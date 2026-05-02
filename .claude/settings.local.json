@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs -I {} basename {})",
+      "Bash(npm install *)",
+      "Bash(npm uninstall *)",
+      "Bash(rm -rf src/config/firebase.ts src/contexts src/hooks)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)"
+    ]
+  }
+}
