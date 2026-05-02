@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, Plus, X, Edit2, Trash2, Check,
-  Clock, Filter, ChevronDown, Image, User
+  Clock, Filter, ChevronDown, Image
 } from 'lucide-react';
 import { usePosts } from '../hooks/usePosts';
 import { useAuth } from '../contexts/AuthContext';
