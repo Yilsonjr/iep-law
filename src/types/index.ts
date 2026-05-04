@@ -68,6 +68,7 @@ export interface Sermon {
   category: SermonCategory;
   thumbnail: string;
   notes?: string;
+  series?: string;
   author_id: string;
   author_name: string;
   published: boolean;
@@ -129,5 +130,22 @@ export interface SermonNote {
   id: string;
   sermon_id: string;
   content: string;
+  created_at: string;
+}
+
+export interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  subject?: string;
+  message: string;
+  read: boolean;
+  created_at: string;
+}
+
+export interface EventRsvp {
+  id: string;
+  event_id: string;
+  user_id: string;
   created_at: string;
 }

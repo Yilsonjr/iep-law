@@ -2,14 +2,19 @@ import { Outlet } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 
-export function Layout() {
+interface LayoutProps {
+  onSearch: () => void;
+  onContact: () => void;
+}
+
+export function Layout({ onSearch, onContact }: LayoutProps) {
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
+      <Navbar onSearch={onSearch} />
       <main className="flex-grow">
-        <Outlet />
+        <Outlet context={{ onContact }} />
       </main>
-      <Footer />
+      <Footer onContact={onContact} />
     </div>
   );
 }

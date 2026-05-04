@@ -28,6 +28,7 @@ const emptyForm = (): Omit<Sermon, 'id' | 'created_at'> => ({
   category: 'Sunday',
   thumbnail: '',
   notes: '',
+  series: '',
   author_id: '',
   author_name: '',
   published: true,
@@ -42,15 +43,20 @@ export function SermonsPage() {
   const { sermons, addSermon, updateSermon, deleteSermon } = useSermons(publishedOnly);
 
   const [filterCat, setFilterCat] = useState<string>('Todos');
+  const [filterSeries, setFilterSeries] = useState<string>('');
   const [selectedSermon, setSelectedSermon] = useState<Sermon | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingSermon, setEditingSermon] = useState<Sermon | null>(null);
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
 
-  const filtered = filterCat === 'Todos'
-    ? sermons
-    : sermons.filter(s => s.category === filterCat);
+  const allSeries = Array.from(new Set(sermons.map(s => s.series).filter(Boolean))) as string[];
+
+  const filtered = sermons.filter(s => {
+    const matchCat = filterCat === 'Todos' || s.category === filterCat;
+    const matchSeries = !filterSeries || s.series === filterSeries;
+    return matchCat && matchSeries;
+  });
 
   const openCreate = () => {
     setEditingSermon(null);
@@ -70,6 +76,7 @@ export function SermonsPage() {
       category: sermon.category,
       thumbnail: sermon.thumbnail,
       notes: sermon.notes ?? '',
+      series: sermon.series ?? '',
       author_id: sermon.author_id,
       author_name: sermon.author_name,
       published: sermon.published,
@@ -138,11 +145,11 @@ export function SermonsPage() {
 
       {/* Filtros */}
       <section className="py-6 bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-3">
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2 text-stone-600">
               <Filter size={18} />
-              <span className="font-medium text-sm">Filtrar:</span>
+              <span className="font-medium text-sm">Categoría:</span>
             </div>
             {['Todos', ...categories].map(cat => (
               <button
@@ -159,6 +166,24 @@ export function SermonsPage() {
               </button>
             ))}
           </div>
+          {allSeries.length > 0 && (
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="font-medium text-sm text-stone-600">Serie:</span>
+              <button
+                onClick={() => setFilterSeries('')}
+                className={cn('px-4 py-1.5 rounded-full text-sm font-medium transition-all',
+                  !filterSeries ? 'bg-gold text-primary shadow-md' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                )}>Todas</button>
+              {allSeries.map(s => (
+                <button key={s} onClick={() => setFilterSeries(s === filterSeries ? '' : s)}
+                  className={cn('px-4 py-1.5 rounded-full text-sm font-medium transition-all',
+                    filterSeries === s ? 'bg-gold text-primary shadow-md' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                  )}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -229,6 +254,13 @@ export function SermonsPage() {
                         year: 'numeric', month: 'long', day: 'numeric'
                       })}
                     </div>
+                    {sermon.series && (
+                      <div className="mt-2">
+                        <span className="text-xs bg-gold/10 text-gold font-medium px-2 py-0.5 rounded-full">
+                          📚 {sermon.series}
+                        </span>
+                      </div>
+                    )}
                     {canEditContent(sermon.author_id) && (
                       <div className="mt-4 flex items-center gap-2 pt-4 border-t border-stone-100">
                         <button
@@ -389,6 +421,21 @@ export function SermonsPage() {
                       className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-stone-600 mb-1">Serie (opcional)</label>
+                  <input
+                    type="text"
+                    value={form.series ?? ''}
+                    onChange={e => setForm({ ...form, series: e.target.value })}
+                    placeholder="Ej: La Fe que Transforma, Frutos del Espíritu..."
+                    className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
+                    list="series-suggestions"
+                  />
+                  <datalist id="series-suggestions">
+                    {allSeries.map(s => <option key={s} value={s} />)}
+                  </datalist>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

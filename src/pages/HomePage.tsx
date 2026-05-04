@@ -3,7 +3,11 @@ import { Link } from 'react-router-dom';
 import { Play, Calendar, Users, Heart, Cross } from 'lucide-react';
 import { HeroSection } from '../components/HeroSection';
 
-export function HomePage() {
+interface HomePageProps {
+  onContact: () => void;
+}
+
+export function HomePage({ onContact }: HomePageProps) {
   return (
     <div>
       <HeroSection />
@@ -160,9 +164,9 @@ export function HomePage() {
               Nos encantaría saber de ti. Contáctanos para más información sobre nuestra 
               iglesia o cómo puedes involucrarte.
             </p>
-            <Link to="/dashboard" className="btn-secondary">
+            <button onClick={onContact} className="btn-secondary">
               Contactar
-            </Link>
+            </button>
           </motion.div>
         </div>
       </section>

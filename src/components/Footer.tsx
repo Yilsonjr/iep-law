@@ -2,7 +2,11 @@ import { Link } from 'react-router-dom';
 import { Church, MapPin, Phone, Mail, Heart, ExternalLink } from 'lucide-react';
 import { useSiteConfigContext } from '../contexts/SiteConfigContext';
 
-export function Footer() {
+interface FooterProps {
+  onContact: () => void;
+}
+
+export function Footer({ onContact }: FooterProps) {
   const { config } = useSiteConfigContext();
   const branding = config.branding;
   const footer = config.footer;
@@ -97,6 +101,11 @@ export function Footer() {
                   </Link>
                 </li>
               ))}
+              <li>
+                <button onClick={onContact} className="text-stone-300 hover:text-gold transition-colors duration-200">
+                  Contacto
+                </button>
+              </li>
             </ul>
           </div>
         </div>

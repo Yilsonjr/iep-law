@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, MapPin, Clock, ChevronLeft, ChevronRight, Filter, Plus, Edit2, Trash2, X, ChevronDown } from 'lucide-react';
 import { useEvents } from '../hooks/useEvents';
 import { useAuth } from '../contexts/AuthContext';
+import { RsvpButton } from '../components/RsvpButton';
 import type { ChurchEvent, EventType } from '../types';
 import { cn } from '../utils';
 
@@ -284,6 +285,9 @@ export function EventsPage() {
                         <div className="text-xs text-stone-400 mt-2">
                           {new Date(ev.date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
                         </div>
+                        <div className="mt-3 flex justify-end">
+                          <RsvpButton eventId={ev.id} userId={profile?.id} />
+                        </div>
                       </motion.div>
                     ))}
                   </div>
@@ -320,7 +324,10 @@ export function EventsPage() {
                 <p className="flex items-center gap-3"><MapPin size={20} className="text-gold" />{selectedEvent.location}</p>
               </div>
               <p className="mt-6 text-stone-600 leading-relaxed">{selectedEvent.description}</p>
-              <button onClick={() => setSelectedEvent(null)} className="mt-8 btn-primary w-full">Cerrar</button>
+              <div className="mt-6 flex items-center gap-3">
+                <RsvpButton eventId={selectedEvent.id} userId={profile?.id} className="text-sm px-4 py-2" />
+              </div>
+              <button onClick={() => setSelectedEvent(null)} className="mt-4 btn-primary w-full">Cerrar</button>
             </motion.div>
           </motion.div>
         )}

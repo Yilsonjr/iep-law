@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Church, Home, Video, Calendar, Users, Menu, X, LogIn, LogOut, ChevronDown, Radio, BookOpen } from 'lucide-react';
+import { Church, Home, Video, Calendar, Users, Menu, X, LogIn, LogOut, ChevronDown, Radio, BookOpen, Search } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSiteConfigContext } from '../contexts/SiteConfigContext';
@@ -28,7 +28,11 @@ const publicNavItems = [
   { path: '/posts', label: 'Comunidad', icon: BookOpen },
 ];
 
-export function Navbar() {
+interface NavbarProps {
+  onSearch: () => void;
+}
+
+export function Navbar({ onSearch }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const location = useLocation();
@@ -110,6 +114,17 @@ export function Navbar() {
             })}
           </div>
 
+          {/* Search — desktop */}
+          <button
+            onClick={onSearch}
+            className="hidden md:flex items-center gap-2 px-3 py-2 text-stone-400 hover:text-primary bg-stone-50 hover:bg-stone-100 rounded-xl transition-colors text-sm"
+            title="Buscar (Ctrl+K)"
+          >
+            <Search size={16} />
+            <span className="text-stone-400">Buscar...</span>
+            <kbd className="text-xs bg-stone-200 text-stone-500 px-1.5 py-0.5 rounded">⌘K</kbd>
+          </button>
+
           {/* Auth — desktop */}
           <div className="hidden md:flex items-center gap-4">
             {user && profile ? (
@@ -182,6 +197,11 @@ export function Navbar() {
               </Link>
             )}
           </div>
+
+          {/* Search mobile icon */}
+          <button onClick={onSearch} className="md:hidden p-2 text-stone-500 hover:text-primary">
+            <Search size={22} />
+          </button>
 
           {/* Mobile toggle */}
           <button
