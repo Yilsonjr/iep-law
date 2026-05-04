@@ -10,7 +10,9 @@
       "Bash(git add *)",
       "Bash(git reset *)",
       "Bash(git commit -m ' *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(node -e \"const p = require\\('./node_modules/lucide-react/package.json'\\); console.log\\(p.version\\)\")",
+      "Bash(node -e \"const lr = require\\('C:/Users/USUARIO/Documents/GitHub/IEP-Law/node_modules/lucide-react'\\); console.log\\(Object.keys\\(lr\\).filter\\(k => /facebook|instagram|youtube|whatsapp|twitter|message/i.test\\(k\\)\\).join\\(', '\\)\\)\")"
     ]
   }
 }

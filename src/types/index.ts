@@ -23,11 +23,19 @@ export interface BrandingConfig {
   tagline: string;
 }
 
+export interface FooterScheduleItem {
+  day: string;
+  time: string;
+  label: string;
+}
+
 export interface FooterConfig {
   text: string;
   copyright: string;
   social: { facebook: string; youtube: string; instagram: string };
-  contact: { address: string; phone: string; email: string };
+  contact: { address: string; phone: string; email: string; whatsapp?: string };
+  cta?: { enabled: boolean; title: string; subtitle: string };
+  schedules?: { enabled: boolean; items: FooterScheduleItem[] };
 }
 
 export interface SeoConfig {
@@ -143,6 +151,9 @@ export interface Page {
   published: boolean;
   show_in_nav: boolean;
   nav_order: number;
+  meta_title?: string;
+  meta_description?: string;
+  og_image?: string;
   created_at: string;
   updated_at?: string;
 }

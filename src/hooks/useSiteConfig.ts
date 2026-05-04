@@ -20,7 +20,16 @@ const defaults: SiteConfigMap = {
     text: 'Una iglesia comprometida con la Palabra de Dios.',
     copyright: '© 2026 Iglesia Ebenezer M.I. Todos los derechos reservados.',
     social: { facebook: '', youtube: '', instagram: '' },
-    contact: { address: '', phone: '', email: '' },
+    contact: { address: '', phone: '', email: '', whatsapp: '' },
+    cta: { enabled: true, title: '¿Tienes preguntas?', subtitle: 'Estamos aquí para acompañarte. No estás solo/a.' },
+    schedules: {
+      enabled: true,
+      items: [
+        { day: 'Domingo', time: '9:00 AM', label: 'Culto Principal' },
+        { day: 'Miércoles', time: '7:00 PM', label: 'Estudio Bíblico' },
+        { day: 'Viernes', time: '7:30 PM', label: 'Culto de Jóvenes' },
+      ],
+    },
   },
   seo: { title: 'Iglesia Ebenezer M.I.', description: '', og_image: '' },
 };

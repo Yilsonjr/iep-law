@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, Search, Filter, Mail, Phone, Calendar,
@@ -418,22 +418,28 @@ function SitioTab() {
 
         {/* FOOTER */}
         {activeSection === 'footer' && (
-          <div className="space-y-5">
+          <div className="space-y-6">
             <h3 className="font-serif text-lg text-primary">Pie de Página</h3>
-            <div>
-              <label className="block text-sm font-medium text-stone-600 mb-1">Texto descriptivo</label>
-              <textarea value={footer.text} rows={3}
-                onChange={e => setFooter({ ...footer, text: e.target.value })}
-                className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold resize-none"
-              />
+
+            {/* Texto y copyright */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-stone-600 mb-1">Texto descriptivo</label>
+                <textarea value={footer.text} rows={3}
+                  onChange={e => setFooter({ ...footer, text: e.target.value })}
+                  className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold resize-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-600 mb-1">Texto de copyright</label>
+                <input type="text" value={footer.copyright}
+                  onChange={e => setFooter({ ...footer, copyright: e.target.value })}
+                  className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-stone-600 mb-1">Texto de copyright</label>
-              <input type="text" value={footer.copyright}
-                onChange={e => setFooter({ ...footer, copyright: e.target.value })}
-                className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
-              />
-            </div>
+
+            {/* Contacto */}
             <div className="border-t border-stone-100 pt-5">
               <p className="text-sm font-medium text-stone-700 mb-3">Contacto</p>
               <div className="space-y-3">
@@ -449,33 +455,138 @@ function SitioTab() {
                   onChange={e => setFooter({ ...footer, contact: { ...footer.contact, email: e.target.value } })}
                   className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
                 />
+                <input type="text" placeholder="WhatsApp (ej: +57 300 123 4567)" value={footer.contact.whatsapp ?? ''}
+                  onChange={e => setFooter({ ...footer, contact: { ...footer.contact, whatsapp: e.target.value } })}
+                  className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
+                />
               </div>
             </div>
+
+            {/* Redes Sociales */}
             <div className="border-t border-stone-100 pt-5">
               <p className="text-sm font-medium text-stone-700 mb-3">Redes Sociales</p>
               <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-stone-500 w-24">Facebook</span>
-                  <input type="url" placeholder="https://facebook.com/..." value={footer.social.facebook}
-                    onChange={e => setFooter({ ...footer, social: { ...footer.social, facebook: e.target.value } })}
-                    className="flex-1 px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-stone-500 w-24">YouTube</span>
-                  <input type="url" placeholder="https://youtube.com/..." value={footer.social.youtube}
-                    onChange={e => setFooter({ ...footer, social: { ...footer.social, youtube: e.target.value } })}
-                    className="flex-1 px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-stone-500 w-24">Instagram</span>
-                  <input type="url" placeholder="https://instagram.com/..." value={footer.social.instagram}
-                    onChange={e => setFooter({ ...footer, social: { ...footer.social, instagram: e.target.value } })}
-                    className="flex-1 px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
-                  />
-                </div>
+                {[
+                  { key: 'facebook' as const, label: 'Facebook', placeholder: 'https://facebook.com/...' },
+                  { key: 'youtube' as const, label: 'YouTube', placeholder: 'https://youtube.com/...' },
+                  { key: 'instagram' as const, label: 'Instagram', placeholder: 'https://instagram.com/...' },
+                ].map(({ key, label, placeholder }) => (
+                  <div key={key} className="flex items-center gap-2">
+                    <span className="text-sm text-stone-500 w-24 flex-shrink-0">{label}</span>
+                    <input type="url" placeholder={placeholder} value={footer.social[key]}
+                      onChange={e => setFooter({ ...footer, social: { ...footer.social, [key]: e.target.value } })}
+                      className="flex-1 px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
+                    />
+                  </div>
+                ))}
               </div>
+            </div>
+
+            {/* CTA Banner */}
+            <div className="border-t border-stone-100 pt-5">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-sm font-medium text-stone-700">Banda de llamada a la acción (CTA)</p>
+                  <p className="text-xs text-stone-400 mt-0.5">Franja superior del footer con botones de contacto</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox"
+                    checked={footer.cta?.enabled ?? true}
+                    onChange={e => setFooter({ ...footer, cta: { ...(footer.cta ?? { title: '¿Tienes preguntas?', subtitle: '' }), enabled: e.target.checked } })}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-stone-200 rounded-full peer peer-checked:bg-primary transition-colors" />
+                  <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5" />
+                </label>
+              </div>
+              {(footer.cta?.enabled ?? true) && (
+                <div className="space-y-3 pl-2 border-l-2 border-gold/40">
+                  <div>
+                    <label className="block text-xs text-stone-500 mb-1">Título</label>
+                    <input type="text"
+                      value={footer.cta?.title ?? '¿Tienes preguntas?'}
+                      onChange={e => setFooter({ ...footer, cta: { ...(footer.cta ?? { enabled: true, subtitle: '' }), title: e.target.value } })}
+                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-stone-500 mb-1">Subtítulo</label>
+                    <input type="text"
+                      value={footer.cta?.subtitle ?? ''}
+                      onChange={e => setFooter({ ...footer, cta: { ...(footer.cta ?? { enabled: true, title: '' }), subtitle: e.target.value } })}
+                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Horarios */}
+            <div className="border-t border-stone-100 pt-5">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-sm font-medium text-stone-700">Horarios de servicio</p>
+                  <p className="text-xs text-stone-400 mt-0.5">Banda de horarios visible en el footer</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox"
+                    checked={footer.schedules?.enabled ?? true}
+                    onChange={e => setFooter({ ...footer, schedules: { ...(footer.schedules ?? { items: [] }), enabled: e.target.checked } })}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-stone-200 rounded-full peer peer-checked:bg-primary transition-colors" />
+                  <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5" />
+                </label>
+              </div>
+              {(footer.schedules?.enabled ?? true) && (
+                <div className="space-y-3">
+                  {(footer.schedules?.items ?? []).map((item, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <input type="text" placeholder="Día" value={item.day}
+                        onChange={e => {
+                          const items = [...(footer.schedules?.items ?? [])];
+                          items[i] = { ...items[i], day: e.target.value };
+                          setFooter({ ...footer, schedules: { ...(footer.schedules ?? { enabled: true }), items } });
+                        }}
+                        className="w-28 px-3 py-2 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm"
+                      />
+                      <input type="text" placeholder="Hora" value={item.time}
+                        onChange={e => {
+                          const items = [...(footer.schedules?.items ?? [])];
+                          items[i] = { ...items[i], time: e.target.value };
+                          setFooter({ ...footer, schedules: { ...(footer.schedules ?? { enabled: true }), items } });
+                        }}
+                        className="w-28 px-3 py-2 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm"
+                      />
+                      <input type="text" placeholder="Nombre del servicio" value={item.label}
+                        onChange={e => {
+                          const items = [...(footer.schedules?.items ?? [])];
+                          items[i] = { ...items[i], label: e.target.value };
+                          setFooter({ ...footer, schedules: { ...(footer.schedules ?? { enabled: true }), items } });
+                        }}
+                        className="flex-1 px-3 py-2 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm"
+                      />
+                      <button type="button"
+                        onClick={() => {
+                          const items = (footer.schedules?.items ?? []).filter((_, idx) => idx !== i);
+                          setFooter({ ...footer, schedules: { ...(footer.schedules ?? { enabled: true }), items } });
+                        }}
+                        className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0">
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  ))}
+                  <button type="button"
+                    onClick={() => {
+                      const items = [...(footer.schedules?.items ?? []), { day: '', time: '', label: '' }];
+                      setFooter({ ...footer, schedules: { ...(footer.schedules ?? { enabled: true }), items } });
+                    }}
+                    className="flex items-center gap-2 text-sm text-primary hover:text-gold transition-colors mt-1">
+                    <Plus size={15} />
+                    Agregar horario
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -707,6 +818,7 @@ function slugify(text: string) {
 const emptyPageForm = (): Omit<Page, 'id' | 'created_at' | 'updated_at'> => ({
   slug: '', title: '', subtitle: '', cover_image: '', content: '',
   published: false, show_in_nav: false, nav_order: 0,
+  meta_title: '', meta_description: '', og_image: '',
 });
 
 function PaginasTab() {
@@ -716,19 +828,45 @@ function PaginasTab() {
   const [form, setForm] = useState(emptyPageForm());
   const [saving, setSaving] = useState(false);
   const [slugManual, setSlugManual] = useState(false);
+  const [showSeo, setShowSeo] = useState(false);
+  const [dragOver, setDragOver] = useState<number | null>(null);
+  const dragFrom = useRef<number>(-1);
 
   const openCreate = () => {
     setEditing(null);
     setForm(emptyPageForm());
     setSlugManual(false);
+    setShowSeo(false);
     setCreating(true);
   };
 
   const openEdit = (p: Page) => {
     setEditing(p);
-    setForm({ slug: p.slug, title: p.title, subtitle: p.subtitle ?? '', cover_image: p.cover_image ?? '', content: p.content, published: p.published, show_in_nav: p.show_in_nav, nav_order: p.nav_order });
+    setForm({
+      slug: p.slug, title: p.title, subtitle: p.subtitle ?? '',
+      cover_image: p.cover_image ?? '', content: p.content,
+      published: p.published, show_in_nav: p.show_in_nav, nav_order: p.nav_order,
+      meta_title: p.meta_title ?? '', meta_description: p.meta_description ?? '',
+      og_image: p.og_image ?? '',
+    });
     setSlugManual(true);
+    setShowSeo(!!(p.meta_title || p.meta_description));
     setCreating(true);
+  };
+
+  const handleDragStart = (i: number) => { dragFrom.current = i; };
+  const handleDragOver = (e: React.DragEvent, i: number) => {
+    e.preventDefault();
+    setDragOver(i);
+  };
+  const handleDrop = async (i: number) => {
+    setDragOver(null);
+    const from = dragFrom.current;
+    if (from === -1 || from === i) return;
+    const reordered = [...pages];
+    const [moved] = reordered.splice(from, 1);
+    reordered.splice(i, 0, moved);
+    await Promise.all(reordered.map((p, idx) => updatePage(p.id, { nav_order: idx })));
   };
 
   const handleTitleChange = (title: string) => {
@@ -841,6 +979,57 @@ function PaginasTab() {
             </div>
           </div>
 
+          {/* SEO colapsable */}
+          <div className="border border-stone-200 rounded-xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setShowSeo(v => !v)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-stone-50 hover:bg-stone-100 transition-colors text-sm font-medium text-stone-600"
+            >
+              <span className="flex items-center gap-2">
+                <Globe size={16} className="text-stone-400" />
+                SEO — Meta etiquetas (opcional)
+              </span>
+              <ChevronDown size={16} className={cn('transition-transform text-stone-400', showSeo && 'rotate-180')} />
+            </button>
+            {showSeo && (
+              <div className="p-4 space-y-4 border-t border-stone-200">
+                <div>
+                  <label className="block text-xs text-stone-500 mb-1">
+                    Meta título <span className="text-stone-400">(por defecto usa el título de la página)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={form.meta_title ?? ''}
+                    onChange={e => setForm(f => ({ ...f, meta_title: e.target.value }))}
+                    placeholder={form.title || 'Título para buscadores'}
+                    maxLength={60}
+                    className="w-full px-3 py-2 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm"
+                  />
+                  <p className="text-xs text-stone-400 mt-1">{(form.meta_title ?? '').length}/60 caracteres</p>
+                </div>
+                <div>
+                  <label className="block text-xs text-stone-500 mb-1">Meta descripción</label>
+                  <textarea
+                    value={form.meta_description ?? ''}
+                    onChange={e => setForm(f => ({ ...f, meta_description: e.target.value }))}
+                    placeholder="Descripción breve para Google (155 caracteres aprox.)"
+                    maxLength={160}
+                    rows={2}
+                    className="w-full px-3 py-2 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm resize-none"
+                  />
+                  <p className="text-xs text-stone-400 mt-1">{(form.meta_description ?? '').length}/160 caracteres</p>
+                </div>
+                <ImageUpload
+                  value={form.og_image ?? ''}
+                  onChange={v => setForm(f => ({ ...f, og_image: v }))}
+                  folder="seo"
+                  label="Imagen Open Graph (para compartir en redes)"
+                />
+              </div>
+            )}
+          </div>
+
           <div className="flex gap-3 pt-2 border-t border-stone-100">
             <button type="button" onClick={() => setCreating(false)} className="flex-1 btn-secondary">
               Cancelar
@@ -887,9 +1076,17 @@ function PaginasTab() {
           {pages.map((page, i) => (
             <motion.div key={page.id}
               initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-              className="bg-white rounded-2xl shadow-md p-5 flex items-center gap-4"
+              draggable
+              onDragStart={() => handleDragStart(i)}
+              onDragOver={(e) => handleDragOver(e, i)}
+              onDragLeave={() => setDragOver(null)}
+              onDrop={() => handleDrop(i)}
+              className={cn(
+                'bg-white rounded-2xl shadow-md p-5 flex items-center gap-4 transition-all',
+                dragOver === i && 'ring-2 ring-gold scale-[1.01]'
+              )}
             >
-              <GripVertical size={18} className="text-stone-300 flex-shrink-0" />
+              <GripVertical size={18} className="text-stone-300 flex-shrink-0 cursor-grab active:cursor-grabbing" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h4 className="font-medium text-stone-800">{page.title}</h4>

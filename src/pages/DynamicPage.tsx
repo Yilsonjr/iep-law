@@ -18,7 +18,33 @@ export function DynamicPage() {
     getBySlug(slug).then(data => {
       if (data) {
         setPage(data);
-        document.title = data.title;
+        // Meta title
+        document.title = data.meta_title || data.title;
+        // Meta description
+        let metaDesc = document.querySelector('meta[name="description"]');
+        if (!metaDesc) {
+          metaDesc = document.createElement('meta');
+          metaDesc.setAttribute('name', 'description');
+          document.head.appendChild(metaDesc);
+        }
+        metaDesc.setAttribute('content', data.meta_description || data.subtitle || '');
+        // OG tags
+        const ogTitle = document.querySelector('meta[property="og:title"]') || (() => {
+          const el = document.createElement('meta');
+          el.setAttribute('property', 'og:title');
+          document.head.appendChild(el);
+          return el;
+        })();
+        ogTitle.setAttribute('content', data.meta_title || data.title);
+        if (data.og_image || data.cover_image) {
+          const ogImg = document.querySelector('meta[property="og:image"]') || (() => {
+            const el = document.createElement('meta');
+            el.setAttribute('property', 'og:image');
+            document.head.appendChild(el);
+            return el;
+          })();
+          ogImg.setAttribute('content', (data.og_image || data.cover_image) ?? '');
+        }
       } else {
         setNotFound(true);
       }
