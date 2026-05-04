@@ -1,5 +1,48 @@
 export type UserRole = 'admin' | 'pastor' | 'leader' | 'member';
 
+// ── Site Config ────────────────────────────────────────────────
+export interface HeroButton {
+  label: string;
+  href: string;
+  variant: 'primary' | 'secondary';
+}
+
+export interface HeroConfig {
+  mode: 'text' | 'image' | 'slider';
+  title: string;
+  subtitle: string;
+  bg_url: string;
+  overlay: number;
+  buttons: HeroButton[];
+  slides: string[];
+}
+
+export interface BrandingConfig {
+  site_name: string;
+  logo_url: string;
+  tagline: string;
+}
+
+export interface FooterConfig {
+  text: string;
+  copyright: string;
+  social: { facebook: string; youtube: string; instagram: string };
+  contact: { address: string; phone: string; email: string };
+}
+
+export interface SeoConfig {
+  title: string;
+  description: string;
+  og_image: string;
+}
+
+export interface SiteConfigMap {
+  branding: BrandingConfig;
+  hero: HeroConfig;
+  footer: FooterConfig;
+  seo: SeoConfig;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -28,6 +71,7 @@ export interface Sermon {
   author_id: string;
   author_name: string;
   published: boolean;
+  published_at?: string;
   created_at: string;
 }
 
@@ -48,6 +92,7 @@ export interface ChurchEvent {
   description: string;
   type: EventType;
   author_id: string;
+  published_at?: string;
   created_at: string;
 }
 
@@ -74,6 +119,7 @@ export interface Post {
   author_id: string;
   author_name: string;
   published: boolean;
+  published_at?: string;
   image_url?: string;
   created_at: string;
   updated_at?: string;

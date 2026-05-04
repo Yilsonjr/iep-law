@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Church, Home, Video, Calendar, Users, Menu, X, LogIn, LogOut, ChevronDown, Radio, BookOpen } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useSiteConfigContext } from '../contexts/SiteConfigContext';
 import { cn } from '../utils';
 
 const roleLabels: Record<string, string> = {
@@ -33,6 +34,8 @@ export function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, profile, signOut, canViewDashboard } = useAuth();
+  const { config } = useSiteConfigContext();
+  const branding = config.branding;
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const navItems = [
@@ -66,12 +69,18 @@ export function Navbar() {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
-              <Church className="w-7 h-7 text-white" />
+            <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center overflow-hidden">
+              {branding.logo_url ? (
+                <img src={branding.logo_url} alt={branding.site_name} className="w-full h-full object-cover" />
+              ) : (
+                <Church className="w-7 h-7 text-white" />
+              )}
             </div>
             <div>
-              <span className="font-serif text-2xl text-primary font-semibold">Ebenezer</span>
-              <span className="block text-xs text-gold font-medium tracking-wider">M.I.</span>
+              <span className="font-serif text-2xl text-primary font-semibold">{branding.site_name}</span>
+              {branding.tagline && (
+                <span className="block text-xs text-gold font-medium tracking-wider">{branding.tagline}</span>
+              )}
             </div>
           </Link>
 

@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Clock, Filter, Plus, Edit2, Trash2, X, Eye, EyeOff, ChevronDown } from 'lucide-react';
 import { useSermons } from '../hooks/useSermons';
 import { useAuth } from '../contexts/AuthContext';
+import { ImageUpload } from '../components/ImageUpload';
+import { RichTextEditor } from '../components/RichTextEditor';
 import type { Sermon, SermonCategory } from '../types';
 import { cn } from '../utils';
 
@@ -29,6 +31,7 @@ const emptyForm = (): Omit<Sermon, 'id' | 'created_at'> => ({
   author_id: '',
   author_name: '',
   published: true,
+  published_at: undefined,
 });
 
 export function SermonsPage() {
@@ -70,6 +73,7 @@ export function SermonsPage() {
       author_id: sermon.author_id,
       author_name: sermon.author_name,
       published: sermon.published,
+      published_at: sermon.published_at,
     });
     setModalOpen(true);
   };
@@ -417,12 +421,10 @@ export function SermonsPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-stone-600 mb-1">Descripción *</label>
-                  <textarea
+                  <RichTextEditor
                     value={form.description}
-                    onChange={e => setForm({ ...form, description: e.target.value })}
-                    rows={3}
-                    className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold resize-none"
-                    required
+                    onChange={v => setForm({ ...form, description: v })}
+                    placeholder="Descripción de la prédica..."
                   />
                 </div>
 
@@ -437,41 +439,47 @@ export function SermonsPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-stone-600 mb-1">URL de Miniatura</label>
-                  <input
-                    type="url"
-                    value={form.thumbnail}
-                    onChange={e => setForm({ ...form, thumbnail: e.target.value })}
-                    placeholder="https://..."
-                    className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
-                  />
-                </div>
+                <ImageUpload
+                  value={form.thumbnail}
+                  onChange={v => setForm({ ...form, thumbnail: v })}
+                  folder="sermons"
+                  label="Miniatura"
+                />
 
                 <div>
                   <label className="block text-sm font-medium text-stone-600 mb-1">Notas del Sermón</label>
-                  <textarea
-                    value={form.notes}
-                    onChange={e => setForm({ ...form, notes: e.target.value })}
-                    rows={2}
-                    className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold resize-none"
+                  <RichTextEditor
+                    value={form.notes ?? ''}
+                    onChange={v => setForm({ ...form, notes: v })}
+                    placeholder="Notas adicionales (opcional)..."
                   />
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <label className="relative inline-flex items-center cursor-pointer">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3">
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.published}
+                        onChange={e => setForm({ ...form, published: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-stone-200 peer-focus:ring-2 peer-focus:ring-gold rounded-full peer peer-checked:bg-primary transition-colors" />
+                      <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5" />
+                    </label>
+                    <span className="text-sm text-stone-600">
+                      {form.published ? 'Publicado' : 'Borrador'}
+                    </span>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-stone-500 mb-1">Publicar en fecha (opcional)</label>
                     <input
-                      type="checkbox"
-                      checked={form.published}
-                      onChange={e => setForm({ ...form, published: e.target.checked })}
-                      className="sr-only peer"
+                      type="datetime-local"
+                      value={form.published_at ? form.published_at.slice(0, 16) : ''}
+                      onChange={e => setForm({ ...form, published_at: e.target.value ? new Date(e.target.value).toISOString() : undefined })}
+                      className="w-full px-3 py-2 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm"
                     />
-                    <div className="w-11 h-6 bg-stone-200 peer-focus:ring-2 peer-focus:ring-gold rounded-full peer peer-checked:bg-primary transition-colors" />
-                    <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5" />
-                  </label>
-                  <span className="text-sm text-stone-600">
-                    {form.published ? 'Publicado (visible para todos)' : 'Borrador (solo administradores)'}
-                  </span>
+                  </div>
                 </div>
 
                 <div className="flex gap-4 pt-2">

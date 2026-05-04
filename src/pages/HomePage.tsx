@@ -1,68 +1,12 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Play, Calendar, Users, Heart, ArrowRight, Cross } from 'lucide-react';
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.2 }
-  }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
-};
+import { Play, Calendar, Users, Heart, Cross } from 'lucide-react';
+import { HeroSection } from '../components/HeroSection';
 
 export function HomePage() {
   return (
     <div>
-      <section className="relative bg-gradient-to-br from-primary via-primary-700 to-primary-800 text-white py-32 overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{ 
-            backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.3) 1px, transparent 0)',
-            backgroundSize: '40px 40px'
-          }} />
-        </div>
-        
-        <motion.div 
-          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <motion.div variants={itemVariants} className="mb-6">
-            <Cross size={48} className="mx-auto text-gold" />
-          </motion.div>
-          
-          <motion.h1 
-            variants={itemVariants}
-            className="font-serif text-5xl md:text-7xl font-bold mb-6"
-          >
-            Iglesia Ebenezer M.I.
-          </motion.h1>
-          
-          <motion.p 
-            variants={itemVariants}
-            className="text-xl md:text-2xl text-stone-300 mb-10 max-w-2xl mx-auto"
-          >
-            Hasta aquí nos has ayudado el Señor. Una comunidad de fe dedicada a la 
-            transformación de vidas a través del poder del evangelio.
-          </motion.p>
-          
-          <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/live" className="btn-primary flex items-center justify-center gap-2">
-              <Play size={20} />
-              Ver en Vivo
-            </Link>
-            <Link to="/sermons" className="btn-secondary flex items-center justify-center gap-2">
-              Sermones
-              <ArrowRight size={20} />
-            </Link>
-          </motion.div>
-        </motion.div>
-      </section>
+      <HeroSection />
 
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

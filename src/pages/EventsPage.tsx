@@ -42,6 +42,7 @@ const emptyForm = (): Omit<ChurchEvent, 'id' | 'created_at'> => ({
   description: '',
   type: 'service',
   author_id: '',
+  published_at: undefined,
 });
 
 export function EventsPage() {
@@ -89,6 +90,7 @@ export function EventsPage() {
       description: ev.description,
       type: ev.type,
       author_id: ev.author_id,
+      published_at: ev.published_at,
     });
     setModalOpen(true);
   };
@@ -389,6 +391,16 @@ export function EventsPage() {
                   <label className="block text-sm font-medium text-stone-600 mb-1">Descripción *</label>
                   <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
                     rows={3} className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold resize-none" required />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-stone-500 mb-1">Publicar en fecha específica (opcional)</label>
+                  <input
+                    type="datetime-local"
+                    value={form.published_at ? form.published_at.slice(0, 16) : ''}
+                    onChange={e => setForm({ ...form, published_at: e.target.value ? new Date(e.target.value).toISOString() : undefined })}
+                    className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm"
+                  />
                 </div>
 
                 <div className="flex gap-4 pt-2">

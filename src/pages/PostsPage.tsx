@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, Plus, X, Edit2, Trash2, Check,
-  Clock, Filter, ChevronDown, Image
+  Clock, Filter, ChevronDown
 } from 'lucide-react';
 import { usePosts } from '../hooks/usePosts';
 import { useAuth } from '../contexts/AuthContext';
+import { ImageUpload } from '../components/ImageUpload';
+import { RichTextEditor } from '../components/RichTextEditor';
 import type { Post, PostCategory } from '../types';
 import { cn } from '../utils';
 
@@ -25,6 +27,7 @@ const emptyForm = (): Omit<Post, 'id' | 'created_at' | 'updated_at'> => ({
   author_name: '',
   published: false,
   image_url: '',
+  published_at: undefined,
 });
 
 export function PostsPage() {
@@ -74,6 +77,7 @@ export function PostsPage() {
       author_name: post.author_name,
       published: post.published,
       image_url: post.image_url ?? '',
+      published_at: post.published_at,
     });
     setModalOpen(true);
   };
@@ -278,9 +282,10 @@ export function PostsPage() {
                     {new Date(selectedPost.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </span>
                 </div>
-                <div className="prose prose-stone max-w-none text-stone-700 leading-relaxed whitespace-pre-wrap">
-                  {selectedPost.content}
-                </div>
+                <div
+                  className="prose prose-stone max-w-none text-stone-700 leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: selectedPost.content }}
+                />
                 <button onClick={() => setSelectedPost(null)} className="mt-8 btn-primary w-full">Cerrar</button>
               </div>
             </motion.div>
@@ -347,44 +352,46 @@ export function PostsPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-stone-600 mb-1">Contenido *</label>
-                  <textarea
+                  <RichTextEditor
                     value={form.content}
-                    onChange={e => setForm({ ...form, content: e.target.value })}
+                    onChange={v => setForm({ ...form, content: v })}
                     placeholder="Escribe tu reflexión, testimonio o devocional aquí..."
-                    rows={8}
-                    className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold resize-none"
-                    required
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-stone-600 mb-1">
-                    <span className="flex items-center gap-1"><Image size={14} /> URL de imagen (opcional)</span>
-                  </label>
-                  <input
-                    type="url"
-                    value={form.image_url}
-                    onChange={e => setForm({ ...form, image_url: e.target.value })}
-                    placeholder="https://..."
-                    className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
-                  />
-                </div>
+                <ImageUpload
+                  value={form.image_url ?? ''}
+                  onChange={v => setForm({ ...form, image_url: v })}
+                  folder="posts"
+                  label="Imagen de portada (opcional)"
+                />
 
                 {canEditAnyContent && (
-                  <div className="flex items-center gap-3">
-                    <label className="relative inline-flex items-center cursor-pointer">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-3">
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={form.published}
+                          onChange={e => setForm({ ...form, published: e.target.checked })}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-stone-200 rounded-full peer peer-checked:bg-primary transition-colors" />
+                        <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5" />
+                      </label>
+                      <span className="text-sm text-stone-600">
+                        {form.published ? 'Publicado' : 'Borrador / Pendiente'}
+                      </span>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-stone-500 mb-1">Publicar en fecha (opcional)</label>
                       <input
-                        type="checkbox"
-                        checked={form.published}
-                        onChange={e => setForm({ ...form, published: e.target.checked })}
-                        className="sr-only peer"
+                        type="datetime-local"
+                        value={form.published_at ? form.published_at.slice(0, 16) : ''}
+                        onChange={e => setForm({ ...form, published_at: e.target.value ? new Date(e.target.value).toISOString() : undefined })}
+                        className="w-full px-3 py-2 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm"
                       />
-                      <div className="w-11 h-6 bg-stone-200 rounded-full peer peer-checked:bg-primary transition-colors" />
-                      <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5" />
-                    </label>
-                    <span className="text-sm text-stone-600">
-                      {form.published ? 'Publicado (visible para todos)' : 'Borrador / Pendiente'}
-                    </span>
+                    </div>
                   </div>
                 )}
 
@@ -457,7 +464,7 @@ function PostCard({ post, index, onRead, onEdit, onDelete, onApprove, canEdit, c
         </h3>
 
         <p className="text-stone-500 text-sm leading-relaxed line-clamp-3 flex-1 mb-4">
-          {post.content}
+          {post.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}
         </p>
 
         <div className="flex items-center gap-2 text-sm text-stone-400 mb-4">

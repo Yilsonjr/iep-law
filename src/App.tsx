@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { SiteConfigProvider } from './contexts/SiteConfigContext';
 import { Layout } from './layouts/MainLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { HomePage } from './pages/HomePage';
@@ -14,6 +15,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <SiteConfigProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/" element={<Layout />}>
@@ -32,6 +34,7 @@ function App() {
             />
           </Route>
         </Routes>
+        </SiteConfigProvider>
       </AuthProvider>
     </BrowserRouter>
   );

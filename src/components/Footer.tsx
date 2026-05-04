@@ -1,55 +1,99 @@
 import { Link } from 'react-router-dom';
-import { Church, MapPin, Phone, Mail, Heart } from 'lucide-react';
+import { Church, MapPin, Phone, Mail, Heart, ExternalLink } from 'lucide-react';
+import { useSiteConfigContext } from '../contexts/SiteConfigContext';
 
 export function Footer() {
+  const { config } = useSiteConfigContext();
+  const branding = config.branding;
+  const footer = config.footer;
+
   return (
     <footer className="bg-primary text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-14 h-14 bg-gold rounded-full flex items-center justify-center">
-                <Church className="w-8 h-8 text-primary" />
+              <div className="w-14 h-14 bg-gold rounded-full flex items-center justify-center overflow-hidden">
+                {branding.logo_url ? (
+                  <img src={branding.logo_url} alt={branding.site_name} className="w-full h-full object-cover" />
+                ) : (
+                  <Church className="w-8 h-8 text-primary" />
+                )}
               </div>
               <div>
-                <span className="font-serif text-3xl text-white font-semibold">Ebenezer</span>
-                <span className="block text-lg text-gold font-medium tracking-wider">M.I.</span>
+                <span className="font-serif text-3xl text-white font-semibold">{branding.site_name}</span>
+                {branding.tagline && (
+                  <span className="block text-lg text-gold font-medium tracking-wider">{branding.tagline}</span>
+                )}
               </div>
             </div>
             <p className="text-stone-300 leading-relaxed max-w-md">
-             Hasta aquí nos has ayudado el Señor. Una iglesia comprometida con la Palabra de Dios 
-              y la edificación de Sus hijos en fe, amor y servicio.
+              {footer.text}
             </p>
+            {(footer.social.facebook || footer.social.youtube || footer.social.instagram) && (
+              <div className="flex items-center gap-4 mt-6">
+                {footer.social.facebook && (
+                  <a href={footer.social.facebook} target="_blank" rel="noopener noreferrer"
+                    className="w-10 h-10 bg-white/10 hover:bg-gold/30 rounded-full flex items-center justify-center transition-colors text-white text-xs font-bold">
+                    f
+                  </a>
+                )}
+                {footer.social.youtube && (
+                  <a href={footer.social.youtube} target="_blank" rel="noopener noreferrer"
+                    className="w-10 h-10 bg-white/10 hover:bg-gold/30 rounded-full flex items-center justify-center transition-colors">
+                    <ExternalLink size={16} className="text-white" />
+                  </a>
+                )}
+                {footer.social.instagram && (
+                  <a href={footer.social.instagram} target="_blank" rel="noopener noreferrer"
+                    className="w-10 h-10 bg-white/10 hover:bg-gold/30 rounded-full flex items-center justify-center transition-colors text-white text-xs font-bold">
+                    ig
+                  </a>
+                )}
+              </div>
+            )}
           </div>
 
           <div>
             <h4 className="font-serif text-xl mb-6 text-gold">Contacto</h4>
             <ul className="space-y-4">
-              <li className="flex items-center gap-3 text-stone-300">
-                <MapPin size={18} className="text-gold" />
-                <span>123 Calle Fe, Ciudad Esperanza</span>
-              </li>
-              <li className="flex items-center gap-3 text-stone-300">
-                <Phone size={18} className="text-gold" />
-                <span>+1 555-0123</span>
-              </li>
-              <li className="flex items-center gap-3 text-stone-300">
-                <Mail size={18} className="text-gold" />
-                <span>contacto@ebenezer-mi.com</span>
-              </li>
+              {footer.contact.address && (
+                <li className="flex items-start gap-3 text-stone-300">
+                  <MapPin size={18} className="text-gold mt-0.5 flex-shrink-0" />
+                  <span>{footer.contact.address}</span>
+                </li>
+              )}
+              {footer.contact.phone && (
+                <li className="flex items-center gap-3 text-stone-300">
+                  <Phone size={18} className="text-gold flex-shrink-0" />
+                  <span>{footer.contact.phone}</span>
+                </li>
+              )}
+              {footer.contact.email && (
+                <li className="flex items-center gap-3 text-stone-300">
+                  <Mail size={18} className="text-gold flex-shrink-0" />
+                  <span>{footer.contact.email}</span>
+                </li>
+              )}
+              {!footer.contact.address && !footer.contact.phone && !footer.contact.email && (
+                <li className="text-stone-400 text-sm italic">Sin información de contacto</li>
+              )}
             </ul>
           </div>
 
           <div>
             <h4 className="font-serif text-xl mb-6 text-gold">Enlaces</h4>
             <ul className="space-y-3">
-              {['Inicio', 'Sermones', 'Eventos', 'En Vivo', 'Dashboard'].map((item) => (
-                <li key={item}>
-                  <Link
-                    to={`/${item.toLowerCase() === 'inicio' ? '' : item.toLowerCase()}`}
-                    className="text-stone-300 hover:text-gold transition-colors duration-200"
-                  >
-                    {item}
+              {[
+                { label: 'Inicio', to: '/' },
+                { label: 'Prédicas', to: '/sermons' },
+                { label: 'Eventos', to: '/events' },
+                { label: 'En Vivo', to: '/live' },
+                { label: 'Comunidad', to: '/posts' },
+              ].map(({ label, to }) => (
+                <li key={to}>
+                  <Link to={to} className="text-stone-300 hover:text-gold transition-colors duration-200">
+                    {label}
                   </Link>
                 </li>
               ))}
@@ -62,7 +106,7 @@ export function Footer() {
             Hecho con <Heart size={14} className="text-gold fill-gold" /> para la Gloria de Dios
           </p>
           <p className="text-stone-500 text-xs mt-2">
-            © 2026 Iglesia Ebenezer M.I. Todos los derechos reservados.
+            {footer.copyright}
           </p>
         </div>
       </div>
