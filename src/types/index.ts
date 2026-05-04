@@ -133,6 +133,20 @@ export interface SermonNote {
   created_at: string;
 }
 
+export interface Page {
+  id: string;
+  slug: string;
+  title: string;
+  subtitle?: string;
+  cover_image?: string;
+  content: string;
+  published: boolean;
+  show_in_nav: boolean;
+  nav_order: number;
+  created_at: string;
+  updated_at?: string;
+}
+
 export interface ContactMessage {
   id: string;
   name: string;

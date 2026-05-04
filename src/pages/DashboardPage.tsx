@@ -4,14 +4,17 @@ import {
   Users, Search, Filter, Mail, Phone, Calendar,
   UserCheck, Shield, ChevronDown, BarChart3, Settings,
   Save, Plus, Trash2, Globe, Layout, FileText,
-  Inbox, Eye, CheckCheck, Trash, ImageIcon,
+  Inbox, Eye, CheckCheck, Trash, ImageIcon, PanelLeft,
+  ExternalLink, GripVertical,
 } from 'lucide-react';
 import { useUsers } from '../hooks/useUsers';
 import { useAuth } from '../contexts/AuthContext';
 import { useSiteConfigContext } from '../contexts/SiteConfigContext';
 import { useContactMessages } from '../hooks/useContactMessages';
+import { usePages } from '../hooks/usePages';
 import { ImageUpload } from '../components/ImageUpload';
-import type { UserProfile, UserRole } from '../types';
+import { RichTextEditor } from '../components/RichTextEditor';
+import type { UserProfile, UserRole, Page } from '../types';
 import type { HeroConfig, BrandingConfig, FooterConfig, SeoConfig } from '../types';
 import { cn } from '../utils';
 
@@ -29,7 +32,7 @@ const statusColors = {
   inactive: { bg: 'bg-stone-100', text: 'text-stone-500' },
 };
 
-type TabId = 'resumen' | 'sitio' | 'usuarios';
+type TabId = 'resumen' | 'sitio' | 'paginas' | 'usuarios';
 
 // ── RESUMEN TAB ────────────────────────────────────────────────
 function ResumenTab() {
@@ -671,6 +674,236 @@ function UsuariosTab() {
   );
 }
 
+// ── PÁGINAS TAB ────────────────────────────────────────────────
+function slugify(text: string) {
+  return text.toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim();
+}
+
+const emptyPageForm = (): Omit<Page, 'id' | 'created_at' | 'updated_at'> => ({
+  slug: '', title: '', subtitle: '', cover_image: '', content: '',
+  published: false, show_in_nav: false, nav_order: 0,
+});
+
+function PaginasTab() {
+  const { pages, loading, addPage, updatePage, deletePage } = usePages();
+  const [editing, setEditing] = useState<Page | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [form, setForm] = useState(emptyPageForm());
+  const [saving, setSaving] = useState(false);
+  const [slugManual, setSlugManual] = useState(false);
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm(emptyPageForm());
+    setSlugManual(false);
+    setCreating(true);
+  };
+
+  const openEdit = (p: Page) => {
+    setEditing(p);
+    setForm({ slug: p.slug, title: p.title, subtitle: p.subtitle ?? '', cover_image: p.cover_image ?? '', content: p.content, published: p.published, show_in_nav: p.show_in_nav, nav_order: p.nav_order });
+    setSlugManual(true);
+    setCreating(true);
+  };
+
+  const handleTitleChange = (title: string) => {
+    setForm(f => ({ ...f, title, ...(slugManual ? {} : { slug: slugify(title) }) }));
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      if (editing) await updatePage(editing.id, form);
+      else await addPage(form);
+      setCreating(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('¿Eliminar esta página permanentemente?')) return;
+    await deletePage(id);
+  };
+
+  if (creating) {
+    return (
+      <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100">
+          <h3 className="font-serif text-xl text-primary">
+            {editing ? `Editar: ${editing.title}` : 'Nueva Página'}
+          </h3>
+          <button onClick={() => setCreating(false)} className="p-2 hover:bg-stone-100 rounded-lg">
+            <Trash size={18} className="text-stone-400" style={{ transform: 'rotate(0)' }} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSave} className="p-6 space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-stone-600 mb-1">Título de la página *</label>
+              <input type="text" value={form.title}
+                onChange={e => handleTitleChange(e.target.value)}
+                className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
+                required placeholder="Ej: Nosotros, Acerca de, Historia..."
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-stone-600 mb-1">
+                Slug (URL) — <span className="text-stone-400 font-normal">/p/<strong>{form.slug || 'mi-pagina'}</strong></span>
+              </label>
+              <input type="text" value={form.slug}
+                onChange={e => { setSlugManual(true); setForm(f => ({ ...f, slug: e.target.value })); }}
+                className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold font-mono text-sm"
+                required placeholder="nosotros"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-stone-600 mb-1">Subtítulo (opcional)</label>
+            <input type="text" value={form.subtitle}
+              onChange={e => setForm(f => ({ ...f, subtitle: e.target.value }))}
+              placeholder="Frase corta que aparece bajo el título"
+              className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
+            />
+          </div>
+
+          <ImageUpload
+            value={form.cover_image ?? ''}
+            onChange={v => setForm(f => ({ ...f, cover_image: v }))}
+            folder="pages"
+            label="Imagen de portada (opcional)"
+          />
+
+          <div>
+            <label className="block text-sm font-medium text-stone-600 mb-1">Contenido *</label>
+            <RichTextEditor
+              value={form.content}
+              onChange={v => setForm(f => ({ ...f, content: v }))}
+              placeholder="Escribe el contenido de la página aquí..."
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+            <div className="flex items-center gap-3">
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" checked={form.published}
+                  onChange={e => setForm(f => ({ ...f, published: e.target.checked }))}
+                  className="sr-only peer" />
+                <div className="w-11 h-6 bg-stone-200 rounded-full peer peer-checked:bg-primary transition-colors" />
+                <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5" />
+              </label>
+              <span className="text-sm text-stone-600">Publicada</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" checked={form.show_in_nav}
+                  onChange={e => setForm(f => ({ ...f, show_in_nav: e.target.checked }))}
+                  className="sr-only peer" />
+                <div className="w-11 h-6 bg-stone-200 rounded-full peer peer-checked:bg-primary transition-colors" />
+                <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5" />
+              </label>
+              <span className="text-sm text-stone-600">Mostrar en menú</span>
+            </div>
+            <div>
+              <label className="block text-xs text-stone-500 mb-1">Orden en menú</label>
+              <input type="number" value={form.nav_order} min={0}
+                onChange={e => setForm(f => ({ ...f, nav_order: parseInt(e.target.value) || 0 }))}
+                className="w-full px-3 py-2 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm"
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-2 border-t border-stone-100">
+            <button type="button" onClick={() => setCreating(false)} className="flex-1 btn-secondary">
+              Cancelar
+            </button>
+            <button type="submit" disabled={saving} className="flex-1 btn-primary flex items-center justify-center gap-2 disabled:opacity-60">
+              <Save size={16} />
+              {saving ? 'Guardando...' : (editing ? 'Actualizar página' : 'Crear página')}
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-serif text-xl text-primary">Páginas del sitio</h3>
+          <p className="text-sm text-stone-500 mt-1">
+            Crea páginas como "Nosotros", "Historia", "Visión y Misión".<br />
+            Las páginas con <strong>Mostrar en menú</strong> aparecen automáticamente en la navegación.
+          </p>
+        </div>
+        <button onClick={openCreate} className="flex items-center gap-2 btn-primary">
+          <Plus size={18} />
+          Nueva página
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
+        </div>
+      ) : pages.length === 0 ? (
+        <div className="bg-white rounded-2xl shadow-md p-12 text-center">
+          <PanelLeft size={48} className="mx-auto text-stone-300 mb-4" />
+          <p className="text-stone-500 text-lg mb-2">No hay páginas creadas</p>
+          <p className="text-stone-400 text-sm mb-6">Crea tu primera página para agregar contenido estático al sitio.</p>
+          <button onClick={openCreate} className="btn-primary">Crear primera página</button>
+        </div>
+      ) : (
+        <div className="grid gap-3">
+          {pages.map((page, i) => (
+            <motion.div key={page.id}
+              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+              className="bg-white rounded-2xl shadow-md p-5 flex items-center gap-4"
+            >
+              <GripVertical size={18} className="text-stone-300 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h4 className="font-medium text-stone-800">{page.title}</h4>
+                  {page.published ? (
+                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Publicada</span>
+                  ) : (
+                    <span className="text-xs bg-stone-100 text-stone-500 px-2 py-0.5 rounded-full font-medium">Borrador</span>
+                  )}
+                  {page.show_in_nav && (
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">En menú #{page.nav_order}</span>
+                  )}
+                </div>
+                <p className="text-sm text-stone-400 font-mono mt-0.5">/p/{page.slug}</p>
+                {page.subtitle && <p className="text-sm text-stone-500 mt-1 truncate">{page.subtitle}</p>}
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <a href={`/p/${page.slug}`} target="_blank" rel="noopener noreferrer"
+                  className="p-2 text-stone-400 hover:text-primary hover:bg-stone-50 rounded-lg transition-colors">
+                  <ExternalLink size={16} />
+                </a>
+                <button onClick={() => openEdit(page)}
+                  className="p-2 text-stone-400 hover:text-primary hover:bg-stone-50 rounded-lg transition-colors">
+                  <Eye size={16} />
+                </button>
+                <button onClick={() => handleDelete(page.id)}
+                  className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                  <Trash size={16} />
+                </button>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── MAIN DASHBOARD ─────────────────────────────────────────────
 export function DashboardPage() {
   const { profile: currentProfile } = useAuth();
@@ -680,6 +913,7 @@ export function DashboardPage() {
   const tabs: { id: TabId; label: string; icon: typeof BarChart3; badge?: number }[] = [
     { id: 'resumen', label: 'Resumen', icon: BarChart3, badge: unread },
     { id: 'sitio', label: 'Sitio Web', icon: Settings },
+    { id: 'paginas', label: 'Páginas', icon: PanelLeft },
     { id: 'usuarios', label: 'Usuarios', icon: Users },
   ];
 
@@ -732,6 +966,7 @@ export function DashboardPage() {
               transition={{ duration: 0.2 }}>
               {activeTab === 'resumen' && <ResumenTab />}
               {activeTab === 'sitio' && <SitioTab />}
+              {activeTab === 'paginas' && <PaginasTab />}
               {activeTab === 'usuarios' && <UsuariosTab />}
             </motion.div>
           </AnimatePresence>

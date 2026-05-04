@@ -1,9 +1,10 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Church, Home, Video, Calendar, Users, Menu, X, LogIn, LogOut, ChevronDown, Radio, BookOpen, Search } from 'lucide-react';
+import { Church, Home, Video, Calendar, Users, Menu, X, LogIn, LogOut, ChevronDown, Radio, BookOpen, Search, FileText } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSiteConfigContext } from '../contexts/SiteConfigContext';
+import { usePages } from '../hooks/usePages';
 import { cn } from '../utils';
 
 const roleLabels: Record<string, string> = {
@@ -40,10 +41,12 @@ export function Navbar({ onSearch }: NavbarProps) {
   const { user, profile, signOut, canViewDashboard } = useAuth();
   const { config } = useSiteConfigContext();
   const branding = config.branding;
+  const { navPages } = usePages(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const navItems = [
     ...publicNavItems,
+    ...navPages.map(p => ({ path: `/p/${p.slug}`, label: p.title, icon: FileText })),
     ...(canViewDashboard ? [{ path: '/dashboard', label: 'Dashboard', icon: Users }] : []),
   ];
 
