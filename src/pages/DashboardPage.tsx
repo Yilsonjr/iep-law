@@ -233,6 +233,7 @@ function SitioTab() {
               onChange={v => setBranding({ ...branding, logo_url: v })}
               folder="branding"
               label="Logo de la Iglesia"
+              variant="logo"
             />
             <div>
               <label className="block text-sm font-medium text-stone-600 mb-1">Nombre del Sitio</label>
@@ -247,6 +248,28 @@ function SitioTab() {
                 onChange={e => setBranding({ ...branding, tagline: e.target.value })}
                 className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
               />
+            </div>
+
+            {/* Vista previa del Navbar */}
+            <div>
+              <label className="block text-sm font-medium text-stone-600 mb-2">Vista previa en el Navbar</label>
+              <div className="flex items-center gap-3 bg-white border border-stone-200 rounded-xl px-4 py-3 shadow-sm">
+                <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-stone-100">
+                  <img
+                    src={branding.logo_url || '/android-chrome-192x192.png'}
+                    alt="logo"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div>
+                  <p className="font-serif text-base text-primary font-semibold leading-tight">
+                    {branding.site_name || 'Nombre del sitio'}
+                  </p>
+                  {branding.tagline && (
+                    <p className="text-xs text-amber-600 font-medium tracking-wider">{branding.tagline}</p>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         )}

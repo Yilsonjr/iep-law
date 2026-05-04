@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Church, Home, Video, Calendar, Users, Menu, X, LogIn, LogOut, ChevronDown, Radio, BookOpen, Search, FileText } from 'lucide-react';
+import { Home, Video, Calendar, Users, Menu, X, LogIn, LogOut, ChevronDown, Radio, BookOpen, Search, FileText } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSiteConfigContext } from '../contexts/SiteConfigContext';
@@ -76,12 +76,12 @@ export function Navbar({ onSearch }: NavbarProps) {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center overflow-hidden">
-              {branding.logo_url ? (
-                <img src={branding.logo_url} alt={branding.site_name} className="w-full h-full object-cover" />
-              ) : (
-                <Church className="w-7 h-7 text-white" />
-              )}
+            <div className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden">
+              <img
+                src={branding.logo_url || '/android-chrome-192x192.png'}
+                alt={branding.site_name}
+                className="w-full h-full object-cover"
+              />
             </div>
             <div>
               <span className="font-serif text-2xl text-primary font-semibold">{branding.site_name}</span>

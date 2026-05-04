@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, type ReactNode } from 'react';
 import { useSiteConfig } from '../hooks/useSiteConfig';
 import type { SiteConfigMap } from '../types';
 
@@ -10,8 +10,24 @@ interface SiteConfigContextType {
 
 const SiteConfigContext = createContext<SiteConfigContextType | null>(null);
 
+function useDynamicFavicon(logoUrl: string) {
+  useEffect(() => {
+    if (!logoUrl) return;
+    const selectors = [
+      'link[rel="icon"]',
+      'link[rel="shortcut icon"]',
+      'link[rel="apple-touch-icon"]',
+    ];
+    selectors.forEach(sel => {
+      const el = document.querySelector<HTMLLinkElement>(sel);
+      if (el) el.href = logoUrl;
+    });
+  }, [logoUrl]);
+}
+
 export function SiteConfigProvider({ children }: { children: ReactNode }) {
   const value = useSiteConfig();
+  useDynamicFavicon(value.config.branding.logo_url);
   return <SiteConfigContext.Provider value={value}>{children}</SiteConfigContext.Provider>;
 }
 

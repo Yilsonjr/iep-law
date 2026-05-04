@@ -9,9 +9,10 @@ interface ImageUploadProps {
   folder?: string;
   label?: string;
   className?: string;
+  variant?: 'banner' | 'logo';
 }
 
-export function ImageUpload({ value, onChange, folder = 'general', label = 'Imagen', className }: ImageUploadProps) {
+export function ImageUpload({ value, onChange, folder = 'general', label = 'Imagen', className, variant = 'banner' }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -54,25 +55,52 @@ export function ImageUpload({ value, onChange, folder = 'general', label = 'Imag
       <label className="block text-sm font-medium text-stone-600 mb-2">{label}</label>
 
       {value ? (
-        <div className="relative group rounded-xl overflow-hidden border border-stone-200">
-          <img src={value} alt="preview" className="w-full h-40 object-cover" />
-          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-            <button
-              type="button"
-              onClick={() => inputRef.current?.click()}
-              className="bg-white text-stone-800 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-stone-100"
-            >
-              Cambiar
-            </button>
-            <button
-              type="button"
-              onClick={() => onChange('')}
-              className="bg-red-500 text-white p-1.5 rounded-lg hover:bg-red-600"
-            >
-              <X size={14} />
-            </button>
+        variant === 'logo' ? (
+          <div className="flex items-center gap-4">
+            <div className="relative group w-20 h-20 rounded-full overflow-hidden border-2 border-stone-200 flex-shrink-0">
+              <img src={value} alt="logo preview" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => inputRef.current?.click()}
+                  className="bg-white text-stone-800 p-1.5 rounded-lg hover:bg-stone-100"
+                  title="Cambiar"
+                >
+                  <Upload size={12} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onChange('')}
+                  className="bg-red-500 text-white p-1.5 rounded-lg hover:bg-red-600"
+                  title="Quitar"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            </div>
+            <p className="text-xs text-stone-400">Pasa el cursor sobre el logo para cambiar o quitar</p>
           </div>
-        </div>
+        ) : (
+          <div className="relative group rounded-xl overflow-hidden border border-stone-200">
+            <img src={value} alt="preview" className="w-full h-40 object-cover" />
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                className="bg-white text-stone-800 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-stone-100"
+              >
+                Cambiar
+              </button>
+              <button
+                type="button"
+                onClick={() => onChange('')}
+                className="bg-red-500 text-white p-1.5 rounded-lg hover:bg-red-600"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          </div>
+        )
       ) : (
         <div
           onDrop={handleDrop}

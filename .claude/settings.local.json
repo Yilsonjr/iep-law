@@ -6,7 +6,11 @@
       "Bash(npm uninstall *)",
       "Bash(rm -rf src/config/firebase.ts src/contexts src/hooks)",
       "Bash(npx tsc *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(git add *)",
+      "Bash(git reset *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }
