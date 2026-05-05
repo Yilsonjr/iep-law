@@ -19,7 +19,7 @@ import { RichTextEditor } from '../components/RichTextEditor';
 import type {
   UserProfile, UserRole, Page,
   HeroConfig, BrandingConfig, FooterConfig, SeoConfig,
-  HomeBlock, HomeBlockType,
+  HomeBlock, HomeBlockType, FooterWidget, FooterWidgetType,
 } from '../types';
 import { cn } from '../utils';
 
@@ -205,6 +205,7 @@ const BLOCK_TYPES: { type: HomeBlockType; label: string; icon: typeof Home; desc
   { type: 'cta_banner', label: 'Banner CTA', icon: Zap, desc: 'Llamada a la acción con título y botones' },
   { type: 'stats', label: 'Estadísticas', icon: TrendingUp, desc: 'Fila de números destacados' },
   { type: 'rich_text', label: 'Texto libre', icon: Type, desc: 'Bloque de contenido HTML con editor rico' },
+  { type: 'contact_form', label: 'Formulario', icon: MessageSquare, desc: 'Formulario de contacto integrado en la página' },
 ];
 
 const BG_OPTIONS: { value: HomeBlock['bg']; label: string; preview: string }[] = [
@@ -233,6 +234,7 @@ function emptyBlock(type: HomeBlockType, order: number): HomeBlock {
     stats: type === 'stats' ? [{ emoji: '🙏', value: '', label: '' }] : [],
     html: '',
     text_align: 'center',
+    color_bg: '', color_heading: '', color_text: '', color_accent: '',
   };
 }
 
@@ -345,6 +347,42 @@ function InicioTab() {
                   <span className={cn('w-4 h-4 rounded-full', opt.preview)} />
                   {opt.label}
                 </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Custom color overrides */}
+          <div className="border border-stone-100 rounded-xl p-4 space-y-3">
+            <p className="text-xs font-medium text-stone-500 flex items-center gap-1.5">
+              <Palette size={13} /> Colores personalizados <span className="font-normal text-stone-400">(vacío = usa colores del fondo)</span>
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {([
+                { key: 'color_bg' as const, label: 'Fondo' },
+                { key: 'color_heading' as const, label: 'Títulos' },
+                { key: 'color_text' as const, label: 'Texto' },
+                { key: 'color_accent' as const, label: 'Acento' },
+              ] as const).map(({ key, label }) => (
+                <div key={key} className="flex items-center gap-2">
+                  <div className="relative">
+                    <input type="color" value={(editing as unknown as Record<string, string>)[key] || '#ffffff'}
+                      onChange={e => upd({ [key]: e.target.value })}
+                      className="w-9 h-9 rounded-lg border border-stone-200 cursor-pointer p-0.5 bg-white" />
+                    {(editing as unknown as Record<string, string>)[key] && (
+                      <button type="button"
+                        onClick={() => upd({ [key]: '' })}
+                        className="absolute -top-1 -right-1 w-4 h-4 bg-stone-400 hover:bg-red-500 rounded-full text-white flex items-center justify-center text-xs leading-none transition-colors">
+                        ×
+                      </button>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs text-stone-500">{label}</p>
+                    <p className="text-xs font-mono text-stone-400 truncate max-w-[60px]">
+                      {(editing as unknown as Record<string, string>)[key] || 'auto'}
+                    </p>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -618,6 +656,32 @@ function InicioTab() {
   );
 }
 
+// ── Footer widget helpers ──────────────────────────────────────
+const WIDGET_META: Record<FooterWidgetType, { label: string; emoji: string; desc: string }> = {
+  logo_info:   { label: 'Logo e Info',           emoji: '🏛️', desc: 'Logo, nombre y descripción de la iglesia' },
+  contact:     { label: 'Contacto',              emoji: '📞', desc: 'Teléfono, email y WhatsApp' },
+  nav_links:   { label: 'Links de navegación',   emoji: '🔗', desc: 'Lista de enlaces personalizables' },
+  social:      { label: 'Redes Sociales',        emoji: '📱', desc: 'Iconos de Facebook, Instagram, YouTube' },
+  schedule:    { label: 'Horarios',              emoji: '🕐', desc: 'Horarios de culto y actividades' },
+  custom_html: { label: 'HTML Personalizado',    emoji: '💻', desc: 'Contenido libre en HTML' },
+  online_cta:  { label: 'CTA Online',            emoji: '📡', desc: 'Banner "También en línea"' },
+};
+
+function emptyWidget(type: FooterWidgetType, order: number): FooterWidget {
+  return {
+    id: crypto.randomUUID(),
+    type,
+    title: WIDGET_META[type].label,
+    visible: true,
+    order,
+    color_heading: '',
+    color_text: '',
+    color_accent: '',
+    links: type === 'nav_links' ? [{ label: 'Inicio', href: '/' }] : [],
+    html: '',
+  };
+}
+
 // ── SITIO TAB ──────────────────────────────────────────────────
 function SitioTab() {
   const { config, updateSection } = useSiteConfigContext();
@@ -629,6 +693,42 @@ function SitioTab() {
   const [hero, setHero] = useState<HeroConfig>(config.hero);
   const [footer, setFooter] = useState<FooterConfig>(config.footer);
   const [seo, setSeo] = useState<SeoConfig>(config.seo);
+
+  // Widget editor state (footer)
+  const [editingWidget, setEditingWidget] = useState<FooterWidget | null>(null);
+  const [addingWidget, setAddingWidget] = useState(false);
+  const wDragFrom = useRef<number>(-1);
+  const [wDragOver, setWDragOver] = useState<number | null>(null);
+
+  const sortedWidgets = [...(footer.widgets ?? [])].sort((a, b) => a.order - b.order);
+
+  const saveWidget = (w: FooterWidget) => {
+    const exists = footer.widgets.some(x => x.id === w.id);
+    const list = exists
+      ? footer.widgets.map(x => x.id === w.id ? w : x)
+      : [...footer.widgets, w];
+    setFooter({ ...footer, widgets: list.map((x, i) => ({ ...x, order: i })) });
+    setEditingWidget(null);
+  };
+
+  const deleteWidget = (id: string) => {
+    if (!confirm('¿Eliminar este widget?')) return;
+    setFooter({ ...footer, widgets: footer.widgets.filter(w => w.id !== id).map((w, i) => ({ ...w, order: i })) });
+  };
+
+  const toggleWidgetVisible = (id: string) => {
+    setFooter({ ...footer, widgets: footer.widgets.map(w => w.id === id ? { ...w, visible: !w.visible } : w) });
+  };
+
+  const handleWDrop = (i: number) => {
+    setWDragOver(null);
+    const from = wDragFrom.current;
+    if (from === -1 || from === i) return;
+    const list = [...sortedWidgets];
+    const [moved] = list.splice(from, 1);
+    list.splice(i, 0, moved);
+    setFooter({ ...footer, widgets: list.map((w, idx) => ({ ...w, order: idx })) });
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -651,7 +751,6 @@ function SitioTab() {
     { id: 'seo' as const, label: 'SEO', icon: Globe },
   ];
 
-  const fSections = footer.sections ?? { show_contact: true, show_links: true, show_social: true };
   const fColors = footer.colors ?? { bg: '#8D000A', heading: '#F5C842', body: '#d6d3d1', link: '#e7e5e4' };
 
   return (
@@ -789,43 +888,221 @@ function SitioTab() {
           </div>
         )}
 
+        {/* FOOTER — widget editor overlay */}
+        {activeSection === 'footer' && editingWidget && (
+          <div className="space-y-0">
+            <div className="flex items-center justify-between px-0 py-3 border-b border-stone-100 mb-5">
+              <div>
+                <h3 className="font-serif text-lg text-primary">
+                  {WIDGET_META[editingWidget.type]?.emoji} Editar widget — {WIDGET_META[editingWidget.type]?.label}
+                </h3>
+                <p className="text-xs text-stone-400 mt-0.5">Los cambios se guardan al presionar "Guardar widget"</p>
+              </div>
+              <button onClick={() => setEditingWidget(null)} className="text-sm text-stone-400 hover:text-stone-600 px-3 py-1.5 rounded-lg hover:bg-stone-100">
+                Cancelar
+              </button>
+            </div>
+            <div className="space-y-5">
+              <div>
+                <label className="block text-xs text-stone-500 mb-1">Título del widget (encabezado de columna)</label>
+                <input type="text" value={editingWidget.title}
+                  onChange={e => setEditingWidget({ ...editingWidget, title: e.target.value })}
+                  className={INPUT} />
+              </div>
+              <div className="flex items-center gap-3">
+                <TOGGLE checked={editingWidget.visible} onChange={v => setEditingWidget({ ...editingWidget, visible: v })} />
+                <span className="text-sm text-stone-600">Visible en el footer</span>
+              </div>
+              {/* Per-widget color overrides */}
+              <div className="border border-stone-100 rounded-xl p-4 space-y-3">
+                <p className="text-xs font-medium text-stone-500 flex items-center gap-1.5">
+                  <Palette size={13} /> Colores <span className="font-normal text-stone-400">(vacío = hereda colores globales del footer)</span>
+                </p>
+                <div className="grid grid-cols-3 gap-3">
+                  {([
+                    { key: 'color_heading' as const, label: 'Títulos' },
+                    { key: 'color_text' as const, label: 'Texto' },
+                    { key: 'color_accent' as const, label: 'Acento / links' },
+                  ] as const).map(({ key, label }) => (
+                    <div key={key} className="flex items-center gap-2">
+                      <div className="relative">
+                        <input type="color" value={editingWidget[key] || '#ffffff'}
+                          onChange={e => setEditingWidget({ ...editingWidget, [key]: e.target.value })}
+                          className="w-9 h-9 rounded-lg border border-stone-200 cursor-pointer p-0.5 bg-white" />
+                        {editingWidget[key] && (
+                          <button type="button"
+                            onClick={() => setEditingWidget({ ...editingWidget, [key]: '' })}
+                            className="absolute -top-1 -right-1 w-4 h-4 bg-stone-400 hover:bg-red-500 rounded-full text-white flex items-center justify-center text-xs leading-none transition-colors">
+                            ×
+                          </button>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-xs text-stone-500">{label}</p>
+                        <p className="text-xs font-mono text-stone-400">{editingWidget[key] || 'auto'}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* nav_links: link list editor */}
+              {editingWidget.type === 'nav_links' && (
+                <div className="border-t border-stone-100 pt-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-stone-700">Enlaces</label>
+                    <button type="button"
+                      onClick={() => setEditingWidget({ ...editingWidget, links: [...editingWidget.links, { label: '', href: '/' }] })}
+                      className="flex items-center gap-1 text-xs text-primary hover:text-gold">
+                      <Plus size={13} /> Agregar enlace
+                    </button>
+                  </div>
+                  {editingWidget.links.map((link, i) => (
+                    <div key={i} className="flex gap-2 items-center">
+                      <input type="text" placeholder="Texto" value={link.label}
+                        onChange={e => { const links = [...editingWidget.links]; links[i] = { ...link, label: e.target.value }; setEditingWidget({ ...editingWidget, links }); }}
+                        className={INPUT_SM + ' flex-1'} />
+                      <input type="text" placeholder="/ruta o URL" value={link.href}
+                        onChange={e => { const links = [...editingWidget.links]; links[i] = { ...link, href: e.target.value }; setEditingWidget({ ...editingWidget, links }); }}
+                        className={INPUT_SM + ' flex-1'} />
+                      <button type="button"
+                        onClick={() => setEditingWidget({ ...editingWidget, links: editingWidget.links.filter((_, idx) => idx !== i) })}
+                        className="p-1.5 text-red-400 hover:text-red-600"><Trash2 size={14} /></button>
+                    </div>
+                  ))}
+                  <p className="text-xs text-stone-400">Usa <code className="bg-stone-100 px-1 rounded">#contact</code> para abrir el formulario de contacto.</p>
+                </div>
+              )}
+              {/* custom_html: HTML editor */}
+              {editingWidget.type === 'custom_html' && (
+                <div className="border-t border-stone-100 pt-4">
+                  <label className="block text-sm font-medium text-stone-700 mb-2">Contenido HTML</label>
+                  <textarea rows={8} value={editingWidget.html}
+                    onChange={e => setEditingWidget({ ...editingWidget, html: e.target.value })}
+                    className={INPUT + ' resize-none font-mono text-xs'} placeholder="<p>Tu contenido aquí...</p>" />
+                </div>
+              )}
+              {/* Info widgets that use global footer data */}
+              {['logo_info', 'contact', 'social', 'schedule', 'online_cta'].includes(editingWidget.type) && (
+                <div className="bg-stone-50 rounded-xl p-4">
+                  <p className="text-xs text-stone-500">
+                    Este widget usa la información configurada en las secciones de abajo
+                    ({editingWidget.type === 'logo_info' ? 'Información + Datos de contacto' :
+                      editingWidget.type === 'contact' ? 'Datos de contacto' :
+                      editingWidget.type === 'social' ? 'Redes Sociales' :
+                      editingWidget.type === 'schedule' ? 'Horarios' : 'Datos de contacto'}).
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="flex items-center justify-end gap-3 pt-5 mt-5 border-t border-stone-100">
+              <button onClick={() => setEditingWidget(null)} className="btn-secondary text-sm px-4 py-2">Cancelar</button>
+              <button onClick={() => saveWidget(editingWidget)} className="btn-primary flex items-center gap-2 text-sm">
+                <Save size={15} /> Guardar widget
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* FOOTER — widget type picker */}
+        {activeSection === 'footer' && !editingWidget && addingWidget && (
+          <div className="space-y-0">
+            <div className="flex items-center justify-between pb-4 border-b border-stone-100 mb-5">
+              <h3 className="font-serif text-lg text-primary">Elegir tipo de widget</h3>
+              <button onClick={() => setAddingWidget(false)} className="text-sm text-stone-400 hover:text-stone-600">Cancelar</button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {(Object.entries(WIDGET_META) as [FooterWidgetType, typeof WIDGET_META[FooterWidgetType]][]).map(([type, meta]) => (
+                <button key={type}
+                  onClick={() => { setAddingWidget(false); setEditingWidget(emptyWidget(type, sortedWidgets.length)); }}
+                  className="flex flex-col gap-3 p-5 border-2 border-stone-200 hover:border-gold hover:bg-gold/5 rounded-2xl text-left transition-all group">
+                  <div className="text-2xl">{meta.emoji}</div>
+                  <div>
+                    <p className="font-semibold text-stone-800">{meta.label}</p>
+                    <p className="text-xs text-stone-500 mt-1">{meta.desc}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* FOOTER */}
-        {activeSection === 'footer' && (
+        {activeSection === 'footer' && !editingWidget && !addingWidget && (
           <div className="space-y-6">
             <h3 className="font-serif text-lg text-primary">Pie de Página</h3>
 
+            {/* Widget list */}
+            <div className="border border-stone-200 rounded-xl overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 bg-stone-50 border-b border-stone-200">
+                <p className="text-sm font-medium text-stone-700">Columnas / Widgets</p>
+                <button onClick={() => setAddingWidget(true)}
+                  className="flex items-center gap-1.5 text-xs text-primary hover:text-gold transition-colors">
+                  <Plus size={14} /> Agregar widget
+                </button>
+              </div>
+              {sortedWidgets.length === 0 ? (
+                <div className="p-8 text-center">
+                  <p className="text-stone-400 text-sm">No hay widgets. Agrega uno para construir el footer.</p>
+                  <button onClick={() => setAddingWidget(true)} className="mt-3 btn-primary text-sm">Agregar widget</button>
+                </div>
+              ) : (
+                <div className="divide-y divide-stone-100">
+                  {sortedWidgets.map((widget, i) => (
+                    <div key={widget.id}
+                      draggable
+                      onDragStart={() => { wDragFrom.current = i; }}
+                      onDragOver={e => { e.preventDefault(); setWDragOver(i); }}
+                      onDragLeave={() => setWDragOver(null)}
+                      onDrop={() => handleWDrop(i)}
+                      className={cn('flex items-center gap-3 px-4 py-3 transition-all', !widget.visible && 'opacity-50', wDragOver === i && 'bg-gold/10')}>
+                      <GripVertical size={15} className="text-stone-300 cursor-grab flex-shrink-0" />
+                      <span className="text-lg">{WIDGET_META[widget.type]?.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-stone-700 truncate">{widget.title || WIDGET_META[widget.type]?.label}</p>
+                        <p className="text-xs text-stone-400">{WIDGET_META[widget.type]?.label}</p>
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <TOGGLE checked={widget.visible} onChange={() => toggleWidgetVisible(widget.id)} />
+                        <button onClick={() => setEditingWidget(widget)}
+                          className="p-1.5 text-stone-400 hover:text-primary hover:bg-stone-50 rounded-lg transition-colors">
+                          <Eye size={15} />
+                        </button>
+                        <button onClick={() => deleteWidget(widget.id)}
+                          className="p-1.5 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                          <Trash size={15} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Texto y copyright */}
-            <div className="space-y-4">
+            <div className="space-y-4 border-t border-stone-100 pt-5">
+              <p className="text-sm font-medium text-stone-700">Información general</p>
               <div>
-                <label className="block text-sm font-medium text-stone-600 mb-1">Texto descriptivo</label>
+                <label className="block text-xs text-stone-500 mb-1">Texto descriptivo</label>
                 <textarea value={footer.text} rows={3} onChange={e => setFooter({ ...footer, text: e.target.value })} className={INPUT + ' resize-none'} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-stone-600 mb-1">Texto de copyright</label>
+                <label className="block text-xs text-stone-500 mb-1">Texto de copyright</label>
                 <input type="text" value={footer.copyright} onChange={e => setFooter({ ...footer, copyright: e.target.value })} className={INPUT} />
               </div>
             </div>
 
-            {/* Secciones visibles */}
+            {/* CTA Band toggles */}
             <div className="border-t border-stone-100 pt-5">
-              <p className="text-sm font-medium text-stone-700 mb-4 flex items-center gap-2">
-                <Eye size={16} className="text-stone-400" /> Secciones visibles
-              </p>
+              <p className="text-sm font-medium text-stone-700 mb-3">Bandas superiores</p>
               <div className="space-y-3">
                 {[
                   { key: 'show_cta' as const, label: 'Banda de CTA (¿Tienes preguntas?)' },
-                  { key: 'show_schedule' as const, label: 'Horarios de servicio' },
-                  { key: 'show_contact' as const, label: 'Columna de contacto (teléfono, email, WhatsApp)' },
-                  { key: 'show_links' as const, label: 'Columna de enlaces rápidos' },
-                  { key: 'show_social' as const, label: 'Columna de redes sociales' },
+                  { key: 'show_schedule' as const, label: 'Banda de horarios de servicio' },
                 ].map(({ key, label }) => {
-                  const checked = key === 'show_cta' ? (footer.cta?.enabled ?? true)
-                    : key === 'show_schedule' ? (footer.schedules?.enabled ?? true)
-                    : (fSections[key as keyof typeof fSections] ?? true);
+                  const checked = key === 'show_cta' ? (footer.cta?.enabled ?? true) : (footer.schedules?.enabled ?? true);
                   const onChange = (v: boolean) => {
                     if (key === 'show_cta') setFooter({ ...footer, cta: { ...(footer.cta ?? { title: '¿Tienes preguntas?', subtitle: '' }), enabled: v } });
-                    else if (key === 'show_schedule') setFooter({ ...footer, schedules: { ...(footer.schedules ?? { items: [] }), enabled: v } });
-                    else setFooter({ ...footer, sections: { ...fSections, [key]: v } });
+                    else setFooter({ ...footer, schedules: { ...(footer.schedules ?? { items: [] }), enabled: v } });
                   };
                   return (
                     <div key={key} className="flex items-center justify-between">

@@ -23,6 +23,37 @@ export interface BrandingConfig {
   tagline: string;
 }
 
+// ── Footer Widget System ───────────────────────────────────────
+export type FooterWidgetType =
+  | 'logo_info'   // logo + site name + description + address
+  | 'contact'     // phone / email / whatsapp
+  | 'nav_links'   // configurable link list
+  | 'social'      // social media icons + join button
+  | 'schedule'    // service schedule items
+  | 'custom_html' // free rich text / HTML
+  | 'online_cta'; // "También online" mini-cta
+
+export interface FooterWidgetLink {
+  label: string;
+  href: string;
+}
+
+export interface FooterWidget {
+  id: string;
+  type: FooterWidgetType;
+  title: string;       // column heading displayed in footer
+  visible: boolean;
+  order: number;
+  // Per-widget color overrides (empty string = inherit global)
+  color_heading: string;
+  color_text: string;
+  color_accent: string; // hover / accent
+  // 'nav_links' & 'online_cta'
+  links: FooterWidgetLink[];
+  // 'custom_html'
+  html: string;
+}
+
 export interface FooterScheduleItem {
   day: string;
   time: string;
@@ -30,23 +61,26 @@ export interface FooterScheduleItem {
 }
 
 export interface FooterConfig {
+  // Description text (used by logo_info widget)
   text: string;
   copyright: string;
-  social: { facebook: string; youtube: string; instagram: string };
-  contact: { address: string; phone: string; email: string; whatsapp?: string };
-  cta?: { enabled: boolean; title: string; subtitle: string };
-  schedules?: { enabled: boolean; items: FooterScheduleItem[] };
-  sections?: {
-    show_contact: boolean;
-    show_links: boolean;
-    show_social: boolean;
-  };
-  colors?: {
+  // Global colors (widgets inherit these unless overridden)
+  colors: {
     bg: string;
     heading: string;
     body: string;
     link: string;
   };
+  // Social links (used by social widget)
+  social: { facebook: string; youtube: string; instagram: string };
+  // Contact info (used by contact widget)
+  contact: { address: string; phone: string; email: string; whatsapp: string };
+  // CTA top band
+  cta: { enabled: boolean; title: string; subtitle: string };
+  // Schedule band
+  schedules: { enabled: boolean; items: FooterScheduleItem[] };
+  // Widget columns
+  widgets: FooterWidget[];
 }
 
 export interface SeoConfig {
@@ -56,8 +90,15 @@ export interface SeoConfig {
 }
 
 // ── Home Blocks ────────────────────────────────────────────────
-export type HomeBlockType = 'cards' | 'columns' | 'cta_banner' | 'stats' | 'rich_text';
-export type HomeBlockBg = 'white' | 'light' | 'primary' | 'gradient';
+export type HomeBlockType =
+  | 'cards'
+  | 'columns'
+  | 'cta_banner'
+  | 'stats'
+  | 'rich_text'
+  | 'contact_form';
+
+export type HomeBlockBg = 'white' | 'light' | 'primary' | 'gradient' | 'custom';
 
 export interface HomeBlockCardItem {
   emoji: string;
@@ -87,6 +128,11 @@ export interface HomeBlock {
   visible: boolean;
   order: number;
   bg: HomeBlockBg;
+  // Per-block custom colors (empty = use bg defaults)
+  color_bg: string;       // custom background color
+  color_heading: string;  // custom heading color
+  color_text: string;     // custom body text color
+  color_accent: string;   // custom accent color
   // cards
   card_cols: 2 | 3 | 4;
   cards: HomeBlockCardItem[];

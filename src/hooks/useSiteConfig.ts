@@ -1,73 +1,77 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../config/supabase';
-import type { SiteConfigMap, HomeBlock } from '../types';
+import type { SiteConfigMap, HomeBlock, FooterWidget } from '../types';
 
+// ── Default footer widgets ─────────────────────────────────────
+const defaultFooterWidgets: FooterWidget[] = [
+  {
+    id: 'fw-logo', type: 'logo_info', title: '', visible: true, order: 0,
+    color_heading: '', color_text: '', color_accent: '', links: [], html: '',
+  },
+  {
+    id: 'fw-contact', type: 'contact', title: 'Contacto', visible: true, order: 1,
+    color_heading: '', color_text: '', color_accent: '', links: [], html: '',
+  },
+  {
+    id: 'fw-links', type: 'nav_links', title: 'Explorar', visible: true, order: 2,
+    color_heading: '', color_text: '', color_accent: '',
+    links: [
+      { label: 'Inicio', href: '/' },
+      { label: 'Prédicas', href: '/sermons' },
+      { label: 'Eventos', href: '/events' },
+      { label: 'En Vivo', href: '/live' },
+      { label: 'Comunidad', href: '/posts' },
+    ],
+    html: '',
+  },
+  {
+    id: 'fw-social', type: 'social', title: 'Comunidad', visible: true, order: 3,
+    color_heading: '', color_text: '', color_accent: '', links: [], html: '',
+  },
+];
+
+// ── Default home blocks ────────────────────────────────────────
 const defaultBlocks: HomeBlock[] = [
   {
-    id: 'default-1',
-    type: 'cards',
+    id: 'default-1', type: 'cards',
     title: 'Nuestra Misión',
     subtitle: 'Hacer discípulos de Cristo, formando comunidades de fe donde cada persona pueda crecer espiritualmente.',
-    visible: true,
-    order: 0,
-    bg: 'white',
+    visible: true, order: 0, bg: 'white',
+    color_bg: '', color_heading: '', color_text: '', color_accent: '',
     card_cols: 3,
     cards: [
       { emoji: '❤️', title: 'Comunidad', description: 'Un lugar donde cada persona es bienvenida y valorada.' },
       { emoji: '✝️', title: 'Adoración', description: 'Celebramos a Dios con alegría y reverencia en cada servicio.' },
       { emoji: '👥', title: 'Discipulado', description: 'Crecemos juntos en la Palabra para transformar vidas.' },
     ],
-    col_items: [],
-    cta_btn1_label: '',
-    cta_btn1_href: '/',
-    cta_btn2_label: '',
-    cta_btn2_href: '/',
-    stats: [],
-    html: '',
-    text_align: 'center',
+    col_items: [], cta_btn1_label: '', cta_btn1_href: '/', cta_btn2_label: '', cta_btn2_href: '/',
+    stats: [], html: '', text_align: 'center',
   },
   {
-    id: 'default-2',
-    type: 'stats',
-    title: 'Nuestra Comunidad',
-    subtitle: '',
-    visible: true,
-    order: 1,
-    bg: 'light',
-    card_cols: 3,
-    cards: [],
-    col_items: [],
-    cta_btn1_label: '',
-    cta_btn1_href: '/',
-    cta_btn2_label: '',
-    cta_btn2_href: '/',
+    id: 'default-2', type: 'stats',
+    title: 'Nuestra Comunidad', subtitle: '',
+    visible: true, order: 1, bg: 'light',
+    color_bg: '', color_heading: '', color_text: '', color_accent: '',
+    card_cols: 3, cards: [], col_items: [],
+    cta_btn1_label: '', cta_btn1_href: '/', cta_btn2_label: '', cta_btn2_href: '/',
     stats: [
       { emoji: '🙏', value: '15+', label: 'Años de ministerio' },
       { emoji: '👨‍👩‍👧‍👦', value: '200+', label: 'Familias' },
       { emoji: '🎙️', value: '500+', label: 'Prédicas' },
       { emoji: '🌍', value: '3', label: 'Países' },
     ],
-    html: '',
-    text_align: 'center',
+    html: '', text_align: 'center',
   },
   {
-    id: 'default-3',
-    type: 'cta_banner',
+    id: 'default-3', type: 'cta_banner',
     title: '¿Tienes preguntas?',
     subtitle: 'Nos encantaría saber de ti. Contáctanos para más información sobre nuestra iglesia.',
-    visible: true,
-    order: 2,
-    bg: 'primary',
-    card_cols: 3,
-    cards: [],
-    col_items: [],
-    cta_btn1_label: 'Contactar',
-    cta_btn1_href: '#contact',
-    cta_btn2_label: 'Ver en Vivo',
-    cta_btn2_href: '/live',
-    stats: [],
-    html: '',
-    text_align: 'center',
+    visible: true, order: 2, bg: 'primary',
+    color_bg: '', color_heading: '', color_text: '', color_accent: '',
+    card_cols: 3, cards: [], col_items: [],
+    cta_btn1_label: 'Contactar', cta_btn1_href: '#contact',
+    cta_btn2_label: 'Ver en Vivo', cta_btn2_href: '/live',
+    stats: [], html: '', text_align: 'center',
   },
 ];
 
@@ -77,8 +81,7 @@ const defaults: SiteConfigMap = {
     mode: 'text',
     title: 'Iglesia Ebenezer M.I.',
     subtitle: 'Hasta aquí nos ha ayudado el Señor',
-    bg_url: '',
-    overlay: 0.5,
+    bg_url: '', overlay: 0.5,
     buttons: [
       { label: 'Ver en Vivo', href: '/live', variant: 'primary' },
       { label: 'Prédicas', href: '/sermons', variant: 'secondary' },
@@ -88,6 +91,7 @@ const defaults: SiteConfigMap = {
   footer: {
     text: 'Una iglesia comprometida con la Palabra de Dios.',
     copyright: '© 2026 Iglesia Ebenezer M.I. Todos los derechos reservados.',
+    colors: { bg: '#8D000A', heading: '#F5C842', body: '#d6d3d1', link: '#e7e5e4' },
     social: { facebook: '', youtube: '', instagram: '' },
     contact: { address: '', phone: '', email: '', whatsapp: '' },
     cta: { enabled: true, title: '¿Tienes preguntas?', subtitle: 'Estamos aquí para acompañarte. No estás solo/a.' },
@@ -99,8 +103,7 @@ const defaults: SiteConfigMap = {
         { day: 'Viernes', time: '7:30 PM', label: 'Culto de Jóvenes' },
       ],
     },
-    sections: { show_contact: true, show_links: true, show_social: true },
-    colors: { bg: '#8D000A', heading: '#F5C842', body: '#d6d3d1', link: '#e7e5e4' },
+    widgets: defaultFooterWidgets,
   },
   seo: { title: 'Iglesia Ebenezer M.I.', description: '', og_image: '' },
   home_blocks: defaultBlocks,
@@ -121,17 +124,20 @@ export function useSiteConfig() {
           merged[row.key] = incoming;
         } else if (typeof incoming === 'object' && incoming !== null) {
           const existing = merged[row.key] as Record<string, unknown>;
-          const deepMerged: Record<string, unknown> = { ...existing, ...(incoming as object) };
+          const result: Record<string, unknown> = { ...existing, ...(incoming as object) };
+          // deep-merge one level (objects only, not arrays)
           for (const [k, v] of Object.entries(incoming as Record<string, unknown>)) {
             if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
-              deepMerged[k] = { ...(existing?.[k] as object ?? {}), ...(v as object) };
+              result[k] = { ...(existing?.[k] as object ?? {}), ...(v as object) };
+            } else if (Array.isArray(v)) {
+              result[k] = v; // arrays replace entirely
             }
           }
-          merged[row.key] = deepMerged;
+          merged[row.key] = result;
         }
       }
       setConfig(merged as unknown as SiteConfigMap);
-      }
+    }
     setLoading(false);
   };
 
@@ -144,10 +150,7 @@ export function useSiteConfig() {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  const updateSection = async <K extends keyof SiteConfigMap>(
-    key: K,
-    value: SiteConfigMap[K]
-  ) => {
+  const updateSection = async <K extends keyof SiteConfigMap>(key: K, value: SiteConfigMap[K]) => {
     const { error } = await supabase
       .from('site_config')
       .upsert({ key, value, updated_at: new Date().toISOString() });
