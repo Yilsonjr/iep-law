@@ -36,6 +36,17 @@ export interface FooterConfig {
   contact: { address: string; phone: string; email: string; whatsapp?: string };
   cta?: { enabled: boolean; title: string; subtitle: string };
   schedules?: { enabled: boolean; items: FooterScheduleItem[] };
+  sections?: {
+    show_contact: boolean;
+    show_links: boolean;
+    show_social: boolean;
+  };
+  colors?: {
+    bg: string;
+    heading: string;
+    body: string;
+    link: string;
+  };
 }
 
 export interface SeoConfig {
@@ -44,11 +55,61 @@ export interface SeoConfig {
   og_image: string;
 }
 
+// ── Home Blocks ────────────────────────────────────────────────
+export type HomeBlockType = 'cards' | 'columns' | 'cta_banner' | 'stats' | 'rich_text';
+export type HomeBlockBg = 'white' | 'light' | 'primary' | 'gradient';
+
+export interface HomeBlockCardItem {
+  emoji: string;
+  title: string;
+  description: string;
+}
+
+export interface HomeBlockStatItem {
+  value: string;
+  label: string;
+  emoji: string;
+}
+
+export interface HomeBlockColumnItem {
+  title: string;
+  body: string;
+  image_url: string;
+  btn_label: string;
+  btn_href: string;
+}
+
+export interface HomeBlock {
+  id: string;
+  type: HomeBlockType;
+  title: string;
+  subtitle: string;
+  visible: boolean;
+  order: number;
+  bg: HomeBlockBg;
+  // cards
+  card_cols: 2 | 3 | 4;
+  cards: HomeBlockCardItem[];
+  // columns
+  col_items: HomeBlockColumnItem[];
+  // cta_banner
+  cta_btn1_label: string;
+  cta_btn1_href: string;
+  cta_btn2_label: string;
+  cta_btn2_href: string;
+  // stats
+  stats: HomeBlockStatItem[];
+  // rich_text
+  html: string;
+  text_align: 'left' | 'center';
+}
+
 export interface SiteConfigMap {
   branding: BrandingConfig;
   hero: HeroConfig;
   footer: FooterConfig;
   seo: SeoConfig;
+  home_blocks: HomeBlock[];
 }
 
 export interface UserProfile {

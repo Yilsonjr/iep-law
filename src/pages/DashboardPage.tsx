@@ -1,11 +1,13 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, Search, Filter, Mail, Phone, Calendar,
   UserCheck, Shield, ChevronDown, BarChart3, Settings,
   Save, Plus, Trash2, Globe, Layout, FileText,
   Inbox, Eye, CheckCheck, Trash, ImageIcon, PanelLeft,
-  ExternalLink, GripVertical,
+  ExternalLink, GripVertical, MessageSquare, Home,
+  Type, Columns, Zap, TrendingUp, AlignCenter, AlignLeft,
+  Palette,
 } from 'lucide-react';
 import { useUsers } from '../hooks/useUsers';
 import { useAuth } from '../contexts/AuthContext';
@@ -14,9 +16,23 @@ import { useContactMessages } from '../hooks/useContactMessages';
 import { usePages } from '../hooks/usePages';
 import { ImageUpload } from '../components/ImageUpload';
 import { RichTextEditor } from '../components/RichTextEditor';
-import type { UserProfile, UserRole, Page } from '../types';
-import type { HeroConfig, BrandingConfig, FooterConfig, SeoConfig } from '../types';
+import type {
+  UserProfile, UserRole, Page,
+  HeroConfig, BrandingConfig, FooterConfig, SeoConfig,
+  HomeBlock, HomeBlockType,
+} from '../types';
 import { cn } from '../utils';
+
+// ── Shared styles ──────────────────────────────────────────────
+const INPUT = 'w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm';
+const INPUT_SM = 'px-3 py-2 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm';
+const TOGGLE = ({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) => (
+  <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+    <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} className="sr-only peer" />
+    <div className="w-11 h-6 bg-stone-200 rounded-full peer peer-checked:bg-primary transition-colors" />
+    <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5" />
+  </label>
+);
 
 const roleColors: Record<UserRole, { bg: string; text: string }> = {
   admin: { bg: 'bg-red-100', text: 'text-red-700' },
@@ -32,27 +48,18 @@ const statusColors = {
   inactive: { bg: 'bg-stone-100', text: 'text-stone-500' },
 };
 
-type TabId = 'resumen' | 'sitio' | 'paginas' | 'usuarios';
+type TabId = 'resumen' | 'inicio' | 'mensajes' | 'sitio' | 'paginas' | 'usuarios';
 
 // ── RESUMEN TAB ────────────────────────────────────────────────
 function ResumenTab() {
   const { users } = useUsers();
-  const { messages, loading: msgsLoading, markRead, deleteMessage, unread } = useContactMessages();
-  const [expandedMsg, setExpandedMsg] = useState<string | null>(null);
-
+  const { unread } = useContactMessages();
   const stats = {
     total: users.length,
     active: users.filter(u => u.status === 'active').length,
     pastors: users.filter(u => u.role === 'pastor' || u.role === 'admin').length,
     leaders: users.filter(u => u.role === 'leader').length,
   };
-
-  const handleExpand = (id: string) => {
-    setExpandedMsg(expandedMsg === id ? null : id);
-    const msg = messages.find(m => m.id === id);
-    if (msg && !msg.read) markRead(id);
-  };
-
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -64,8 +71,7 @@ function ResumenTab() {
         ].map(({ label, value, color }, i) => (
           <motion.div key={label}
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-            className="bg-white rounded-xl shadow-md p-5"
-          >
+            className="bg-white rounded-xl shadow-md p-5">
             <div className="flex items-center gap-3">
               <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', color)}>
                 <Users size={20} className="text-white" />
@@ -97,77 +103,517 @@ function ResumenTab() {
         </div>
       </div>
 
-      {/* Contact Messages Inbox */}
-      <div className="bg-white rounded-2xl shadow-md p-6">
-        <div className="flex items-center gap-3 mb-5">
-          <Inbox size={22} className="text-primary" />
-          <h3 className="font-serif text-xl text-primary">Mensajes de Contacto</h3>
-          {unread > 0 && (
-            <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{unread} nuevos</span>
+      {unread > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-5 flex items-center gap-4">
+          <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
+            <Mail size={20} className="text-white" />
+          </div>
+          <div>
+            <p className="font-semibold text-red-800">Tienes {unread} mensaje{unread > 1 ? 's' : ''} sin leer</p>
+            <p className="text-sm text-red-600">Ve a la pestaña <strong>Mensajes</strong> para revisarlos.</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── MENSAJES TAB ───────────────────────────────────────────────
+function MensajesTab() {
+  const { messages, loading, markRead, deleteMessage, unread } = useContactMessages();
+  const [expandedMsg, setExpandedMsg] = useState<string | null>(null);
+
+  const handleExpand = (id: string) => {
+    setExpandedMsg(expandedMsg === id ? null : id);
+    const msg = messages.find(m => m.id === id);
+    if (msg && !msg.read) markRead(id);
+  };
+
+  return (
+    <div className="bg-white rounded-2xl shadow-md p-6">
+      <div className="flex items-center gap-3 mb-6">
+        <Inbox size={22} className="text-primary" />
+        <h3 className="font-serif text-xl text-primary">Bandeja de Contacto</h3>
+        {unread > 0 && (
+          <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{unread} nuevos</span>
+        )}
+      </div>
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
+        </div>
+      ) : messages.length === 0 ? (
+        <div className="text-center py-16 text-stone-400">
+          <Inbox size={48} className="mx-auto mb-3 opacity-30" />
+          <p className="text-lg">No hay mensajes aún</p>
+          <p className="text-sm mt-1">Los mensajes del formulario de contacto aparecerán aquí.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {messages.map(msg => (
+            <motion.div key={msg.id}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              className={cn('rounded-xl border transition-colors', msg.read ? 'border-stone-100 bg-stone-50' : 'border-primary/20 bg-primary/5')}>
+              <button className="w-full flex items-center gap-3 px-4 py-3 text-left" onClick={() => handleExpand(msg.id)}>
+                {!msg.read && <span className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium text-stone-800 text-sm">{msg.name}</span>
+                    <span className="text-xs text-stone-400">{msg.email}</span>
+                    {msg.subject && <span className="text-xs text-stone-500">· {msg.subject}</span>}
+                  </div>
+                  <p className="text-xs text-stone-400 mt-0.5">
+                    {new Date(msg.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+                {msg.read ? <CheckCheck size={14} className="text-stone-300 flex-shrink-0" /> : <Eye size={14} className="text-primary flex-shrink-0" />}
+              </button>
+              <AnimatePresence>
+                {expandedMsg === msg.id && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}
+                    className="overflow-hidden">
+                    <div className="px-4 pb-4 border-t border-stone-100 pt-3">
+                      <p className="text-stone-700 text-sm leading-relaxed whitespace-pre-wrap">{msg.message}</p>
+                      <div className="flex items-center justify-between mt-4">
+                        <a href={`mailto:${msg.email}?subject=Re: ${msg.subject ?? ''}`}
+                          className="flex items-center gap-1.5 text-xs text-primary hover:underline">
+                          <Mail size={13} /> Responder por email
+                        </a>
+                        <button onClick={() => deleteMessage(msg.id)}
+                          className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors">
+                          <Trash size={13} /> Eliminar
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── INICIO TAB (Home CMS) ──────────────────────────────────────
+const BLOCK_TYPES: { type: HomeBlockType; label: string; icon: typeof Home; desc: string }[] = [
+  { type: 'cards', label: 'Tarjetas', icon: Layout, desc: 'Grid de cards con emoji, título y descripción' },
+  { type: 'columns', label: 'Columnas', icon: Columns, desc: 'Secciones en 2 o 3 columnas con imagen y texto' },
+  { type: 'cta_banner', label: 'Banner CTA', icon: Zap, desc: 'Llamada a la acción con título y botones' },
+  { type: 'stats', label: 'Estadísticas', icon: TrendingUp, desc: 'Fila de números destacados' },
+  { type: 'rich_text', label: 'Texto libre', icon: Type, desc: 'Bloque de contenido HTML con editor rico' },
+];
+
+const BG_OPTIONS: { value: HomeBlock['bg']; label: string; preview: string }[] = [
+  { value: 'white', label: 'Blanco', preview: 'bg-white' },
+  { value: 'light', label: 'Gris claro', preview: 'bg-stone-100' },
+  { value: 'primary', label: 'Rojo (primario)', preview: 'bg-primary' },
+  { value: 'gradient', label: 'Degradado', preview: 'bg-gradient-to-br from-primary to-primary/70' },
+];
+
+function emptyBlock(type: HomeBlockType, order: number): HomeBlock {
+  return {
+    id: crypto.randomUUID(),
+    type,
+    title: '',
+    subtitle: '',
+    visible: true,
+    order,
+    bg: type === 'cta_banner' ? 'primary' : 'white',
+    card_cols: 3,
+    cards: type === 'cards' ? [{ emoji: '✝️', title: '', description: '' }] : [],
+    col_items: type === 'columns' ? [{ title: '', body: '', image_url: '', btn_label: '', btn_href: '' }, { title: '', body: '', image_url: '', btn_label: '', btn_href: '' }] : [],
+    cta_btn1_label: type === 'cta_banner' ? 'Contactar' : '',
+    cta_btn1_href: '#contact',
+    cta_btn2_label: '',
+    cta_btn2_href: '/',
+    stats: type === 'stats' ? [{ emoji: '🙏', value: '', label: '' }] : [],
+    html: '',
+    text_align: 'center',
+  };
+}
+
+function InicioTab() {
+  const { config, updateSection } = useSiteConfigContext();
+  const [blocks, setBlocks] = useState<HomeBlock[]>(() =>
+    [...config.home_blocks].sort((a, b) => a.order - b.order)
+  );
+  const [editing, setEditing] = useState<HomeBlock | null>(null);
+  const [pickingType, setPickingType] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const dragFrom = useRef(-1);
+  const [dragOver, setDragOver] = useState<number | null>(null);
+
+  const save = useCallback(async (newBlocks: HomeBlock[]) => {
+    setSaving(true);
+    try {
+      await updateSection('home_blocks', newBlocks);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } finally {
+      setSaving(false);
+    }
+  }, [updateSection]);
+
+  const toggleVisible = (id: string) => {
+    const updated = blocks.map(b => b.id === id ? { ...b, visible: !b.visible } : b);
+    setBlocks(updated);
+    save(updated);
+  };
+
+  const deleteBlock = async (id: string) => {
+    if (!confirm('¿Eliminar este bloque?')) return;
+    const updated = blocks.filter(b => b.id !== id).map((b, i) => ({ ...b, order: i }));
+    setBlocks(updated);
+    save(updated);
+  };
+
+  const addBlock = (type: HomeBlockType) => {
+    const nb = emptyBlock(type, blocks.length);
+    setBlocks(prev => [...prev, nb]);
+    setPickingType(false);
+    setEditing(nb);
+  };
+
+  const saveEditing = async () => {
+    if (!editing) return;
+    const updated = blocks.map(b => b.id === editing.id ? editing : b);
+    setBlocks(updated);
+    await save(updated);
+    setEditing(null);
+  };
+
+  const handleDragStart = (i: number) => { dragFrom.current = i; };
+  const handleDragOver = (e: React.DragEvent, i: number) => { e.preventDefault(); setDragOver(i); };
+  const handleDrop = async (i: number) => {
+    setDragOver(null);
+    const from = dragFrom.current;
+    if (from === -1 || from === i) return;
+    const reordered = [...blocks];
+    const [moved] = reordered.splice(from, 1);
+    reordered.splice(i, 0, moved);
+    const updated = reordered.map((b, idx) => ({ ...b, order: idx }));
+    setBlocks(updated);
+    save(updated);
+  };
+
+  // ── Block editor ─────────────────────────────────────────────
+  if (editing) {
+    const upd = (patch: Partial<HomeBlock>) => setEditing(e => e ? { ...e, ...patch } : e);
+    return (
+      <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100">
+          <div>
+            <h3 className="font-serif text-xl text-primary">
+              Editar bloque — {BLOCK_TYPES.find(t => t.type === editing.type)?.label}
+            </h3>
+            <p className="text-xs text-stone-400 mt-0.5">Los cambios se guardan al presionar "Guardar bloque"</p>
+          </div>
+          <button onClick={() => setEditing(null)} className="text-sm text-stone-400 hover:text-stone-600 px-3 py-1.5 rounded-lg hover:bg-stone-100 transition-colors">
+            Cancelar
+          </button>
+        </div>
+
+        <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+          {/* Common fields */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs text-stone-500 mb-1">Título del bloque</label>
+              <input type="text" value={editing.title} onChange={e => upd({ title: e.target.value })}
+                placeholder="Ej: Nuestra Misión" className={INPUT} />
+            </div>
+            <div>
+              <label className="block text-xs text-stone-500 mb-1">Subtítulo / descripción</label>
+              <input type="text" value={editing.subtitle} onChange={e => upd({ subtitle: e.target.value })}
+                placeholder="Texto debajo del título" className={INPUT} />
+            </div>
+          </div>
+
+          {/* Background */}
+          <div>
+            <label className="block text-xs text-stone-500 mb-2">Fondo de sección</label>
+            <div className="flex flex-wrap gap-2">
+              {BG_OPTIONS.map(opt => (
+                <button key={opt.value} type="button" onClick={() => upd({ bg: opt.value })}
+                  className={cn('flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm transition-all',
+                    editing.bg === opt.value ? 'border-gold' : 'border-stone-200 hover:border-stone-300'
+                  )}>
+                  <span className={cn('w-4 h-4 rounded-full', opt.preview)} />
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <TOGGLE checked={editing.visible} onChange={v => upd({ visible: v })} />
+            <span className="text-sm text-stone-600">Visible en la página de inicio</span>
+          </div>
+
+          {/* ── Cards ── */}
+          {editing.type === 'cards' && (
+            <div className="space-y-4 border-t border-stone-100 pt-5">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-stone-700">Tarjetas</label>
+                <div className="flex items-center gap-3">
+                  <select value={editing.card_cols}
+                    onChange={e => upd({ card_cols: parseInt(e.target.value) as 2 | 3 | 4 })}
+                    className="px-3 py-1.5 border border-stone-200 rounded-lg text-sm bg-white">
+                    <option value={2}>2 columnas</option>
+                    <option value={3}>3 columnas</option>
+                    <option value={4}>4 columnas</option>
+                  </select>
+                  <button type="button" onClick={() => upd({ cards: [...editing.cards, { emoji: '✝️', title: '', description: '' }] })}
+                    className="flex items-center gap-1 text-xs text-primary hover:text-gold transition-colors">
+                    <Plus size={14} /> Agregar
+                  </button>
+                </div>
+              </div>
+              {editing.cards.map((card, i) => (
+                <div key={i} className="flex gap-2 items-start bg-stone-50 rounded-xl p-3">
+                  <input type="text" placeholder="🙏" value={card.emoji}
+                    onChange={e => { const cards = [...editing.cards]; cards[i] = { ...card, emoji: e.target.value }; upd({ cards }); }}
+                    className="w-14 px-2 py-2 border border-stone-200 rounded-lg text-center text-lg" />
+                  <div className="flex-1 space-y-2">
+                    <input type="text" placeholder="Título" value={card.title}
+                      onChange={e => { const cards = [...editing.cards]; cards[i] = { ...card, title: e.target.value }; upd({ cards }); }}
+                      className={INPUT_SM + ' w-full'} />
+                    <input type="text" placeholder="Descripción" value={card.description}
+                      onChange={e => { const cards = [...editing.cards]; cards[i] = { ...card, description: e.target.value }; upd({ cards }); }}
+                      className={INPUT_SM + ' w-full'} />
+                  </div>
+                  <button type="button" onClick={() => upd({ cards: editing.cards.filter((_, idx) => idx !== i) })}
+                    className="p-1.5 text-red-400 hover:text-red-600 mt-1"><Trash2 size={14} /></button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── Columns ── */}
+          {editing.type === 'columns' && (
+            <div className="space-y-4 border-t border-stone-100 pt-5">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-stone-700">Columnas</label>
+                <button type="button" onClick={() => upd({ col_items: [...editing.col_items, { title: '', body: '', image_url: '', btn_label: '', btn_href: '/' }] })}
+                  className="flex items-center gap-1 text-xs text-primary hover:text-gold transition-colors">
+                  <Plus size={14} /> Agregar columna
+                </button>
+              </div>
+              {editing.col_items.map((col, i) => (
+                <div key={i} className="border border-stone-200 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-stone-500">Columna {i + 1}</span>
+                    <button type="button" onClick={() => upd({ col_items: editing.col_items.filter((_, idx) => idx !== i) })}
+                      className="text-red-400 hover:text-red-600"><Trash2 size={14} /></button>
+                  </div>
+                  <ImageUpload value={col.image_url} onChange={v => { const col_items = [...editing.col_items]; col_items[i] = { ...col, image_url: v }; upd({ col_items }); }}
+                    folder="home-blocks" label="Imagen (opcional)" />
+                  <input type="text" placeholder="Título de columna" value={col.title}
+                    onChange={e => { const col_items = [...editing.col_items]; col_items[i] = { ...col, title: e.target.value }; upd({ col_items }); }}
+                    className={INPUT} />
+                  <RichTextEditor value={col.body} onChange={v => { const col_items = [...editing.col_items]; col_items[i] = { ...col, body: v }; upd({ col_items }); }}
+                    placeholder="Contenido de la columna..." />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="text" placeholder="Texto del botón" value={col.btn_label}
+                      onChange={e => { const col_items = [...editing.col_items]; col_items[i] = { ...col, btn_label: e.target.value }; upd({ col_items }); }}
+                      className={INPUT_SM} />
+                    <input type="text" placeholder="/ruta o URL" value={col.btn_href}
+                      onChange={e => { const col_items = [...editing.col_items]; col_items[i] = { ...col, btn_href: e.target.value }; upd({ col_items }); }}
+                      className={INPUT_SM} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── CTA Banner ── */}
+          {editing.type === 'cta_banner' && (
+            <div className="space-y-4 border-t border-stone-100 pt-5">
+              <label className="text-sm font-medium text-stone-700">Botones de acción</label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-stone-500 mb-1">Botón principal — Texto</label>
+                  <input type="text" value={editing.cta_btn1_label} onChange={e => upd({ cta_btn1_label: e.target.value })}
+                    placeholder="Contactar" className={INPUT} />
+                </div>
+                <div>
+                  <label className="block text-xs text-stone-500 mb-1">Botón principal — Enlace</label>
+                  <input type="text" value={editing.cta_btn1_href} onChange={e => upd({ cta_btn1_href: e.target.value })}
+                    placeholder="#contact o /ruta" className={INPUT} />
+                </div>
+                <div>
+                  <label className="block text-xs text-stone-500 mb-1">Botón secundario — Texto</label>
+                  <input type="text" value={editing.cta_btn2_label} onChange={e => upd({ cta_btn2_label: e.target.value })}
+                    placeholder="Ver en Vivo (opcional)" className={INPUT} />
+                </div>
+                <div>
+                  <label className="block text-xs text-stone-500 mb-1">Botón secundario — Enlace</label>
+                  <input type="text" value={editing.cta_btn2_href} onChange={e => upd({ cta_btn2_href: e.target.value })}
+                    placeholder="/live" className={INPUT} />
+                </div>
+              </div>
+              <p className="text-xs text-stone-400">Usa <code className="bg-stone-100 px-1 rounded">#contact</code> para abrir el formulario de contacto.</p>
+            </div>
+          )}
+
+          {/* ── Stats ── */}
+          {editing.type === 'stats' && (
+            <div className="space-y-4 border-t border-stone-100 pt-5">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-stone-700">Estadísticas</label>
+                <button type="button" onClick={() => upd({ stats: [...editing.stats, { emoji: '📊', value: '', label: '' }] })}
+                  className="flex items-center gap-1 text-xs text-primary hover:text-gold transition-colors">
+                  <Plus size={14} /> Agregar
+                </button>
+              </div>
+              {editing.stats.map((stat, i) => (
+                <div key={i} className="flex gap-2 items-center">
+                  <input type="text" placeholder="🙏" value={stat.emoji}
+                    onChange={e => { const stats = [...editing.stats]; stats[i] = { ...stat, emoji: e.target.value }; upd({ stats }); }}
+                    className="w-14 px-2 py-2 border border-stone-200 rounded-lg text-center text-lg" />
+                  <input type="text" placeholder="Valor (ej: 200+)" value={stat.value}
+                    onChange={e => { const stats = [...editing.stats]; stats[i] = { ...stat, value: e.target.value }; upd({ stats }); }}
+                    className={INPUT_SM + ' w-32'} />
+                  <input type="text" placeholder="Etiqueta" value={stat.label}
+                    onChange={e => { const stats = [...editing.stats]; stats[i] = { ...stat, label: e.target.value }; upd({ stats }); }}
+                    className={INPUT_SM + ' flex-1'} />
+                  <button type="button" onClick={() => upd({ stats: editing.stats.filter((_, idx) => idx !== i) })}
+                    className="p-1.5 text-red-400 hover:text-red-600"><Trash2 size={14} /></button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── Rich Text ── */}
+          {editing.type === 'rich_text' && (
+            <div className="space-y-4 border-t border-stone-100 pt-5">
+              <div className="flex items-center gap-3">
+                <label className="text-sm font-medium text-stone-700">Alineación</label>
+                <div className="flex gap-1">
+                  {(['left', 'center'] as const).map(align => (
+                    <button key={align} type="button" onClick={() => upd({ text_align: align })}
+                      className={cn('p-1.5 rounded-lg border transition-colors',
+                        editing.text_align === align ? 'border-gold bg-gold/10 text-gold' : 'border-stone-200 text-stone-400 hover:border-stone-300'
+                      )}>
+                      {align === 'left' ? <AlignLeft size={16} /> : <AlignCenter size={16} />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <RichTextEditor value={editing.html} onChange={v => upd({ html: v })} placeholder="Escribe el contenido aquí..." />
+            </div>
           )}
         </div>
 
-        {msgsLoading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="text-center py-8 text-stone-400">
-            <Inbox size={40} className="mx-auto mb-3 opacity-30" />
-            <p>No hay mensajes aún</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {messages.map(msg => (
-              <motion.div key={msg.id}
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className={cn('rounded-xl border transition-colors', msg.read ? 'border-stone-100 bg-stone-50' : 'border-primary/20 bg-primary/5')}
-              >
-                <button
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left"
-                  onClick={() => handleExpand(msg.id)}
-                >
-                  {!msg.read && <span className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium text-stone-800 text-sm">{msg.name}</span>
-                      <span className="text-xs text-stone-400">{msg.email}</span>
-                      {msg.subject && <span className="text-xs text-stone-500">· {msg.subject}</span>}
-                    </div>
-                    <p className="text-xs text-stone-400 mt-0.5">
-                      {new Date(msg.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    {msg.read ? <CheckCheck size={14} className="text-stone-300" /> : <Eye size={14} className="text-primary" />}
-                  </div>
-                </button>
-
-                <AnimatePresence>
-                  {expandedMsg === msg.id && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="px-4 pb-4 border-t border-stone-100 pt-3">
-                        <p className="text-stone-700 text-sm leading-relaxed whitespace-pre-wrap">{msg.message}</p>
-                        <div className="flex justify-end mt-3">
-                          <button onClick={() => deleteMessage(msg.id)}
-                            className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors">
-                            <Trash size={13} />
-                            Eliminar
-                          </button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            ))}
-          </div>
-        )}
+        <div className="px-6 py-4 border-t border-stone-100 flex items-center justify-end gap-3">
+          {saved && <span className="text-sm text-green-600">¡Guardado!</span>}
+          <button onClick={() => setEditing(null)} className="btn-secondary text-sm px-4 py-2">Cancelar</button>
+          <button onClick={saveEditing} disabled={saving} className="btn-primary flex items-center gap-2 text-sm disabled:opacity-60">
+            <Save size={15} />
+            {saving ? 'Guardando...' : 'Guardar bloque'}
+          </button>
+        </div>
       </div>
+    );
+  }
+
+  // ── Block type picker ────────────────────────────────────────
+  if (pickingType) {
+    return (
+      <div className="bg-white rounded-2xl shadow-md p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="font-serif text-xl text-primary">Elegir tipo de bloque</h3>
+          <button onClick={() => setPickingType(false)} className="text-sm text-stone-400 hover:text-stone-600">Cancelar</button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {BLOCK_TYPES.map(({ type, label, icon: Icon, desc }) => (
+            <button key={type} onClick={() => addBlock(type)}
+              className="flex flex-col gap-3 p-5 border-2 border-stone-200 hover:border-gold hover:bg-gold/5 rounded-2xl text-left transition-all group">
+              <div className="w-10 h-10 bg-primary/10 group-hover:bg-gold/20 rounded-xl flex items-center justify-center transition-colors">
+                <Icon size={20} className="text-primary group-hover:text-gold transition-colors" />
+              </div>
+              <div>
+                <p className="font-semibold text-stone-800">{label}</p>
+                <p className="text-xs text-stone-500 mt-1">{desc}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Block list ───────────────────────────────────────────────
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-serif text-xl text-primary">Bloques de la página de inicio</h3>
+          <p className="text-sm text-stone-500 mt-1">Arrastra para reordenar. Los bloques ocultos no aparecen en el sitio.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {saved && <span className="text-sm text-green-600">¡Guardado!</span>}
+          <button onClick={() => setPickingType(true)} className="flex items-center gap-2 btn-primary">
+            <Plus size={18} /> Agregar bloque
+          </button>
+        </div>
+      </div>
+
+      {blocks.length === 0 ? (
+        <div className="bg-white rounded-2xl shadow-md p-16 text-center">
+          <Home size={48} className="mx-auto text-stone-300 mb-4" />
+          <p className="text-stone-500 text-lg mb-6">No hay bloques en la página de inicio</p>
+          <button onClick={() => setPickingType(true)} className="btn-primary">Crear primer bloque</button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {blocks.map((block, i) => {
+            const meta = BLOCK_TYPES.find(t => t.type === block.type);
+            const Icon = meta?.icon ?? Layout;
+            return (
+              <motion.div key={block.id}
+                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
+                draggable
+                onDragStart={() => handleDragStart(i)}
+                onDragOver={e => handleDragOver(e, i)}
+                onDragLeave={() => setDragOver(null)}
+                onDrop={() => handleDrop(i)}
+                className={cn('bg-white rounded-2xl shadow-md p-4 flex items-center gap-4 transition-all',
+                  !block.visible && 'opacity-50',
+                  dragOver === i && 'ring-2 ring-gold scale-[1.01]'
+                )}>
+                <GripVertical size={18} className="text-stone-300 flex-shrink-0 cursor-grab active:cursor-grabbing" />
+                <div className="w-9 h-9 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Icon size={16} className="text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs bg-stone-100 text-stone-600 px-2 py-0.5 rounded-full font-medium">{meta?.label}</span>
+                    <span className="font-medium text-stone-800 text-sm truncate">{block.title || '(sin título)'}</span>
+                    {!block.visible && <span className="text-xs text-stone-400">· Oculto</span>}
+                  </div>
+                  {block.subtitle && <p className="text-xs text-stone-400 mt-0.5 truncate">{block.subtitle}</p>}
+                </div>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <TOGGLE checked={block.visible} onChange={() => toggleVisible(block.id)} />
+                  <button onClick={() => setEditing(block)}
+                    className="p-2 text-stone-400 hover:text-primary hover:bg-stone-50 rounded-lg transition-colors">
+                    <Eye size={16} />
+                  </button>
+                  <button onClick={() => deleteBlock(block.id)}
+                    className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                    <Trash size={16} />
+                  </button>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -205,20 +651,18 @@ function SitioTab() {
     { id: 'seo' as const, label: 'SEO', icon: Globe },
   ];
 
+  const fSections = footer.sections ?? { show_contact: true, show_links: true, show_social: true };
+  const fColors = footer.colors ?? { bg: '#8D000A', heading: '#F5C842', body: '#d6d3d1', link: '#e7e5e4' };
+
   return (
     <div className="bg-white rounded-2xl shadow-md overflow-hidden">
-      {/* Section tabs */}
       <div className="flex border-b border-stone-200 overflow-x-auto">
         {sections.map(({ id, label, icon: Icon }) => (
           <button key={id} onClick={() => setActiveSection(id)}
-            className={cn(
-              'flex items-center gap-2 px-5 py-4 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px',
-              activeSection === id
-                ? 'border-gold text-primary'
-                : 'border-transparent text-stone-500 hover:text-stone-700'
+            className={cn('flex items-center gap-2 px-5 py-4 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px',
+              activeSection === id ? 'border-gold text-primary' : 'border-transparent text-stone-500 hover:text-stone-700'
             )}>
-            <Icon size={16} />
-            {label}
+            <Icon size={16} />{label}
           </button>
         ))}
       </div>
@@ -228,46 +672,24 @@ function SitioTab() {
         {activeSection === 'branding' && (
           <div className="space-y-5">
             <h3 className="font-serif text-lg text-primary">Identidad del Sitio</h3>
-            <ImageUpload
-              value={branding.logo_url}
-              onChange={v => setBranding({ ...branding, logo_url: v })}
-              folder="branding"
-              label="Logo de la Iglesia"
-              variant="logo"
-            />
+            <ImageUpload value={branding.logo_url} onChange={v => setBranding({ ...branding, logo_url: v })} folder="branding" label="Logo de la Iglesia" variant="logo" />
             <div>
               <label className="block text-sm font-medium text-stone-600 mb-1">Nombre del Sitio</label>
-              <input type="text" value={branding.site_name}
-                onChange={e => setBranding({ ...branding, site_name: e.target.value })}
-                className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
-              />
+              <input type="text" value={branding.site_name} onChange={e => setBranding({ ...branding, site_name: e.target.value })} className={INPUT} />
             </div>
             <div>
               <label className="block text-sm font-medium text-stone-600 mb-1">Tagline / Subtítulo</label>
-              <input type="text" value={branding.tagline}
-                onChange={e => setBranding({ ...branding, tagline: e.target.value })}
-                className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
-              />
+              <input type="text" value={branding.tagline} onChange={e => setBranding({ ...branding, tagline: e.target.value })} className={INPUT} />
             </div>
-
-            {/* Vista previa del Navbar */}
             <div>
               <label className="block text-sm font-medium text-stone-600 mb-2">Vista previa en el Navbar</label>
               <div className="flex items-center gap-3 bg-white border border-stone-200 rounded-xl px-4 py-3 shadow-sm">
                 <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-stone-100">
-                  <img
-                    src={branding.logo_url || '/android-chrome-192x192.png'}
-                    alt="logo"
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={branding.logo_url || '/android-chrome-192x192.png'} alt="logo" className="w-full h-full object-cover" />
                 </div>
                 <div>
-                  <p className="font-serif text-base text-primary font-semibold leading-tight">
-                    {branding.site_name || 'Nombre del sitio'}
-                  </p>
-                  {branding.tagline && (
-                    <p className="text-xs text-amber-600 font-medium tracking-wider">{branding.tagline}</p>
-                  )}
+                  <p className="font-serif text-base text-primary font-semibold leading-tight">{branding.site_name || 'Nombre del sitio'}</p>
+                  {branding.tagline && <p className="text-xs text-amber-600 font-medium tracking-wider">{branding.tagline}</p>}
                 </div>
               </div>
             </div>
@@ -282,13 +704,9 @@ function SitioTab() {
               <label className="block text-sm font-medium text-stone-600 mb-1">Modo</label>
               <div className="flex gap-3">
                 {(['text', 'image', 'slider'] as const).map(mode => (
-                  <button key={mode} type="button"
-                    onClick={() => setHero({ ...hero, mode })}
-                    className={cn(
-                      'flex-1 py-2 px-4 rounded-xl text-sm font-medium border-2 transition-all',
-                      hero.mode === mode
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-stone-200 text-stone-500 hover:border-stone-300'
+                  <button key={mode} type="button" onClick={() => setHero({ ...hero, mode })}
+                    className={cn('flex-1 py-2 px-4 rounded-xl text-sm font-medium border-2 transition-all',
+                      hero.mode === mode ? 'border-primary bg-primary/10 text-primary' : 'border-stone-200 text-stone-500 hover:border-stone-300'
                     )}>
                     {mode === 'text' ? 'Texto' : mode === 'image' ? 'Imagen' : 'Carrusel'}
                   </button>
@@ -297,44 +715,27 @@ function SitioTab() {
             </div>
             <div>
               <label className="block text-sm font-medium text-stone-600 mb-1">Título principal</label>
-              <input type="text" value={hero.title}
-                onChange={e => setHero({ ...hero, title: e.target.value })}
-                className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
-              />
+              <input type="text" value={hero.title} onChange={e => setHero({ ...hero, title: e.target.value })} className={INPUT} />
             </div>
             <div>
               <label className="block text-sm font-medium text-stone-600 mb-1">Subtítulo</label>
-              <textarea value={hero.subtitle} rows={2}
-                onChange={e => setHero({ ...hero, subtitle: e.target.value })}
-                className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold resize-none"
-              />
+              <textarea value={hero.subtitle} rows={2} onChange={e => setHero({ ...hero, subtitle: e.target.value })} className={INPUT + ' resize-none'} />
             </div>
             {hero.mode === 'image' && (
-              <ImageUpload
-                value={hero.bg_url}
-                onChange={v => setHero({ ...hero, bg_url: v })}
-                folder="hero"
-                label="Imagen de fondo"
-              />
+              <ImageUpload value={hero.bg_url} onChange={v => setHero({ ...hero, bg_url: v })} folder="hero" label="Imagen de fondo" />
             )}
             {(hero.mode === 'image' || hero.mode === 'slider') && (
               <div>
-                <label className="block text-sm font-medium text-stone-600 mb-1">
-                  Opacidad del overlay ({Math.round(hero.overlay * 100)}%)
-                </label>
-                <input type="range" min={0} max={1} step={0.05}
-                  value={hero.overlay}
-                  onChange={e => setHero({ ...hero, overlay: parseFloat(e.target.value) })}
-                  className="w-full accent-gold"
-                />
+                <label className="block text-sm font-medium text-stone-600 mb-1">Opacidad del overlay ({Math.round(hero.overlay * 100)}%)</label>
+                <input type="range" min={0} max={1} step={0.05} value={hero.overlay}
+                  onChange={e => setHero({ ...hero, overlay: parseFloat(e.target.value) })} className="w-full accent-gold" />
               </div>
             )}
             {hero.mode === 'slider' && (
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-sm font-medium text-stone-600">Imágenes del carrusel</label>
-                  <button type="button"
-                    onClick={() => setHero({ ...hero, slides: [...hero.slides, ''] })}
+                  <button type="button" onClick={() => setHero({ ...hero, slides: [...hero.slides, ''] })}
                     className="flex items-center gap-1 text-xs text-primary hover:text-gold transition-colors">
                     <Plus size={14} /> Agregar
                   </button>
@@ -342,16 +743,9 @@ function SitioTab() {
                 <div className="space-y-3">
                   {hero.slides.map((url, i) => (
                     <div key={i} className="space-y-2">
-                      <ImageUpload
-                        value={url}
-                        onChange={v => {
-                          const slides = [...hero.slides];
-                          slides[i] = v;
-                          setHero({ ...hero, slides });
-                        }}
-                        folder="hero/slides"
-                        label={`Slide ${i + 1}`}
-                      />
+                      <ImageUpload value={url}
+                        onChange={v => { const slides = [...hero.slides]; slides[i] = v; setHero({ ...hero, slides }); }}
+                        folder="hero/slides" label={`Slide ${i + 1}`} />
                       <button type="button"
                         onClick={() => setHero({ ...hero, slides: hero.slides.filter((_, idx) => idx !== i) })}
                         className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700">
@@ -359,18 +753,14 @@ function SitioTab() {
                       </button>
                     </div>
                   ))}
-                  {hero.slides.length === 0 && (
-                    <p className="text-sm text-stone-400 italic">No hay slides. Agrega al menos uno.</p>
-                  )}
+                  {hero.slides.length === 0 && <p className="text-sm text-stone-400 italic">No hay slides. Agrega al menos uno.</p>}
                 </div>
               </div>
             )}
-            {/* Buttons */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-sm font-medium text-stone-600">Botones</label>
-                <button type="button"
-                  onClick={() => setHero({ ...hero, buttons: [...hero.buttons, { label: '', href: '/', variant: 'primary' }] })}
+                <button type="button" onClick={() => setHero({ ...hero, buttons: [...hero.buttons, { label: '', href: '/', variant: 'primary' }] })}
                   className="flex items-center gap-1 text-xs text-primary hover:text-gold transition-colors">
                   <Plus size={14} /> Agregar botón
                 </button>
@@ -379,36 +769,19 @@ function SitioTab() {
                 {hero.buttons.map((btn, i) => (
                   <div key={i} className="flex gap-2 items-center">
                     <input type="text" placeholder="Texto" value={btn.label}
-                      onChange={e => {
-                        const buttons = [...hero.buttons];
-                        buttons[i] = { ...btn, label: e.target.value };
-                        setHero({ ...hero, buttons });
-                      }}
-                      className="flex-1 px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-gold"
-                    />
+                      onChange={e => { const buttons = [...hero.buttons]; buttons[i] = { ...btn, label: e.target.value }; setHero({ ...hero, buttons }); }}
+                      className="flex-1 px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-gold" />
                     <input type="text" placeholder="/ruta" value={btn.href}
-                      onChange={e => {
-                        const buttons = [...hero.buttons];
-                        buttons[i] = { ...btn, href: e.target.value };
-                        setHero({ ...hero, buttons });
-                      }}
-                      className="flex-1 px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-gold"
-                    />
+                      onChange={e => { const buttons = [...hero.buttons]; buttons[i] = { ...btn, href: e.target.value }; setHero({ ...hero, buttons }); }}
+                      className="flex-1 px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-gold" />
                     <select value={btn.variant}
-                      onChange={e => {
-                        const buttons = [...hero.buttons];
-                        buttons[i] = { ...btn, variant: e.target.value as 'primary' | 'secondary' };
-                        setHero({ ...hero, buttons });
-                      }}
+                      onChange={e => { const buttons = [...hero.buttons]; buttons[i] = { ...btn, variant: e.target.value as 'primary' | 'secondary' }; setHero({ ...hero, buttons }); }}
                       className="px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-gold bg-white">
                       <option value="primary">Principal</option>
                       <option value="secondary">Secundario</option>
                     </select>
-                    <button type="button"
-                      onClick={() => setHero({ ...hero, buttons: hero.buttons.filter((_, idx) => idx !== i) })}
-                      className="p-2 text-red-500 hover:text-red-700">
-                      <Trash2 size={14} />
-                    </button>
+                    <button type="button" onClick={() => setHero({ ...hero, buttons: hero.buttons.filter((_, idx) => idx !== i) })}
+                      className="p-2 text-red-500 hover:text-red-700"><Trash2 size={14} /></button>
                   </div>
                 ))}
               </div>
@@ -425,168 +798,147 @@ function SitioTab() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-stone-600 mb-1">Texto descriptivo</label>
-                <textarea value={footer.text} rows={3}
-                  onChange={e => setFooter({ ...footer, text: e.target.value })}
-                  className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold resize-none"
-                />
+                <textarea value={footer.text} rows={3} onChange={e => setFooter({ ...footer, text: e.target.value })} className={INPUT + ' resize-none'} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-stone-600 mb-1">Texto de copyright</label>
-                <input type="text" value={footer.copyright}
-                  onChange={e => setFooter({ ...footer, copyright: e.target.value })}
-                  className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
-                />
+                <input type="text" value={footer.copyright} onChange={e => setFooter({ ...footer, copyright: e.target.value })} className={INPUT} />
               </div>
+            </div>
+
+            {/* Secciones visibles */}
+            <div className="border-t border-stone-100 pt-5">
+              <p className="text-sm font-medium text-stone-700 mb-4 flex items-center gap-2">
+                <Eye size={16} className="text-stone-400" /> Secciones visibles
+              </p>
+              <div className="space-y-3">
+                {[
+                  { key: 'show_cta' as const, label: 'Banda de CTA (¿Tienes preguntas?)' },
+                  { key: 'show_schedule' as const, label: 'Horarios de servicio' },
+                  { key: 'show_contact' as const, label: 'Columna de contacto (teléfono, email, WhatsApp)' },
+                  { key: 'show_links' as const, label: 'Columna de enlaces rápidos' },
+                  { key: 'show_social' as const, label: 'Columna de redes sociales' },
+                ].map(({ key, label }) => {
+                  const checked = key === 'show_cta' ? (footer.cta?.enabled ?? true)
+                    : key === 'show_schedule' ? (footer.schedules?.enabled ?? true)
+                    : (fSections[key as keyof typeof fSections] ?? true);
+                  const onChange = (v: boolean) => {
+                    if (key === 'show_cta') setFooter({ ...footer, cta: { ...(footer.cta ?? { title: '¿Tienes preguntas?', subtitle: '' }), enabled: v } });
+                    else if (key === 'show_schedule') setFooter({ ...footer, schedules: { ...(footer.schedules ?? { items: [] }), enabled: v } });
+                    else setFooter({ ...footer, sections: { ...fSections, [key]: v } });
+                  };
+                  return (
+                    <div key={key} className="flex items-center justify-between">
+                      <span className="text-sm text-stone-600">{label}</span>
+                      <TOGGLE checked={checked} onChange={onChange} />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Colores */}
+            <div className="border-t border-stone-100 pt-5">
+              <p className="text-sm font-medium text-stone-700 mb-4 flex items-center gap-2">
+                <Palette size={16} className="text-stone-400" /> Colores del footer
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {([
+                  { key: 'bg' as const, label: 'Fondo principal' },
+                  { key: 'heading' as const, label: 'Títulos / acentos' },
+                  { key: 'body' as const, label: 'Texto cuerpo' },
+                  { key: 'link' as const, label: 'Color de enlaces' },
+                ] as const).map(({ key, label }) => (
+                  <div key={key} className="flex items-center gap-3">
+                    <input type="color" value={fColors[key]}
+                      onChange={e => setFooter({ ...footer, colors: { ...fColors, [key]: e.target.value } })}
+                      className="w-10 h-10 rounded-xl border border-stone-200 cursor-pointer p-0.5 bg-white" />
+                    <div className="flex-1">
+                      <p className="text-xs text-stone-500">{label}</p>
+                      <p className="text-xs font-mono text-stone-400">{fColors[key]}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-stone-400 mt-3">Haz clic en el cuadro de color para abrir el selector.</p>
             </div>
 
             {/* Contacto */}
             <div className="border-t border-stone-100 pt-5">
-              <p className="text-sm font-medium text-stone-700 mb-3">Contacto</p>
+              <p className="text-sm font-medium text-stone-700 mb-3">Información de contacto</p>
               <div className="space-y-3">
-                <input type="text" placeholder="Dirección" value={footer.contact.address}
-                  onChange={e => setFooter({ ...footer, contact: { ...footer.contact, address: e.target.value } })}
-                  className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
-                />
-                <input type="text" placeholder="Teléfono" value={footer.contact.phone}
-                  onChange={e => setFooter({ ...footer, contact: { ...footer.contact, phone: e.target.value } })}
-                  className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
-                />
-                <input type="email" placeholder="Email" value={footer.contact.email}
-                  onChange={e => setFooter({ ...footer, contact: { ...footer.contact, email: e.target.value } })}
-                  className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
-                />
-                <input type="text" placeholder="WhatsApp (ej: +57 300 123 4567)" value={footer.contact.whatsapp ?? ''}
-                  onChange={e => setFooter({ ...footer, contact: { ...footer.contact, whatsapp: e.target.value } })}
-                  className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
-                />
+                {[
+                  { field: 'address' as const, placeholder: 'Dirección', type: 'text' },
+                  { field: 'phone' as const, placeholder: 'Teléfono', type: 'text' },
+                  { field: 'email' as const, placeholder: 'Email', type: 'email' },
+                  { field: 'whatsapp' as const, placeholder: 'WhatsApp (ej: +57 300 123 4567)', type: 'text' },
+                ].map(({ field, placeholder, type }) => (
+                  <input key={field} type={type} placeholder={placeholder}
+                    value={(footer.contact[field] ?? '') as string}
+                    onChange={e => setFooter({ ...footer, contact: { ...footer.contact, [field]: e.target.value } })}
+                    className={INPUT} />
+                ))}
               </div>
             </div>
 
-            {/* Redes Sociales */}
+            {/* Redes sociales */}
             <div className="border-t border-stone-100 pt-5">
               <p className="text-sm font-medium text-stone-700 mb-3">Redes Sociales</p>
               <div className="space-y-3">
                 {[
-                  { key: 'facebook' as const, label: 'Facebook', placeholder: 'https://facebook.com/...' },
-                  { key: 'youtube' as const, label: 'YouTube', placeholder: 'https://youtube.com/...' },
-                  { key: 'instagram' as const, label: 'Instagram', placeholder: 'https://instagram.com/...' },
-                ].map(({ key, label, placeholder }) => (
+                  { key: 'facebook' as const, label: 'Facebook', ph: 'https://facebook.com/...' },
+                  { key: 'youtube' as const, label: 'YouTube', ph: 'https://youtube.com/...' },
+                  { key: 'instagram' as const, label: 'Instagram', ph: 'https://instagram.com/...' },
+                ].map(({ key, label, ph }) => (
                   <div key={key} className="flex items-center gap-2">
                     <span className="text-sm text-stone-500 w-24 flex-shrink-0">{label}</span>
-                    <input type="url" placeholder={placeholder} value={footer.social[key]}
+                    <input type="url" placeholder={ph} value={footer.social[key]}
                       onChange={e => setFooter({ ...footer, social: { ...footer.social, [key]: e.target.value } })}
-                      className="flex-1 px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
-                    />
+                      className="flex-1 px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm" />
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* CTA Banner */}
+            {/* CTA Banner config */}
             <div className="border-t border-stone-100 pt-5">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-sm font-medium text-stone-700">Banda de llamada a la acción (CTA)</p>
-                  <p className="text-xs text-stone-400 mt-0.5">Franja superior del footer con botones de contacto</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox"
-                    checked={footer.cta?.enabled ?? true}
-                    onChange={e => setFooter({ ...footer, cta: { ...(footer.cta ?? { title: '¿Tienes preguntas?', subtitle: '' }), enabled: e.target.checked } })}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-stone-200 rounded-full peer peer-checked:bg-primary transition-colors" />
-                  <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5" />
-                </label>
+              <p className="text-sm font-medium text-stone-700 mb-3">Texto de la banda CTA</p>
+              <div className="space-y-3">
+                <input type="text" value={footer.cta?.title ?? ''} placeholder="¿Tienes preguntas?"
+                  onChange={e => setFooter({ ...footer, cta: { ...(footer.cta ?? { enabled: true, subtitle: '' }), title: e.target.value } })}
+                  className={INPUT} />
+                <input type="text" value={footer.cta?.subtitle ?? ''} placeholder="Subtítulo del CTA"
+                  onChange={e => setFooter({ ...footer, cta: { ...(footer.cta ?? { enabled: true, title: '' }), subtitle: e.target.value } })}
+                  className={INPUT} />
               </div>
-              {(footer.cta?.enabled ?? true) && (
-                <div className="space-y-3 pl-2 border-l-2 border-gold/40">
-                  <div>
-                    <label className="block text-xs text-stone-500 mb-1">Título</label>
-                    <input type="text"
-                      value={footer.cta?.title ?? '¿Tienes preguntas?'}
-                      onChange={e => setFooter({ ...footer, cta: { ...(footer.cta ?? { enabled: true, subtitle: '' }), title: e.target.value } })}
-                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-stone-500 mb-1">Subtítulo</label>
-                    <input type="text"
-                      value={footer.cta?.subtitle ?? ''}
-                      onChange={e => setFooter({ ...footer, cta: { ...(footer.cta ?? { enabled: true, title: '' }), subtitle: e.target.value } })}
-                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm"
-                    />
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Horarios */}
             <div className="border-t border-stone-100 pt-5">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-sm font-medium text-stone-700">Horarios de servicio</p>
-                  <p className="text-xs text-stone-400 mt-0.5">Banda de horarios visible en el footer</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox"
-                    checked={footer.schedules?.enabled ?? true}
-                    onChange={e => setFooter({ ...footer, schedules: { ...(footer.schedules ?? { items: [] }), enabled: e.target.checked } })}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-stone-200 rounded-full peer peer-checked:bg-primary transition-colors" />
-                  <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5" />
-                </label>
+              <p className="text-sm font-medium text-stone-700 mb-3">Horarios de servicio</p>
+              <div className="space-y-3">
+                {(footer.schedules?.items ?? []).map((item, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <input type="text" placeholder="Día" value={item.day}
+                      onChange={e => { const items = [...(footer.schedules?.items ?? [])]; items[i] = { ...items[i], day: e.target.value }; setFooter({ ...footer, schedules: { ...(footer.schedules ?? { enabled: true }), items } }); }}
+                      className="w-28 px-3 py-2 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm" />
+                    <input type="text" placeholder="Hora" value={item.time}
+                      onChange={e => { const items = [...(footer.schedules?.items ?? [])]; items[i] = { ...items[i], time: e.target.value }; setFooter({ ...footer, schedules: { ...(footer.schedules ?? { enabled: true }), items } }); }}
+                      className="w-28 px-3 py-2 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm" />
+                    <input type="text" placeholder="Nombre del servicio" value={item.label}
+                      onChange={e => { const items = [...(footer.schedules?.items ?? [])]; items[i] = { ...items[i], label: e.target.value }; setFooter({ ...footer, schedules: { ...(footer.schedules ?? { enabled: true }), items } }); }}
+                      className="flex-1 px-3 py-2 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm" />
+                    <button type="button"
+                      onClick={() => { const items = (footer.schedules?.items ?? []).filter((_, idx) => idx !== i); setFooter({ ...footer, schedules: { ...(footer.schedules ?? { enabled: true }), items } }); }}
+                      className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"><Trash2 size={15} /></button>
+                  </div>
+                ))}
+                <button type="button"
+                  onClick={() => { const items = [...(footer.schedules?.items ?? []), { day: '', time: '', label: '' }]; setFooter({ ...footer, schedules: { ...(footer.schedules ?? { enabled: true }), items } }); }}
+                  className="flex items-center gap-2 text-sm text-primary hover:text-gold transition-colors">
+                  <Plus size={15} /> Agregar horario
+                </button>
               </div>
-              {(footer.schedules?.enabled ?? true) && (
-                <div className="space-y-3">
-                  {(footer.schedules?.items ?? []).map((item, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <input type="text" placeholder="Día" value={item.day}
-                        onChange={e => {
-                          const items = [...(footer.schedules?.items ?? [])];
-                          items[i] = { ...items[i], day: e.target.value };
-                          setFooter({ ...footer, schedules: { ...(footer.schedules ?? { enabled: true }), items } });
-                        }}
-                        className="w-28 px-3 py-2 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm"
-                      />
-                      <input type="text" placeholder="Hora" value={item.time}
-                        onChange={e => {
-                          const items = [...(footer.schedules?.items ?? [])];
-                          items[i] = { ...items[i], time: e.target.value };
-                          setFooter({ ...footer, schedules: { ...(footer.schedules ?? { enabled: true }), items } });
-                        }}
-                        className="w-28 px-3 py-2 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm"
-                      />
-                      <input type="text" placeholder="Nombre del servicio" value={item.label}
-                        onChange={e => {
-                          const items = [...(footer.schedules?.items ?? [])];
-                          items[i] = { ...items[i], label: e.target.value };
-                          setFooter({ ...footer, schedules: { ...(footer.schedules ?? { enabled: true }), items } });
-                        }}
-                        className="flex-1 px-3 py-2 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm"
-                      />
-                      <button type="button"
-                        onClick={() => {
-                          const items = (footer.schedules?.items ?? []).filter((_, idx) => idx !== i);
-                          setFooter({ ...footer, schedules: { ...(footer.schedules ?? { enabled: true }), items } });
-                        }}
-                        className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0">
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  ))}
-                  <button type="button"
-                    onClick={() => {
-                      const items = [...(footer.schedules?.items ?? []), { day: '', time: '', label: '' }];
-                      setFooter({ ...footer, schedules: { ...(footer.schedules ?? { enabled: true }), items } });
-                    }}
-                    className="flex items-center gap-2 text-sm text-primary hover:text-gold transition-colors mt-1">
-                    <Plus size={15} />
-                    Agregar horario
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -597,213 +949,24 @@ function SitioTab() {
             <h3 className="font-serif text-lg text-primary">SEO y Metadatos</h3>
             <div>
               <label className="block text-sm font-medium text-stone-600 mb-1">Título de la pestaña (title)</label>
-              <input type="text" value={seo.title}
-                onChange={e => setSeo({ ...seo, title: e.target.value })}
-                className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
-              />
+              <input type="text" value={seo.title} onChange={e => setSeo({ ...seo, title: e.target.value })} className={INPUT} />
             </div>
             <div>
               <label className="block text-sm font-medium text-stone-600 mb-1">Descripción (meta description)</label>
-              <textarea value={seo.description} rows={3}
-                onChange={e => setSeo({ ...seo, description: e.target.value })}
-                className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold resize-none"
-              />
+              <textarea value={seo.description} rows={3} onChange={e => setSeo({ ...seo, description: e.target.value })} className={INPUT + ' resize-none'} />
             </div>
-            <ImageUpload
-              value={seo.og_image}
-              onChange={v => setSeo({ ...seo, og_image: v })}
-              folder="seo"
-              label="Imagen Open Graph (og:image)"
-            />
+            <ImageUpload value={seo.og_image} onChange={v => setSeo({ ...seo, og_image: v })} folder="seo" label="Imagen Open Graph (og:image)" />
           </div>
         )}
 
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-stone-100">
           {saved && <span className="text-sm text-green-600 font-medium">¡Guardado!</span>}
-          <button onClick={handleSave} disabled={saving}
-            className="flex items-center gap-2 btn-primary disabled:opacity-60">
+          <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 btn-primary disabled:opacity-60">
             <Save size={16} />
             {saving ? 'Guardando...' : 'Guardar cambios'}
           </button>
         </div>
       </div>
-    </div>
-  );
-}
-
-// ── USUARIOS TAB ───────────────────────────────────────────────
-function UsuariosTab() {
-  const { users, loading, updateUserRole, updateUserStatus } = useUsers();
-  const { profile: currentProfile, canManageUsers } = useAuth();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-
-  const filtered = users.filter(u => {
-    const matchSearch = u.display_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchSearch
-      && (roleFilter === 'all' || u.role === roleFilter)
-      && (statusFilter === 'all' || u.status === statusFilter);
-  });
-
-  const handleRoleChange = async (user: UserProfile, role: UserRole) => {
-    if (!canManageUsers || user.id === currentProfile?.id) return;
-    await updateUserRole(user.id, role);
-  };
-  const handleStatusChange = async (user: UserProfile, status: 'active' | 'inactive') => {
-    if (!canManageUsers || user.id === currentProfile?.id) return;
-    await updateUserStatus(user.id, status);
-  };
-
-  return (
-    <div className="bg-white rounded-2xl shadow-md p-6">
-      <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
-        <div className="relative flex-1 max-w-md">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
-          <input type="text" placeholder="Buscar por nombre o email..."
-            value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <Filter size={18} className="text-stone-400" />
-          <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)}
-            className="px-3 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold bg-white text-sm">
-            <option value="all">Todos los roles</option>
-            <option value="admin">Admin</option>
-            <option value="pastor">Pastor</option>
-            <option value="leader">Líder</option>
-            <option value="member">Miembro</option>
-          </select>
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-            className="px-3 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold bg-white text-sm">
-            <option value="all">Todos los estados</option>
-            <option value="active">Activos</option>
-            <option value="inactive">Inactivos</option>
-          </select>
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <div className="animate-spin rounded-full h-10 w-10 border-4 border-primary border-t-transparent" />
-        </div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-stone-200">
-                <th className="text-left py-4 px-4 text-sm font-semibold text-stone-600">Usuario</th>
-                <th className="text-left py-4 px-4 text-sm font-semibold text-stone-600">Contacto</th>
-                <th className="text-left py-4 px-4 text-sm font-semibold text-stone-600">Rol</th>
-                <th className="text-left py-4 px-4 text-sm font-semibold text-stone-600">Estado</th>
-                <th className="text-left py-4 px-4 text-sm font-semibold text-stone-600">Ingreso</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((user, i) => {
-                const isSelf = user.id === currentProfile?.id;
-                return (
-                  <motion.tr key={user.id}
-                    initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-                    className="border-b border-stone-100 hover:bg-stone-50 transition-colors"
-                  >
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                          {user.display_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="font-medium text-stone-800">
-                            {user.display_name}
-                            {isSelf && <span className="ml-2 text-xs text-stone-400">(tú)</span>}
-                          </p>
-                          {user.address && <p className="text-xs text-stone-400">{user.address}</p>}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="space-y-1">
-                        <p className="flex items-center gap-2 text-sm text-stone-600">
-                          <Mail size={13} className="text-stone-400" />{user.email}
-                        </p>
-                        {user.phone && (
-                          <p className="flex items-center gap-2 text-sm text-stone-600">
-                            <Phone size={13} className="text-stone-400" />{user.phone}
-                          </p>
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      {canManageUsers && !isSelf ? (
-                        <div className="relative">
-                          <select value={user.role}
-                            onChange={e => handleRoleChange(user, e.target.value as UserRole)}
-                            className={cn(
-                              'pl-3 pr-7 py-1.5 rounded-full text-sm font-medium border-0 appearance-none cursor-pointer focus:ring-2 focus:ring-gold focus:outline-none',
-                              roleColors[user.role].bg, roleColors[user.role].text
-                            )}>
-                            <option value="admin">Admin</option>
-                            <option value="pastor">Pastor</option>
-                            <option value="leader">Líder</option>
-                            <option value="member">Miembro</option>
-                          </select>
-                          <ChevronDown size={12} className={cn('absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none', roleColors[user.role].text)} />
-                        </div>
-                      ) : (
-                        <span className={cn('px-3 py-1 rounded-full text-sm font-medium', roleColors[user.role].bg, roleColors[user.role].text)}>
-                          {roleLabels[user.role]}
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-4 px-4">
-                      {canManageUsers && !isSelf ? (
-                        <div className="relative">
-                          <select value={user.status}
-                            onChange={e => handleStatusChange(user, e.target.value as 'active' | 'inactive')}
-                            className={cn(
-                              'pl-3 pr-7 py-1.5 rounded-full text-sm font-medium border-0 appearance-none cursor-pointer focus:ring-2 focus:ring-gold focus:outline-none',
-                              statusColors[user.status].bg, statusColors[user.status].text
-                            )}>
-                            <option value="active">Activo</option>
-                            <option value="inactive">Inactivo</option>
-                          </select>
-                          <ChevronDown size={12} className={cn('absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none', statusColors[user.status].text)} />
-                        </div>
-                      ) : (
-                        <span className={cn('px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 w-fit', statusColors[user.status].bg, statusColors[user.status].text)}>
-                          <UserCheck size={13} />
-                          {user.status === 'active' ? 'Activo' : 'Inactivo'}
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-2 text-sm text-stone-500">
-                        <Calendar size={13} />
-                        {new Date(user.join_date).toLocaleDateString('es-ES', {
-                          day: 'numeric', month: 'short', year: 'numeric'
-                        })}
-                      </div>
-                    </td>
-                  </motion.tr>
-                );
-              })}
-            </tbody>
-          </table>
-          {filtered.length === 0 && (
-            <div className="text-center py-12">
-              <Users size={48} className="mx-auto text-stone-300 mb-4" />
-              <p className="text-stone-500">No se encontraron usuarios</p>
-            </div>
-          )}
-        </div>
-      )}
-      {!canManageUsers && (
-        <p className="mt-4 text-sm text-stone-400 text-center">
-          Solo pastores y administradores pueden cambiar roles y estados.
-        </p>
-      )}
     </div>
   );
 }
@@ -855,10 +1018,7 @@ function PaginasTab() {
   };
 
   const handleDragStart = (i: number) => { dragFrom.current = i; };
-  const handleDragOver = (e: React.DragEvent, i: number) => {
-    e.preventDefault();
-    setDragOver(i);
-  };
+  const handleDragOver = (e: React.DragEvent, i: number) => { e.preventDefault(); setDragOver(i); };
   const handleDrop = async (i: number) => {
     setDragOver(null);
     const from = dragFrom.current;
@@ -894,23 +1054,15 @@ function PaginasTab() {
     return (
       <div className="bg-white rounded-2xl shadow-md overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100">
-          <h3 className="font-serif text-xl text-primary">
-            {editing ? `Editar: ${editing.title}` : 'Nueva Página'}
-          </h3>
-          <button onClick={() => setCreating(false)} className="p-2 hover:bg-stone-100 rounded-lg">
-            <Trash size={18} className="text-stone-400" style={{ transform: 'rotate(0)' }} />
-          </button>
+          <h3 className="font-serif text-xl text-primary">{editing ? `Editar: ${editing.title}` : 'Nueva Página'}</h3>
+          <button onClick={() => setCreating(false)} className="text-sm text-stone-400 hover:text-stone-600 px-3 py-1.5 rounded-lg hover:bg-stone-100">Cancelar</button>
         </div>
-
         <form onSubmit={handleSave} className="p-6 space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-stone-600 mb-1">Título de la página *</label>
-              <input type="text" value={form.title}
-                onChange={e => handleTitleChange(e.target.value)}
-                className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
-                required placeholder="Ej: Nosotros, Acerca de, Historia..."
-              />
+              <input type="text" value={form.title} onChange={e => handleTitleChange(e.target.value)}
+                className={INPUT} required placeholder="Ej: Nosotros, Acerca de, Historia..." />
             </div>
             <div>
               <label className="block text-sm font-medium text-stone-600 mb-1">
@@ -918,125 +1070,66 @@ function PaginasTab() {
               </label>
               <input type="text" value={form.slug}
                 onChange={e => { setSlugManual(true); setForm(f => ({ ...f, slug: e.target.value })); }}
-                className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold font-mono text-sm"
-                required placeholder="nosotros"
-              />
+                className={INPUT + ' font-mono'} required placeholder="nosotros" />
             </div>
           </div>
-
           <div>
             <label className="block text-sm font-medium text-stone-600 mb-1">Subtítulo (opcional)</label>
-            <input type="text" value={form.subtitle}
-              onChange={e => setForm(f => ({ ...f, subtitle: e.target.value }))}
-              placeholder="Frase corta que aparece bajo el título"
-              className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold"
-            />
+            <input type="text" value={form.subtitle} onChange={e => setForm(f => ({ ...f, subtitle: e.target.value }))}
+              placeholder="Frase corta que aparece bajo el título" className={INPUT} />
           </div>
-
-          <ImageUpload
-            value={form.cover_image ?? ''}
-            onChange={v => setForm(f => ({ ...f, cover_image: v }))}
-            folder="pages"
-            label="Imagen de portada (opcional)"
-          />
-
+          <ImageUpload value={form.cover_image ?? ''} onChange={v => setForm(f => ({ ...f, cover_image: v }))} folder="pages" label="Imagen de portada (opcional)" />
           <div>
             <label className="block text-sm font-medium text-stone-600 mb-1">Contenido *</label>
-            <RichTextEditor
-              value={form.content}
-              onChange={v => setForm(f => ({ ...f, content: v }))}
-              placeholder="Escribe el contenido de la página aquí..."
-            />
+            <RichTextEditor value={form.content} onChange={v => setForm(f => ({ ...f, content: v }))} placeholder="Escribe el contenido de la página aquí..." />
           </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-            <div className="flex items-center gap-3">
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" checked={form.published}
-                  onChange={e => setForm(f => ({ ...f, published: e.target.checked }))}
-                  className="sr-only peer" />
-                <div className="w-11 h-6 bg-stone-200 rounded-full peer peer-checked:bg-primary transition-colors" />
-                <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5" />
-              </label>
-              <span className="text-sm text-stone-600">Publicada</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" checked={form.show_in_nav}
-                  onChange={e => setForm(f => ({ ...f, show_in_nav: e.target.checked }))}
-                  className="sr-only peer" />
-                <div className="w-11 h-6 bg-stone-200 rounded-full peer peer-checked:bg-primary transition-colors" />
-                <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5" />
-              </label>
-              <span className="text-sm text-stone-600">Mostrar en menú</span>
-            </div>
+            {[
+              { label: 'Publicada', field: 'published' as const },
+              { label: 'Mostrar en menú', field: 'show_in_nav' as const },
+            ].map(({ label, field }) => (
+              <div key={field} className="flex items-center gap-3">
+                <TOGGLE checked={form[field] as boolean} onChange={v => setForm(f => ({ ...f, [field]: v }))} />
+                <span className="text-sm text-stone-600">{label}</span>
+              </div>
+            ))}
             <div>
               <label className="block text-xs text-stone-500 mb-1">Orden en menú</label>
               <input type="number" value={form.nav_order} min={0}
                 onChange={e => setForm(f => ({ ...f, nav_order: parseInt(e.target.value) || 0 }))}
-                className="w-full px-3 py-2 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm"
-              />
+                className="w-full px-3 py-2 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm" />
             </div>
           </div>
-
           {/* SEO colapsable */}
           <div className="border border-stone-200 rounded-xl overflow-hidden">
-            <button
-              type="button"
-              onClick={() => setShowSeo(v => !v)}
-              className="w-full flex items-center justify-between px-4 py-3 bg-stone-50 hover:bg-stone-100 transition-colors text-sm font-medium text-stone-600"
-            >
-              <span className="flex items-center gap-2">
-                <Globe size={16} className="text-stone-400" />
-                SEO — Meta etiquetas (opcional)
-              </span>
+            <button type="button" onClick={() => setShowSeo(v => !v)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-stone-50 hover:bg-stone-100 transition-colors text-sm font-medium text-stone-600">
+              <span className="flex items-center gap-2"><Globe size={16} className="text-stone-400" />SEO — Meta etiquetas (opcional)</span>
               <ChevronDown size={16} className={cn('transition-transform text-stone-400', showSeo && 'rotate-180')} />
             </button>
             {showSeo && (
               <div className="p-4 space-y-4 border-t border-stone-200">
                 <div>
-                  <label className="block text-xs text-stone-500 mb-1">
-                    Meta título <span className="text-stone-400">(por defecto usa el título de la página)</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={form.meta_title ?? ''}
-                    onChange={e => setForm(f => ({ ...f, meta_title: e.target.value }))}
-                    placeholder={form.title || 'Título para buscadores'}
-                    maxLength={60}
-                    className="w-full px-3 py-2 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm"
-                  />
+                  <label className="block text-xs text-stone-500 mb-1">Meta título <span className="text-stone-400">(por defecto usa el título)</span></label>
+                  <input type="text" value={form.meta_title ?? ''} onChange={e => setForm(f => ({ ...f, meta_title: e.target.value }))}
+                    placeholder={form.title || 'Título para buscadores'} maxLength={60} className={INPUT} />
                   <p className="text-xs text-stone-400 mt-1">{(form.meta_title ?? '').length}/60 caracteres</p>
                 </div>
                 <div>
                   <label className="block text-xs text-stone-500 mb-1">Meta descripción</label>
-                  <textarea
-                    value={form.meta_description ?? ''}
-                    onChange={e => setForm(f => ({ ...f, meta_description: e.target.value }))}
-                    placeholder="Descripción breve para Google (155 caracteres aprox.)"
-                    maxLength={160}
-                    rows={2}
-                    className="w-full px-3 py-2 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm resize-none"
-                  />
+                  <textarea value={form.meta_description ?? ''} onChange={e => setForm(f => ({ ...f, meta_description: e.target.value }))}
+                    placeholder="Descripción breve para Google (155 caracteres aprox.)" maxLength={160} rows={2}
+                    className={INPUT + ' resize-none'} />
                   <p className="text-xs text-stone-400 mt-1">{(form.meta_description ?? '').length}/160 caracteres</p>
                 </div>
-                <ImageUpload
-                  value={form.og_image ?? ''}
-                  onChange={v => setForm(f => ({ ...f, og_image: v }))}
-                  folder="seo"
-                  label="Imagen Open Graph (para compartir en redes)"
-                />
+                <ImageUpload value={form.og_image ?? ''} onChange={v => setForm(f => ({ ...f, og_image: v }))} folder="seo" label="Imagen Open Graph" />
               </div>
             )}
           </div>
-
           <div className="flex gap-3 pt-2 border-t border-stone-100">
-            <button type="button" onClick={() => setCreating(false)} className="flex-1 btn-secondary">
-              Cancelar
-            </button>
+            <button type="button" onClick={() => setCreating(false)} className="flex-1 btn-secondary">Cancelar</button>
             <button type="submit" disabled={saving} className="flex-1 btn-primary flex items-center justify-center gap-2 disabled:opacity-60">
-              <Save size={16} />
-              {saving ? 'Guardando...' : (editing ? 'Actualizar página' : 'Crear página')}
+              <Save size={16} />{saving ? 'Guardando...' : (editing ? 'Actualizar página' : 'Crear página')}
             </button>
           </div>
         </form>
@@ -1049,21 +1142,12 @@ function PaginasTab() {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-serif text-xl text-primary">Páginas del sitio</h3>
-          <p className="text-sm text-stone-500 mt-1">
-            Crea páginas como "Nosotros", "Historia", "Visión y Misión".<br />
-            Las páginas con <strong>Mostrar en menú</strong> aparecen automáticamente en la navegación.
-          </p>
+          <p className="text-sm text-stone-500 mt-1">Crea páginas como "Nosotros", "Historia", "Visión y Misión". Las páginas con <strong>Mostrar en menú</strong> aparecen automáticamente en la navegación.</p>
         </div>
-        <button onClick={openCreate} className="flex items-center gap-2 btn-primary">
-          <Plus size={18} />
-          Nueva página
-        </button>
+        <button onClick={openCreate} className="flex items-center gap-2 btn-primary"><Plus size={18} />Nueva página</button>
       </div>
-
       {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
-        </div>
+        <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" /></div>
       ) : pages.length === 0 ? (
         <div className="bg-white rounded-2xl shadow-md p-12 text-center">
           <PanelLeft size={48} className="mx-auto text-stone-300 mb-4" />
@@ -1076,49 +1160,171 @@ function PaginasTab() {
           {pages.map((page, i) => (
             <motion.div key={page.id}
               initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-              draggable
-              onDragStart={() => handleDragStart(i)}
-              onDragOver={(e) => handleDragOver(e, i)}
-              onDragLeave={() => setDragOver(null)}
-              onDrop={() => handleDrop(i)}
-              className={cn(
-                'bg-white rounded-2xl shadow-md p-5 flex items-center gap-4 transition-all',
-                dragOver === i && 'ring-2 ring-gold scale-[1.01]'
-              )}
-            >
+              draggable onDragStart={() => handleDragStart(i)} onDragOver={e => handleDragOver(e, i)}
+              onDragLeave={() => setDragOver(null)} onDrop={() => handleDrop(i)}
+              className={cn('bg-white rounded-2xl shadow-md p-5 flex items-center gap-4 transition-all', dragOver === i && 'ring-2 ring-gold scale-[1.01]')}>
               <GripVertical size={18} className="text-stone-300 flex-shrink-0 cursor-grab active:cursor-grabbing" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h4 className="font-medium text-stone-800">{page.title}</h4>
-                  {page.published ? (
-                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Publicada</span>
-                  ) : (
-                    <span className="text-xs bg-stone-100 text-stone-500 px-2 py-0.5 rounded-full font-medium">Borrador</span>
-                  )}
-                  {page.show_in_nav && (
-                    <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">En menú #{page.nav_order}</span>
-                  )}
+                  <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium', page.published ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-500')}>
+                    {page.published ? 'Publicada' : 'Borrador'}
+                  </span>
+                  {page.show_in_nav && <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">En menú #{page.nav_order}</span>}
                 </div>
                 <p className="text-sm text-stone-400 font-mono mt-0.5">/p/{page.slug}</p>
                 {page.subtitle && <p className="text-sm text-stone-500 mt-1 truncate">{page.subtitle}</p>}
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <a href={`/p/${page.slug}`} target="_blank" rel="noopener noreferrer"
-                  className="p-2 text-stone-400 hover:text-primary hover:bg-stone-50 rounded-lg transition-colors">
-                  <ExternalLink size={16} />
-                </a>
-                <button onClick={() => openEdit(page)}
-                  className="p-2 text-stone-400 hover:text-primary hover:bg-stone-50 rounded-lg transition-colors">
-                  <Eye size={16} />
-                </button>
-                <button onClick={() => handleDelete(page.id)}
-                  className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                  <Trash size={16} />
-                </button>
+                  className="p-2 text-stone-400 hover:text-primary hover:bg-stone-50 rounded-lg transition-colors"><ExternalLink size={16} /></a>
+                <button onClick={() => openEdit(page)} className="p-2 text-stone-400 hover:text-primary hover:bg-stone-50 rounded-lg transition-colors"><Eye size={16} /></button>
+                <button onClick={() => handleDelete(page.id)} className="p-2 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"><Trash size={16} /></button>
               </div>
             </motion.div>
           ))}
         </div>
+      )}
+    </div>
+  );
+}
+
+// ── USUARIOS TAB ───────────────────────────────────────────────
+function UsuariosTab() {
+  const { users, loading, updateUserRole, updateUserStatus } = useUsers();
+  const { profile: currentProfile, canManageUsers } = useAuth();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  const filtered = users.filter(u => {
+    const matchSearch = u.display_name.toLowerCase().includes(searchTerm.toLowerCase()) || u.email.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchSearch && (roleFilter === 'all' || u.role === roleFilter) && (statusFilter === 'all' || u.status === statusFilter);
+  });
+
+  const handleRoleChange = async (user: UserProfile, role: UserRole) => {
+    if (!canManageUsers || user.id === currentProfile?.id) return;
+    await updateUserRole(user.id, role);
+  };
+  const handleStatusChange = async (user: UserProfile, status: 'active' | 'inactive') => {
+    if (!canManageUsers || user.id === currentProfile?.id) return;
+    await updateUserStatus(user.id, status);
+  };
+
+  return (
+    <div className="bg-white rounded-2xl shadow-md p-6">
+      <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
+        <div className="relative flex-1 max-w-md">
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+          <input type="text" placeholder="Buscar por nombre o email..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold" />
+        </div>
+        <div className="flex items-center gap-2">
+          <Filter size={18} className="text-stone-400" />
+          <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)}
+            className="px-3 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold bg-white text-sm">
+            <option value="all">Todos los roles</option>
+            <option value="admin">Admin</option>
+            <option value="pastor">Pastor</option>
+            <option value="leader">Líder</option>
+            <option value="member">Miembro</option>
+          </select>
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+            className="px-3 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold bg-white text-sm">
+            <option value="all">Todos los estados</option>
+            <option value="active">Activos</option>
+            <option value="inactive">Inactivos</option>
+          </select>
+        </div>
+      </div>
+      {loading ? (
+        <div className="flex items-center justify-center py-16">
+          <div className="animate-spin rounded-full h-10 w-10 border-4 border-primary border-t-transparent" />
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-stone-200">
+                {['Usuario', 'Contacto', 'Rol', 'Estado', 'Ingreso'].map(h => (
+                  <th key={h} className="text-left py-4 px-4 text-sm font-semibold text-stone-600">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((user, i) => {
+                const isSelf = user.id === currentProfile?.id;
+                return (
+                  <motion.tr key={user.id}
+                    initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
+                    className="border-b border-stone-100 hover:bg-stone-50 transition-colors">
+                    <td className="py-4 px-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                          {user.display_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-medium text-stone-800">{user.display_name}{isSelf && <span className="ml-2 text-xs text-stone-400">(tú)</span>}</p>
+                          {user.address && <p className="text-xs text-stone-400">{user.address}</p>}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="space-y-1">
+                        <p className="flex items-center gap-2 text-sm text-stone-600"><Mail size={13} className="text-stone-400" />{user.email}</p>
+                        {user.phone && <p className="flex items-center gap-2 text-sm text-stone-600"><Phone size={13} className="text-stone-400" />{user.phone}</p>}
+                      </div>
+                    </td>
+                    <td className="py-4 px-4">
+                      {canManageUsers && !isSelf ? (
+                        <div className="relative">
+                          <select value={user.role} onChange={e => handleRoleChange(user, e.target.value as UserRole)}
+                            className={cn('pl-3 pr-7 py-1.5 rounded-full text-sm font-medium border-0 appearance-none cursor-pointer focus:ring-2 focus:ring-gold focus:outline-none', roleColors[user.role].bg, roleColors[user.role].text)}>
+                            {Object.entries(roleLabels).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                          </select>
+                          <ChevronDown size={12} className={cn('absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none', roleColors[user.role].text)} />
+                        </div>
+                      ) : (
+                        <span className={cn('px-3 py-1 rounded-full text-sm font-medium', roleColors[user.role].bg, roleColors[user.role].text)}>{roleLabels[user.role]}</span>
+                      )}
+                    </td>
+                    <td className="py-4 px-4">
+                      {canManageUsers && !isSelf ? (
+                        <div className="relative">
+                          <select value={user.status} onChange={e => handleStatusChange(user, e.target.value as 'active' | 'inactive')}
+                            className={cn('pl-3 pr-7 py-1.5 rounded-full text-sm font-medium border-0 appearance-none cursor-pointer focus:ring-2 focus:ring-gold focus:outline-none', statusColors[user.status].bg, statusColors[user.status].text)}>
+                            <option value="active">Activo</option>
+                            <option value="inactive">Inactivo</option>
+                          </select>
+                          <ChevronDown size={12} className={cn('absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none', statusColors[user.status].text)} />
+                        </div>
+                      ) : (
+                        <span className={cn('px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 w-fit', statusColors[user.status].bg, statusColors[user.status].text)}>
+                          <UserCheck size={13} />{user.status === 'active' ? 'Activo' : 'Inactivo'}
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex items-center gap-2 text-sm text-stone-500">
+                        <Calendar size={13} />
+                        {new Date(user.join_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </div>
+                    </td>
+                  </motion.tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {filtered.length === 0 && (
+            <div className="text-center py-12">
+              <Users size={48} className="mx-auto text-stone-300 mb-4" />
+              <p className="text-stone-500">No se encontraron usuarios</p>
+            </div>
+          )}
+        </div>
+      )}
+      {!canManageUsers && (
+        <p className="mt-4 text-sm text-stone-400 text-center">Solo pastores y administradores pueden cambiar roles y estados.</p>
       )}
     </div>
   );
@@ -1131,7 +1337,9 @@ export function DashboardPage() {
   const [activeTab, setActiveTab] = useState<TabId>('resumen');
 
   const tabs: { id: TabId; label: string; icon: typeof BarChart3; badge?: number }[] = [
-    { id: 'resumen', label: 'Resumen', icon: BarChart3, badge: unread },
+    { id: 'resumen', label: 'Resumen', icon: BarChart3 },
+    { id: 'inicio', label: 'Inicio', icon: Home },
+    { id: 'mensajes', label: 'Mensajes', icon: MessageSquare, badge: unread },
     { id: 'sitio', label: 'Sitio Web', icon: Settings },
     { id: 'paginas', label: 'Páginas', icon: PanelLeft },
     { id: 'usuarios', label: 'Usuarios', icon: Users },
@@ -1139,36 +1347,28 @@ export function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-stone-50">
-      <section className="bg-gradient-to-br from-primary to-primary-700 text-white py-16">
+      <section className="bg-gradient-to-br from-primary to-primary/80 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-4">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-4">
             <div className="w-16 h-16 bg-gold rounded-full flex items-center justify-center">
               <Shield size={32} className="text-primary" />
             </div>
             <div>
               <h1 className="font-serif text-4xl font-bold">Dashboard</h1>
-              <p className="text-stone-300">
-                {currentProfile?.display_name} · {roleLabels[currentProfile?.role ?? 'member']}
-              </p>
+              <p className="text-stone-300">{currentProfile?.display_name} · {roleLabels[currentProfile?.role ?? 'member']}</p>
             </div>
           </motion.div>
 
-          <div className="flex gap-1 mt-8 bg-white/10 rounded-xl p-1 w-fit">
+          <div className="flex gap-1 mt-8 bg-white/10 rounded-xl p-1 w-fit overflow-x-auto max-w-full">
             {tabs.map(({ id, label, icon: Icon, badge }) => (
               <button key={id} onClick={() => setActiveTab(id)}
-                className={cn(
-                  'flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all relative',
-                  activeTab === id
-                    ? 'bg-white text-primary shadow-md'
-                    : 'text-white/80 hover:text-white hover:bg-white/10'
+                className={cn('flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all relative whitespace-nowrap flex-shrink-0',
+                  activeTab === id ? 'bg-white text-primary shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
                 )}>
-                <Icon size={16} />
+                <Icon size={15} />
                 {label}
                 {badge && badge > 0 ? (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                    {badge}
-                  </span>
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-4 h-4 rounded-full flex items-center justify-center">{badge}</span>
                 ) : null}
               </button>
             ))}
@@ -1180,11 +1380,11 @@ export function DashboardPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimatePresence mode="wait">
             <motion.div key={activeTab}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.2 }}>
+              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.2 }}>
               {activeTab === 'resumen' && <ResumenTab />}
+              {activeTab === 'inicio' && <InicioTab />}
+              {activeTab === 'mensajes' && <MensajesTab />}
               {activeTab === 'sitio' && <SitioTab />}
               {activeTab === 'paginas' && <PaginasTab />}
               {activeTab === 'usuarios' && <UsuariosTab />}
