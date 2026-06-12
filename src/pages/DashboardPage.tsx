@@ -7,7 +7,7 @@ import {
   Inbox, Eye, CheckCheck, Trash, ImageIcon, PanelLeft,
   ExternalLink, GripVertical, MessageSquare, Home,
   Type, Columns, Zap, TrendingUp, AlignCenter, AlignLeft,
-  Palette,
+  Palette, X, AlertCircle, User, Lock,
 } from 'lucide-react';
 import { useUsers } from '../hooks/useUsers';
 import { useAuth } from '../contexts/AuthContext';
@@ -1466,18 +1466,48 @@ function PaginasTab() {
   );
 }
 
+const userFormErrors: Record<string, string> = {
+  'User already registered': 'Este email ya está registrado.',
+  'Password should be at least 6 characters': 'La contraseña debe tener al menos 6 caracteres.',
+  'Unable to validate email address: invalid format': 'El formato del email no es válido.',
+};
+
+function parseUserFormError(msg: string): string {
+  return userFormErrors[msg] ?? 'Ocurrió un error al crear el usuario. Intenta de nuevo.';
+}
+
+const emptyUserForm = () => ({
+  display_name: '',
+  email: '',
+  password: '',
+  role: 'member' as UserRole,
+  status: 'active' as 'active' | 'inactive',
+  phone: '',
+  address: '',
+});
+
 // ── USUARIOS TAB ───────────────────────────────────────────────
 function UsuariosTab() {
-  const { users, loading, updateUserRole, updateUserStatus } = useUsers();
+  const { users, loading, updateUserRole, updateUserStatus, createUser } = useUsers();
   const { profile: currentProfile, canManageUsers } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [form, setForm] = useState(emptyUserForm);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
 
   const filtered = users.filter(u => {
     const matchSearch = u.display_name.toLowerCase().includes(searchTerm.toLowerCase()) || u.email.toLowerCase().includes(searchTerm.toLowerCase());
     return matchSearch && (roleFilter === 'all' || u.role === roleFilter) && (statusFilter === 'all' || u.status === statusFilter);
   });
+
+  const openCreateModal = () => {
+    setForm(emptyUserForm());
+    setFormError('');
+    setModalOpen(true);
+  };
 
   const handleRoleChange = async (user: UserProfile, role: UserRole) => {
     if (!canManageUsers || user.id === currentProfile?.id) return;
@@ -1488,6 +1518,34 @@ function UsuariosTab() {
     await updateUserStatus(user.id, status);
   };
 
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError('');
+    if (!form.display_name.trim()) {
+      setFormError('El nombre es requerido.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await createUser({
+        email: form.email.trim(),
+        password: form.password,
+        display_name: form.display_name.trim(),
+        role: form.role,
+        status: form.status,
+        phone: form.phone.trim() || undefined,
+        address: form.address.trim() || undefined,
+      });
+      setModalOpen(false);
+      setForm(emptyUserForm());
+    } catch (err: unknown) {
+      const msg = (err as { message?: string }).message ?? '';
+      setFormError(parseUserFormError(msg));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-md p-6">
       <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
@@ -1496,7 +1554,7 @@ function UsuariosTab() {
           <input type="text" placeholder="Buscar por nombre o email..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold" />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Filter size={18} className="text-stone-400" />
           <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)}
             className="px-3 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold bg-white text-sm">
@@ -1512,6 +1570,11 @@ function UsuariosTab() {
             <option value="active">Activos</option>
             <option value="inactive">Inactivos</option>
           </select>
+          {canManageUsers && (
+            <button onClick={openCreateModal} className="flex items-center gap-2 btn-primary whitespace-nowrap ml-auto md:ml-0">
+              <Plus size={18} /> Agregar usuario
+            </button>
+          )}
         </div>
       </div>
       {loading ? (
@@ -1603,6 +1666,151 @@ function UsuariosTab() {
       {!canManageUsers && (
         <p className="mt-4 text-sm text-stone-400 text-center">Solo pastores y administradores pueden cambiar roles y estados.</p>
       )}
+
+      <AnimatePresence>
+        {modalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+            onClick={() => setModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-8"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="font-serif text-2xl text-primary">Registrar usuario</h2>
+                <button onClick={() => setModalOpen(false)} className="p-2 hover:bg-stone-100 rounded-lg">
+                  <X size={24} className="text-stone-500" />
+                </button>
+              </div>
+
+              <p className="text-stone-500 text-sm mb-6">
+                Crea una cuenta para un nuevo miembro. El usuario podrá iniciar sesión con el email y contraseña que definas.
+              </p>
+
+              {formError && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 mb-6 text-sm"
+                >
+                  <AlertCircle size={18} className="flex-shrink-0" />
+                  {formError}
+                </motion.div>
+              )}
+
+              <form onSubmit={handleCreateUser} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-stone-600 mb-1">Nombre completo *</label>
+                  <div className="relative">
+                    <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                    <input
+                      type="text"
+                      value={form.display_name}
+                      onChange={e => setForm({ ...form, display_name: e.target.value })}
+                      placeholder="Juan Pérez García"
+                      className="w-full pl-10 pr-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-stone-600 mb-1">Correo electrónico *</label>
+                  <div className="relative">
+                    <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                    <input
+                      type="email"
+                      value={form.email}
+                      onChange={e => setForm({ ...form, email: e.target.value })}
+                      placeholder="correo@ejemplo.com"
+                      className="w-full pl-10 pr-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-stone-600 mb-1">Contraseña *</label>
+                  <div className="relative">
+                    <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                    <input
+                      type="password"
+                      value={form.password}
+                      onChange={e => setForm({ ...form, password: e.target.value })}
+                      placeholder="Mínimo 6 caracteres"
+                      className="w-full pl-10 pr-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm"
+                      required
+                      minLength={6}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-stone-600 mb-1">Rol</label>
+                    <select
+                      value={form.role}
+                      onChange={e => setForm({ ...form, role: e.target.value as UserRole })}
+                      className="w-full px-3 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold bg-white text-sm"
+                    >
+                      {Object.entries(roleLabels).map(([v, l]) => (
+                        <option key={v} value={v}>{l}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-stone-600 mb-1">Estado</label>
+                    <select
+                      value={form.status}
+                      onChange={e => setForm({ ...form, status: e.target.value as 'active' | 'inactive' })}
+                      className="w-full px-3 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold bg-white text-sm"
+                    >
+                      <option value="active">Activo</option>
+                      <option value="inactive">Inactivo</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-stone-600 mb-1">Teléfono (opcional)</label>
+                  <div className="relative">
+                    <Phone size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                    <input
+                      type="tel"
+                      value={form.phone}
+                      onChange={e => setForm({ ...form, phone: e.target.value })}
+                      placeholder="809-000-0000"
+                      className="w-full pl-10 pr-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-stone-600 mb-1">Dirección (opcional)</label>
+                  <input
+                    type="text"
+                    value={form.address}
+                    onChange={e => setForm({ ...form, address: e.target.value })}
+                    placeholder="Ciudad, provincia"
+                    className={INPUT}
+                  />
+                </div>
+
+                <div className="flex gap-4 pt-2">
+                  <button type="button" onClick={() => setModalOpen(false)} className="flex-1 btn-secondary">
+                    Cancelar
+                  </button>
+                  <button type="submit" disabled={saving} className="flex-1 btn-primary disabled:opacity-60">
+                    {saving ? 'Registrando...' : 'Registrar usuario'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

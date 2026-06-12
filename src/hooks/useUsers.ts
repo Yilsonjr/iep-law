@@ -36,5 +36,37 @@ export function useUsers() {
     if (error) throw error;
   };
 
-  return { users, loading, updateUserRole, updateUserStatus, refetch: fetch };
+  const createUser = async (input: {
+    email: string;
+    password: string;
+    display_name: string;
+    role: UserRole;
+    status?: 'active' | 'inactive';
+    phone?: string;
+    address?: string;
+  }) => {
+    const { email, password, display_name, role, status = 'active', phone, address } = input;
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { display_name } },
+    });
+    if (error) throw error;
+    if (!data.user) throw new Error('No se pudo crear el usuario.');
+
+    const updates: Record<string, string> = { role, status };
+    if (phone?.trim()) updates.phone = phone.trim();
+    if (address?.trim()) updates.address = address.trim();
+
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', data.user.id);
+    if (profileError) throw profileError;
+
+    await fetch();
+  };
+
+  return { users, loading, updateUserRole, updateUserStatus, createUser, refetch: fetch };
 }
