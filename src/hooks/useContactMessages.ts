@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../config/supabase';
 import type { ContactMessage } from '../types';
 
 export function useContactMessages() {
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [loading, setLoading] = useState(true);
+  const channelName = useRef(`contact-messages-${Math.random().toString(36).slice(2)}`);
 
   const fetch = async () => {
     const { data } = await supabase
@@ -18,7 +19,7 @@ export function useContactMessages() {
   useEffect(() => {
     fetch();
     const channel = supabase
-      .channel('contact-messages-changes')
+      .channel(channelName.current)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'contact_messages' }, fetch)
       .subscribe();
     return () => { supabase.removeChannel(channel); };
