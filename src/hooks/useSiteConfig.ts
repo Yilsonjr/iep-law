@@ -155,6 +155,7 @@ export function useSiteConfig() {
       .from('site_config')
       .upsert({ key, value, updated_at: new Date().toISOString() });
     if (error) throw error;
+    await fetchConfig();
   };
 
   return { config, loading, updateSection };

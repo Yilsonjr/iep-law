@@ -26,6 +26,7 @@ export function usePages(publishedOnly = false) {
   const addPage = async (page: Omit<Page, 'id' | 'created_at' | 'updated_at'>) => {
     const { error } = await supabase.from('pages').insert(page);
     if (error) throw error;
+    await fetch();
   };
 
   const updatePage = async (id: string, data: Partial<Omit<Page, 'id' | 'created_at'>>) => {
@@ -34,11 +35,13 @@ export function usePages(publishedOnly = false) {
       .update({ ...data, updated_at: new Date().toISOString() })
       .eq('id', id);
     if (error) throw error;
+    await fetch();
   };
 
   const deletePage = async (id: string) => {
     const { error } = await supabase.from('pages').delete().eq('id', id);
     if (error) throw error;
+    await fetch();
   };
 
   const getBySlug = async (slug: string): Promise<Page | null> => {

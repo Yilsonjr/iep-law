@@ -96,6 +96,7 @@ export function useLiveStream() {
       .from('live_stream')
       .upsert({ id: 1, ...config, ...data, updated_at: new Date().toISOString() });
     if (error) throw error;
+    await fetchConfig();
   };
 
   return { config, loading, updateConfig };

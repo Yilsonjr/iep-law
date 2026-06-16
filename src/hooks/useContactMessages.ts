@@ -28,14 +28,17 @@ export function useContactMessages() {
   const sendMessage = async (data: Omit<ContactMessage, 'id' | 'read' | 'created_at'>) => {
     const { error } = await supabase.from('contact_messages').insert({ ...data, read: false });
     if (error) throw error;
+    await fetch();
   };
 
   const markRead = async (id: string) => {
     await supabase.from('contact_messages').update({ read: true }).eq('id', id);
+    await fetch();
   };
 
   const deleteMessage = async (id: string) => {
     await supabase.from('contact_messages').delete().eq('id', id);
+    await fetch();
   };
 
   const unread = messages.filter(m => !m.read).length;
