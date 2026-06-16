@@ -30,6 +30,7 @@ export function usePosts(showAll = false) {
   const addPost = async (post: Omit<Post, 'id' | 'created_at' | 'updated_at'>): Promise<Post> => {
     const { data, error } = await supabase.from('posts').insert(post).select().single();
     if (error) throw error;
+    await fetch();
     return data as Post;
   };
 
@@ -39,11 +40,13 @@ export function usePosts(showAll = false) {
       .update({ ...data, updated_at: new Date().toISOString() })
       .eq('id', id);
     if (error) throw error;
+    await fetch();
   };
 
   const deletePost = async (id: string) => {
     const { error } = await supabase.from('posts').delete().eq('id', id);
     if (error) throw error;
+    await fetch();
   };
 
   const approvePost = async (id: string) => {

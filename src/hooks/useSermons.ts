@@ -28,16 +28,19 @@ export function useSermons(publishedOnly = true) {
   const addSermon = async (sermon: Omit<Sermon, 'id' | 'created_at'>) => {
     const { error } = await supabase.from('sermons').insert(sermon);
     if (error) throw error;
+    await fetch();
   };
 
   const updateSermon = async (id: string, data: Partial<Omit<Sermon, 'id' | 'created_at'>>) => {
     const { error } = await supabase.from('sermons').update(data).eq('id', id);
     if (error) throw error;
+    await fetch();
   };
 
   const deleteSermon = async (id: string) => {
     const { error } = await supabase.from('sermons').delete().eq('id', id);
     if (error) throw error;
+    await fetch();
   };
 
   return { sermons, loading, addSermon, updateSermon, deleteSermon, refetch: fetch };
