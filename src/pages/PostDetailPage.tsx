@@ -18,7 +18,7 @@ const categoryConfig: Record<PostCategory, { label: string; color: string; bg: s
 export function PostDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { profile, canEditContent } = useAuth();
+  const { canEditContent } = useAuth();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
