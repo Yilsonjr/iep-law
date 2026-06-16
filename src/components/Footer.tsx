@@ -424,10 +424,10 @@ export function Footer({ onContact }: FooterProps) {
               <span style={{ color: `${C.body}40` }}>·</span>
               <Link to="/p/terminos" className="hover:text-white transition-colors">Términos</Link>
             </div>
-            <p style={{ fontSize: '11px' }}>
+            <p style={{ fontSize: '12px', color: C.body }}>
               Desarrollado por{' '}
               <a href="https://portafolio-yilson.vercel.app/" target="_blank" rel="noopener noreferrer"
-                className="hover:text-white transition-colors" style={{ color: `${C.body}80` }}>
+                className="font-semibold underline underline-offset-2 hover:text-white transition-colors" style={{ color: C.link }}>
                 YilsonDev
               </a>
             </p>
