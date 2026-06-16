@@ -426,7 +426,7 @@ export function Footer({ onContact }: FooterProps) {
             </div>
             <p style={{ fontSize: '11px' }}>
               Desarrollado por{' '}
-              <a href="https://portafolio-yilson.vercel.app/iglesias" target="_blank" rel="noopener noreferrer"
+              <a href="https://portafolio-yilson.vercel.app/" target="_blank" rel="noopener noreferrer"
                 className="hover:text-white transition-colors" style={{ color: `${C.body}80` }}>
                 YilsonDev
               </a>

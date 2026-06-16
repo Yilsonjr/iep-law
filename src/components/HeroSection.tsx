@@ -28,7 +28,7 @@ export function HeroSection() {
   // ── SLIDER MODE ────────────────────────────────────────────
   if (hero.mode === 'slider' && hero.slides.length > 0) {
     return (
-      <section className="relative h-[600px] overflow-hidden">
+      <section className="relative h-[600px] overflow-hidden bg-black">
         {hero.slides.map((src, i) => (
           <div
             key={i}
@@ -36,7 +36,7 @@ export function HeroSection() {
               'absolute inset-0 transition-opacity duration-1000',
               i === slide ? 'opacity-100' : 'opacity-0'
             )}
-            style={{ backgroundImage: `url(${src})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+            style={{ backgroundImage: `url(${src})`, backgroundSize: 'contain', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
           />
         ))}
         <div className="absolute inset-0 bg-black" style={{ opacity: hero.overlay }} />
