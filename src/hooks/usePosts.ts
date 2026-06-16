@@ -27,9 +27,10 @@ export function usePosts(showAll = false) {
     return () => { supabase.removeChannel(channel); };
   }, [showAll]);
 
-  const addPost = async (post: Omit<Post, 'id' | 'created_at' | 'updated_at'>) => {
-    const { error } = await supabase.from('posts').insert(post);
+  const addPost = async (post: Omit<Post, 'id' | 'created_at' | 'updated_at'>): Promise<Post> => {
+    const { data, error } = await supabase.from('posts').insert(post).select().single();
     if (error) throw error;
+    return data as Post;
   };
 
   const updatePost = async (id: string, data: Partial<Omit<Post, 'id' | 'created_at'>>) => {

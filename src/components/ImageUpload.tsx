@@ -15,7 +15,14 @@ interface ImageUploadProps {
 export function ImageUpload({ value, onChange, folder = 'general', label = 'Imagen', className, variant = 'banner' }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [imgError, setImgError] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Reset imgError when URL changes
+  const handleUrlChange = (url: string) => {
+    setImgError(false);
+    onChange(url);
+  };
 
   const handleFile = async (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -82,7 +89,21 @@ export function ImageUpload({ value, onChange, folder = 'general', label = 'Imag
           </div>
         ) : (
           <div className="relative group rounded-xl overflow-hidden border border-stone-200">
-            <img src={value} alt="preview" className="w-full h-40 object-cover" />
+            {imgError ? (
+              <div className="w-full h-40 bg-stone-100 flex flex-col items-center justify-center gap-2">
+                <ImageIcon size={28} className="text-stone-400" />
+                <p className="text-xs text-stone-500 text-center px-4">
+                  No se pudo previsualizar.<br />La URL puede tener restricciones de acceso externo.
+                </p>
+              </div>
+            ) : (
+              <img
+                src={value}
+                alt="preview"
+                className="w-full h-40 object-cover"
+                onError={() => setImgError(true)}
+              />
+            )}
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
               <button
                 type="button"
@@ -93,7 +114,7 @@ export function ImageUpload({ value, onChange, folder = 'general', label = 'Imag
               </button>
               <button
                 type="button"
-                onClick={() => onChange('')}
+                onClick={() => { onChange(''); setImgError(false); }}
                 className="bg-red-500 text-white p-1.5 rounded-lg hover:bg-red-600"
               >
                 <X size={14} />
@@ -125,11 +146,11 @@ export function ImageUpload({ value, onChange, folder = 'general', label = 'Imag
 
       {/* También acepta URL manualmente */}
       <div className="mt-2 flex items-center gap-2">
-        <ImageIcon size={14} className="text-stone-400 flex-shrink-0" />
+        <ImageIcon size={14} className="text-stone-400 shrink-0" />
         <input
           type="url"
           value={value}
-          onChange={e => onChange(e.target.value)}
+          onChange={e => handleUrlChange(e.target.value)}
           placeholder="O pega una URL de imagen..."
           className="flex-1 text-xs px-3 py-2 border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-gold"
         />

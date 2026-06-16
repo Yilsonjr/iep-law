@@ -2,6 +2,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
+import { useMemo } from 'react';
 import { Bold, Italic, List, ListOrdered, Heading2, Heading3, Link as LinkIcon, Undo, Redo, Quote } from 'lucide-react';
 import { cn } from '../utils';
 
@@ -36,12 +37,14 @@ function ToolbarBtn({
 }
 
 export function RichTextEditor({ value, onChange, placeholder = 'Escribe aquí...', className }: RichTextEditorProps) {
+  const extensions = useMemo(() => [
+    StarterKit,
+    Link.configure({ openOnClick: false }),
+    Placeholder.configure({ placeholder }),
+  ], [placeholder]);
+
   const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Link.configure({ openOnClick: false }),
-      Placeholder.configure({ placeholder }),
-    ],
+    extensions,
     content: value,
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
   });

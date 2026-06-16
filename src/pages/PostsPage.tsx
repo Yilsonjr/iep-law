@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, Plus, X, Edit2, Trash2, Check,
-  Clock, Filter, ChevronDown
+  Clock, Filter, ChevronDown, CheckCircle, AlertCircle,
 } from 'lucide-react';
 import { usePosts } from '../hooks/usePosts';
 import { useAuth } from '../contexts/AuthContext';
@@ -43,6 +43,16 @@ export function PostsPage() {
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  useEffect(() => {
+    return () => { setToast(null); };
+  }, []);
 
   // Los miembros también pueden crear posts (quedan pendientes)
   const canPost = !!user;
@@ -88,10 +98,16 @@ export function PostsPage() {
     try {
       if (editingPost) {
         await updatePost(editingPost.id, form);
+        setModalOpen(false);
+        showToast('¡Publicación actualizada exitosamente!');
       } else {
-        await addPost(form);
+        const created = await addPost(form);
+        setModalOpen(false);
+        showToast(form.published ? '¡Publicación creada y publicada!' : '¡Enviada para revisión por un líder!');
+        setSelectedPost(created);
       }
-      setModalOpen(false);
+    } catch {
+      showToast('Error al guardar. Intenta nuevamente.', 'error');
     } finally {
       setSaving(false);
     }
@@ -289,6 +305,25 @@ export function PostsPage() {
                 <button onClick={() => setSelectedPost(null)} className="mt-8 btn-primary w-full">Cerrar</button>
               </div>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Toast */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 40, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-60 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-white text-sm font-medium ${
+              toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'
+            }`}
+          >
+            {toast.type === 'success'
+              ? <CheckCircle size={18} />
+              : <AlertCircle size={18} />}
+            {toast.msg}
           </motion.div>
         )}
       </AnimatePresence>
