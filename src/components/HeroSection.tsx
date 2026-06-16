@@ -28,7 +28,7 @@ export function HeroSection() {
   // ── SLIDER MODE ────────────────────────────────────────────
   if (hero.mode === 'slider' && hero.slides.length > 0) {
     return (
-      <section className="relative h-[600px] overflow-hidden bg-black">
+      <section className="relative h-screen overflow-hidden bg-black">
         {hero.slides.map((src, i) => (
           <div
             key={i}
