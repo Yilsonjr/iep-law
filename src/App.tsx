@@ -13,6 +13,7 @@ import { EventsPage } from './pages/EventsPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { LoginPage } from './pages/LoginPage';
 import { PostsPage } from './pages/PostsPage';
+import { PostDetailPage } from './pages/PostDetailPage';
 import { DynamicPage } from './pages/DynamicPage';
 import { useSeoMeta } from './hooks/useSeoMeta';
 
@@ -42,6 +43,7 @@ function AppInner() {
           <Route path="live" element={<LivePage />} />
           <Route path="events" element={<EventsPage />} />
           <Route path="posts" element={<PostsPage />} />
+          <Route path="posts/:id" element={<PostDetailPage />} />
           <Route path="p/:slug" element={<DynamicPage />} />
           <Route
             path="dashboard"

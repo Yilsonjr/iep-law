@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, Plus, X, Edit2, Trash2, Check,
-  Clock, Filter, ChevronDown, CheckCircle, AlertCircle,
+  Filter, ChevronDown, CheckCircle, AlertCircle,
 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { usePosts } from '../hooks/usePosts';
 import { useAuth } from '../contexts/AuthContext';
 import { ImageUpload } from '../components/ImageUpload';
@@ -31,6 +32,7 @@ const emptyForm = (): Omit<Post, 'id' | 'created_at' | 'updated_at'> => ({
 });
 
 export function PostsPage() {
+  const navigate = useNavigate();
   const { profile, user, canCreateContent, canEditAnyContent, canEditContent } = useAuth();
 
   // Líderes/pastores ven todos los posts (incluyendo pendientes)
@@ -38,7 +40,6 @@ export function PostsPage() {
   const { posts, loading, addPost, updatePost, deletePost, approvePost } = usePosts(showAll);
 
   const [filterCat, setFilterCat] = useState<string>('all');
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [form, setForm] = useState(emptyForm());
@@ -104,7 +105,7 @@ export function PostsPage() {
         const created = await addPost(form);
         setModalOpen(false);
         showToast(form.published ? '¡Publicación creada y publicada!' : '¡Enviada para revisión por un líder!');
-        setSelectedPost(created);
+        if (form.published) navigate(`/posts/${created.id}`);
       }
     } catch {
       showToast('Error al guardar. Intenta nuevamente.', 'error');
@@ -116,7 +117,6 @@ export function PostsPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('¿Eliminar este post?')) return;
     await deletePost(id);
-    if (selectedPost?.id === id) setSelectedPost(null);
   };
 
   return (
@@ -206,7 +206,6 @@ export function PostsPage() {
                     key={post.id}
                     post={post}
                     index={i}
-                    onRead={() => setSelectedPost(post)}
                     onEdit={() => openEdit(post)}
                     onDelete={() => handleDelete(post.id)}
                     onApprove={() => approvePost(post.id)}
@@ -246,7 +245,6 @@ export function PostsPage() {
                   key={post.id}
                   post={post}
                   index={i}
-                  onRead={() => setSelectedPost(post)}
                   onEdit={() => openEdit(post)}
                   onDelete={() => handleDelete(post.id)}
                   canEdit={canEditContent(post.author_id)}
@@ -257,57 +255,6 @@ export function PostsPage() {
           )}
         </div>
       </section>
-
-      {/* Modal detalle */}
-      <AnimatePresence>
-        {selectedPost && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
-            onClick={() => setSelectedPost(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-              onClick={e => e.stopPropagation()}
-            >
-              {selectedPost.image_url && (
-                <div className="aspect-video overflow-hidden rounded-t-2xl">
-                  <img src={selectedPost.image_url} alt={selectedPost.title} className="w-full h-full object-cover" />
-                </div>
-              )}
-              <div className="p-8">
-                <span className={cn(
-                  'inline-block text-xs font-semibold px-3 py-1 rounded-full mb-4',
-                  categoryConfig[selectedPost.category].bg,
-                  categoryConfig[selectedPost.category].color
-                )}>
-                  {categoryConfig[selectedPost.category].label}
-                </span>
-                <h2 className="font-serif text-3xl text-primary mb-4">{selectedPost.title}</h2>
-                <div className="flex items-center gap-3 text-stone-500 text-sm mb-6">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 bg-primary rounded-full flex items-center justify-center text-white text-xs font-semibold">
-                      {selectedPost.author_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                    </div>
-                    {selectedPost.author_name}
-                  </div>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <Clock size={13} />
-                    {new Date(selectedPost.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
-                  </span>
-                </div>
-                <div
-                  className="prose prose-stone max-w-none text-stone-700 leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: selectedPost.content }}
-                />
-                <button onClick={() => setSelectedPost(null)} className="mt-8 btn-primary w-full">Cerrar</button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Toast */}
       <AnimatePresence>
@@ -450,7 +397,6 @@ export function PostsPage() {
 interface PostCardProps {
   post: Post;
   index: number;
-  onRead: () => void;
   onEdit: () => void;
   onDelete: () => void;
   onApprove?: () => void;
@@ -459,7 +405,7 @@ interface PostCardProps {
   showPending?: boolean;
 }
 
-function PostCard({ post, index, onRead, onEdit, onDelete, onApprove, canEdit, canApprove, showPending }: PostCardProps) {
+function PostCard({ post, index, onEdit, onDelete, onApprove, canEdit, canApprove, showPending }: PostCardProps) {
   const cat = categoryConfig[post.category];
   const initials = post.author_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 
@@ -474,9 +420,9 @@ function PostCard({ post, index, onRead, onEdit, onDelete, onApprove, canEdit, c
       )}
     >
       {post.image_url && (
-        <div className="aspect-video overflow-hidden cursor-pointer" onClick={onRead}>
+        <Link to={`/posts/${post.id}`} className="aspect-video overflow-hidden block">
           <img src={post.image_url} alt={post.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
-        </div>
+        </Link>
       )}
 
       <div className="p-6 flex flex-col flex-1">
@@ -491,12 +437,9 @@ function PostCard({ post, index, onRead, onEdit, onDelete, onApprove, canEdit, c
           )}
         </div>
 
-        <h3
-          className="font-serif text-xl text-primary mb-3 line-clamp-2 cursor-pointer hover:text-gold transition-colors"
-          onClick={onRead}
-        >
+        <Link to={`/posts/${post.id}`} className="font-serif text-xl text-primary mb-3 line-clamp-2 hover:text-gold transition-colors">
           {post.title}
-        </h3>
+        </Link>
 
         <p className="text-stone-500 text-sm leading-relaxed line-clamp-3 flex-1 mb-4">
           {post.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}
@@ -512,12 +455,12 @@ function PostCard({ post, index, onRead, onEdit, onDelete, onApprove, canEdit, c
         </div>
 
         <div className="flex items-center gap-2 pt-3 border-t border-stone-100">
-          <button
-            onClick={onRead}
-            className="flex-1 text-sm text-primary font-medium py-2 rounded-lg hover:bg-primary/5 transition-colors"
+          <Link
+            to={`/posts/${post.id}`}
+            className="flex-1 text-sm text-center text-primary font-medium py-2 rounded-lg hover:bg-primary/5 transition-colors"
           >
             Leer más
-          </button>
+          </Link>
           {canApprove && onApprove && (
             <button
               onClick={onApprove}
