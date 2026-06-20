@@ -1497,6 +1497,9 @@ function UsuariosTab() {
   const [form, setForm] = useState(emptyUserForm);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
+  const [savingUserId, setSavingUserId] = useState<string | null>(null);
+  const [savedUserId, setSavedUserId] = useState<string | null>(null);
+  const [userError, setUserError] = useState<{ id: string; msg: string } | null>(null);
 
   const filtered = users.filter(u => {
     const matchSearch = u.display_name.toLowerCase().includes(searchTerm.toLowerCase()) || u.email.toLowerCase().includes(searchTerm.toLowerCase());
@@ -1511,11 +1514,33 @@ function UsuariosTab() {
 
   const handleRoleChange = async (user: UserProfile, role: UserRole) => {
     if (!canManageUsers || user.id === currentProfile?.id) return;
-    await updateUserRole(user.id, role);
+    setSavingUserId(user.id);
+    setUserError(null);
+    try {
+      await updateUserRole(user.id, role);
+      setSavedUserId(user.id);
+      setTimeout(() => setSavedUserId(null), 2000);
+    } catch {
+      setUserError({ id: user.id, msg: 'Error al guardar el rol' });
+      setTimeout(() => setUserError(null), 3000);
+    } finally {
+      setSavingUserId(null);
+    }
   };
   const handleStatusChange = async (user: UserProfile, status: 'active' | 'inactive') => {
     if (!canManageUsers || user.id === currentProfile?.id) return;
-    await updateUserStatus(user.id, status);
+    setSavingUserId(user.id);
+    setUserError(null);
+    try {
+      await updateUserStatus(user.id, status);
+      setSavedUserId(user.id);
+      setTimeout(() => setSavedUserId(null), 2000);
+    } catch {
+      setUserError({ id: user.id, msg: 'Error al guardar el estado' });
+      setTimeout(() => setUserError(null), 3000);
+    } finally {
+      setSavingUserId(null);
+    }
   };
 
   const handleCreateUser = async (e: React.FormEvent) => {
@@ -1594,6 +1619,9 @@ function UsuariosTab() {
             <tbody>
               {filtered.map((user, i) => {
                 const isSelf = user.id === currentProfile?.id;
+                const isRowSaving = savingUserId === user.id;
+                const isRowSaved = savedUserId === user.id;
+                const rowError = userError?.id === user.id ? userError.msg : null;
                 return (
                   <motion.tr key={user.id}
                     initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
@@ -1606,6 +1634,9 @@ function UsuariosTab() {
                         <div>
                           <p className="font-medium text-stone-800">{user.display_name}{isSelf && <span className="ml-2 text-xs text-stone-400">(tú)</span>}</p>
                           {user.address && <p className="text-xs text-stone-400">{user.address}</p>}
+                          {isRowSaving && <p className="text-xs text-stone-400 animate-pulse">Guardando...</p>}
+                          {isRowSaved && <p className="text-xs text-green-600">✓ Guardado</p>}
+                          {rowError && <p className="text-xs text-red-500">{rowError}</p>}
                         </div>
                       </div>
                     </td>
