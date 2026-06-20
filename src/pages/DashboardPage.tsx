@@ -1497,9 +1497,14 @@ function UsuariosTab() {
   const [form, setForm] = useState(emptyUserForm);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
-  const [savingUserId, setSavingUserId] = useState<string | null>(null);
-  const [savedUserId, setSavedUserId] = useState<string | null>(null);
-  const [userError, setUserError] = useState<{ id: string; msg: string } | null>(null);
+  // Optimistic local overrides: { [userId]: { role?, status?, saving?, saved?, error? } }
+  const [localOverrides, setLocalOverrides] = useState<Record<string, {
+    role?: UserRole;
+    status?: 'active' | 'inactive';
+    saving?: boolean;
+    saved?: boolean;
+    error?: string;
+  }>>({});
 
   const filtered = users.filter(u => {
     const matchSearch = u.display_name.toLowerCase().includes(searchTerm.toLowerCase()) || u.email.toLowerCase().includes(searchTerm.toLowerCase());
@@ -1512,34 +1517,32 @@ function UsuariosTab() {
     setModalOpen(true);
   };
 
+  const patchOverride = (id: string, patch: typeof localOverrides[string]) =>
+    setLocalOverrides(prev => ({ ...prev, [id]: { ...prev[id], ...patch } }));
+
   const handleRoleChange = async (user: UserProfile, role: UserRole) => {
     if (!canManageUsers || user.id === currentProfile?.id) return;
-    setSavingUserId(user.id);
-    setUserError(null);
+    patchOverride(user.id, { role, saving: true, saved: false, error: undefined });
     try {
       await updateUserRole(user.id, role);
-      setSavedUserId(user.id);
-      setTimeout(() => setSavedUserId(null), 2000);
+      patchOverride(user.id, { saving: false, saved: true });
+      setTimeout(() => patchOverride(user.id, { saved: false }), 2000);
     } catch {
-      setUserError({ id: user.id, msg: 'Error al guardar el rol' });
-      setTimeout(() => setUserError(null), 3000);
-    } finally {
-      setSavingUserId(null);
+      patchOverride(user.id, { role: user.role, saving: false, error: 'Error al guardar el rol' });
+      setTimeout(() => patchOverride(user.id, { error: undefined }), 3000);
     }
   };
+
   const handleStatusChange = async (user: UserProfile, status: 'active' | 'inactive') => {
     if (!canManageUsers || user.id === currentProfile?.id) return;
-    setSavingUserId(user.id);
-    setUserError(null);
+    patchOverride(user.id, { status, saving: true, saved: false, error: undefined });
     try {
       await updateUserStatus(user.id, status);
-      setSavedUserId(user.id);
-      setTimeout(() => setSavedUserId(null), 2000);
+      patchOverride(user.id, { saving: false, saved: true });
+      setTimeout(() => patchOverride(user.id, { saved: false }), 2000);
     } catch {
-      setUserError({ id: user.id, msg: 'Error al guardar el estado' });
-      setTimeout(() => setUserError(null), 3000);
-    } finally {
-      setSavingUserId(null);
+      patchOverride(user.id, { status: user.status, saving: false, error: 'Error al guardar el estado' });
+      setTimeout(() => patchOverride(user.id, { error: undefined }), 3000);
     }
   };
 
@@ -1619,9 +1622,12 @@ function UsuariosTab() {
             <tbody>
               {filtered.map((user, i) => {
                 const isSelf = user.id === currentProfile?.id;
-                const isRowSaving = savingUserId === user.id;
-                const isRowSaved = savedUserId === user.id;
-                const rowError = userError?.id === user.id ? userError.msg : null;
+                const ov = localOverrides[user.id] ?? {};
+                const displayRole = ov.role ?? user.role;
+                const displayStatus = ov.status ?? user.status;
+                const isRowSaving = ov.saving;
+                const isRowSaved = ov.saved;
+                const rowError = ov.error;
                 return (
                   <motion.tr key={user.id}
                     initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
@@ -1649,11 +1655,12 @@ function UsuariosTab() {
                     <td className="py-4 px-4">
                       {canManageUsers && !isSelf ? (
                         <div className="relative">
-                          <select value={user.role} onChange={e => handleRoleChange(user, e.target.value as UserRole)}
-                            className={cn('pl-3 pr-7 py-1.5 rounded-full text-sm font-medium border-0 appearance-none cursor-pointer focus:ring-2 focus:ring-gold focus:outline-none', roleColors[user.role].bg, roleColors[user.role].text)}>
+                          <select value={displayRole} onChange={e => handleRoleChange(user, e.target.value as UserRole)}
+                            disabled={isRowSaving}
+                            className={cn('pl-3 pr-7 py-1.5 rounded-full text-sm font-medium border-0 appearance-none cursor-pointer focus:ring-2 focus:ring-gold focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed', roleColors[displayRole].bg, roleColors[displayRole].text)}>
                             {Object.entries(roleLabels).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                           </select>
-                          <ChevronDown size={12} className={cn('absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none', roleColors[user.role].text)} />
+                          <ChevronDown size={12} className={cn('absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none', roleColors[displayRole].text)} />
                         </div>
                       ) : (
                         <span className={cn('px-3 py-1 rounded-full text-sm font-medium', roleColors[user.role].bg, roleColors[user.role].text)}>{roleLabels[user.role]}</span>
@@ -1662,12 +1669,13 @@ function UsuariosTab() {
                     <td className="py-4 px-4">
                       {canManageUsers && !isSelf ? (
                         <div className="relative">
-                          <select value={user.status} onChange={e => handleStatusChange(user, e.target.value as 'active' | 'inactive')}
-                            className={cn('pl-3 pr-7 py-1.5 rounded-full text-sm font-medium border-0 appearance-none cursor-pointer focus:ring-2 focus:ring-gold focus:outline-none', statusColors[user.status].bg, statusColors[user.status].text)}>
+                          <select value={displayStatus} onChange={e => handleStatusChange(user, e.target.value as 'active' | 'inactive')}
+                            disabled={isRowSaving}
+                            className={cn('pl-3 pr-7 py-1.5 rounded-full text-sm font-medium border-0 appearance-none cursor-pointer focus:ring-2 focus:ring-gold focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed', statusColors[displayStatus].bg, statusColors[displayStatus].text)}>
                             <option value="active">Activo</option>
                             <option value="inactive">Inactivo</option>
                           </select>
-                          <ChevronDown size={12} className={cn('absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none', statusColors[user.status].text)} />
+                          <ChevronDown size={12} className={cn('absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none', statusColors[displayStatus].text)} />
                         </div>
                       ) : (
                         <span className={cn('px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 w-fit', statusColors[user.status].bg, statusColors[user.status].text)}>
