@@ -27,13 +27,19 @@ export function useUsers() {
   }, []);
 
   const updateUserRole = async (id: string, role: UserRole) => {
-    const { error } = await supabase.from('profiles').update({ role }).eq('id', id);
+    const { data, error } = await supabase
+      .from('profiles').update({ role }).eq('id', id).select('id');
     if (error) throw error;
+    if (!data || data.length === 0)
+      throw new Error('RLS_BLOCKED');
   };
 
   const updateUserStatus = async (id: string, status: 'active' | 'inactive') => {
-    const { error } = await supabase.from('profiles').update({ status }).eq('id', id);
+    const { data, error } = await supabase
+      .from('profiles').update({ status }).eq('id', id).select('id');
     if (error) throw error;
+    if (!data || data.length === 0)
+      throw new Error('RLS_BLOCKED');
   };
 
   const createUser = async (input: {

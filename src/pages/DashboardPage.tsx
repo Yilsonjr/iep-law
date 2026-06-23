@@ -1527,9 +1527,13 @@ function UsuariosTab() {
       await updateUserRole(user.id, role);
       patchOverride(user.id, { saving: false, saved: true });
       setTimeout(() => patchOverride(user.id, { saved: false }), 2000);
-    } catch {
-      patchOverride(user.id, { role: user.role, saving: false, error: 'Error al guardar el rol' });
-      setTimeout(() => patchOverride(user.id, { error: undefined }), 3000);
+    } catch (err: unknown) {
+      const blocked = (err as Error).message === 'RLS_BLOCKED';
+      patchOverride(user.id, {
+        role: user.role, saving: false,
+        error: blocked ? 'Sin permisos RLS — revisa las políticas de la tabla profiles en Supabase' : 'Error al guardar el rol',
+      });
+      setTimeout(() => patchOverride(user.id, { error: undefined }), 5000);
     }
   };
 
@@ -1540,9 +1544,13 @@ function UsuariosTab() {
       await updateUserStatus(user.id, status);
       patchOverride(user.id, { saving: false, saved: true });
       setTimeout(() => patchOverride(user.id, { saved: false }), 2000);
-    } catch {
-      patchOverride(user.id, { status: user.status, saving: false, error: 'Error al guardar el estado' });
-      setTimeout(() => patchOverride(user.id, { error: undefined }), 3000);
+    } catch (err: unknown) {
+      const blocked = (err as Error).message === 'RLS_BLOCKED';
+      patchOverride(user.id, {
+        status: user.status, saving: false,
+        error: blocked ? 'Sin permisos RLS — revisa las políticas de la tabla profiles en Supabase' : 'Error al guardar el estado',
+      });
+      setTimeout(() => patchOverride(user.id, { error: undefined }), 5000);
     }
   };
 
