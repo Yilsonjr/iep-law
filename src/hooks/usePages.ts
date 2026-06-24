@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../config/supabase';
 import type { Page } from '../types';
 
@@ -6,6 +6,8 @@ export function usePages(publishedOnly = false) {
   const [pages, setPages] = useState<Page[]>([]);
   const [loading, setLoading] = useState(true);
   const [dbError, setDbError] = useState<string | null>(null);
+  // Unique channel name per hook instance to avoid Supabase "already subscribed" error
+  const channelId = useRef(`pages-${Math.random().toString(36).slice(2)}`);
 
   const fetch = async () => {
     let q = supabase.from('pages').select('*').order('nav_order', { ascending: true });
@@ -23,7 +25,7 @@ export function usePages(publishedOnly = false) {
   useEffect(() => {
     fetch();
     const channel = supabase
-      .channel('pages-changes')
+      .channel(channelId.current)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'pages' }, fetch)
       .subscribe();
     return () => { supabase.removeChannel(channel); };
