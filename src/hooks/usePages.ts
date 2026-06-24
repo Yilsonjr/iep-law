@@ -5,12 +5,18 @@ import type { Page } from '../types';
 export function usePages(publishedOnly = false) {
   const [pages, setPages] = useState<Page[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dbError, setDbError] = useState<string | null>(null);
 
   const fetch = async () => {
     let q = supabase.from('pages').select('*').order('nav_order', { ascending: true });
     if (publishedOnly) q = q.eq('published', true);
-    const { data } = await q;
-    setPages(data ?? []);
+    const { data, error } = await q;
+    if (error) {
+      setDbError(error.message);
+    } else {
+      setPages(data ?? []);
+      setDbError(null);
+    }
     setLoading(false);
   };
 
@@ -56,5 +62,5 @@ export function usePages(publishedOnly = false) {
 
   const navPages = pages.filter(p => p.published && p.show_in_nav);
 
-  return { pages, navPages, loading, addPage, updatePage, deletePage, getBySlug };
+  return { pages, navPages, loading, dbError, addPage, updatePage, deletePage, getBySlug };
 }

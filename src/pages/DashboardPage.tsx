@@ -1261,8 +1261,36 @@ const emptyPageForm = (): Omit<Page, 'id' | 'created_at' | 'updated_at'> => ({
   meta_title: '', meta_description: '', og_image: '',
 });
 
+const CREATE_PAGES_SQL = `-- Ejecuta esto en Supabase → SQL Editor
+CREATE TABLE IF NOT EXISTS public.pages (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  slug TEXT NOT NULL UNIQUE,
+  title TEXT NOT NULL,
+  subtitle TEXT,
+  cover_image TEXT,
+  content TEXT NOT NULL DEFAULT '',
+  published BOOLEAN NOT NULL DEFAULT false,
+  show_in_nav BOOLEAN NOT NULL DEFAULT false,
+  nav_order INTEGER NOT NULL DEFAULT 0,
+  meta_title TEXT,
+  meta_description TEXT,
+  og_image TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE public.pages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "public_read_published_pages" ON public.pages
+  FOR SELECT USING (published = true);
+CREATE POLICY "admins_read_all_pages" ON public.pages
+  FOR SELECT TO authenticated
+  USING ((SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('admin','pastor','leader'));
+CREATE POLICY "admins_manage_pages" ON public.pages
+  FOR ALL TO authenticated
+  USING ((SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('admin','pastor'))
+  WITH CHECK ((SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('admin','pastor'));`;
+
 function PaginasTab() {
-  const { pages, loading, addPage, updatePage, deletePage } = usePages();
+  const { pages, loading, dbError, addPage, updatePage, deletePage } = usePages();
   const [editing, setEditing] = useState<Page | null>(null);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState(emptyPageForm());
@@ -1410,6 +1438,24 @@ function PaginasTab() {
             </button>
           </div>
         </form>
+      </div>
+    );
+  }
+
+  if (dbError) {
+    return (
+      <div className="bg-white rounded-2xl shadow-md p-8 space-y-4">
+        <div className="flex items-start gap-3 text-red-700 bg-red-50 border border-red-200 rounded-xl p-4">
+          <span className="text-xl flex-shrink-0">⚠️</span>
+          <div>
+            <p className="font-semibold">La tabla <code className="bg-red-100 px-1 rounded">pages</code> no existe en Supabase</p>
+            <p className="text-sm text-red-600 mt-1">Ve a <strong>Supabase → SQL Editor</strong> y ejecuta el siguiente SQL para crearla:</p>
+          </div>
+        </div>
+        <pre className="bg-stone-900 text-green-400 rounded-xl p-4 text-xs overflow-auto max-h-80 leading-relaxed whitespace-pre-wrap">
+          {CREATE_PAGES_SQL}
+        </pre>
+        <p className="text-xs text-stone-400">Después de ejecutar el SQL, recarga la página.</p>
       </div>
     );
   }
