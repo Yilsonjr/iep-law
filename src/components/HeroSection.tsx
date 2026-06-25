@@ -10,15 +10,16 @@ export function HeroSection() {
   const hero = config.hero;
   const [slide, setSlide] = useState(0);
 
+  // All hooks must come before any conditional returns (Rules of Hooks)
+  useEffect(() => {
+    if (loading || hero.mode !== 'slider' || hero.slides.length < 2) return;
+    const interval = setInterval(() => setSlide(s => (s + 1) % hero.slides.length), 5000);
+    return () => clearInterval(interval);
+  }, [loading, hero.mode, hero.slides.length]);
+
   if (loading) {
     return <div className="h-screen bg-black animate-pulse" />;
   }
-
-  useEffect(() => {
-    if (hero.mode !== 'slider' || hero.slides.length < 2) return;
-    const interval = setInterval(() => setSlide(s => (s + 1) % hero.slides.length), 5000);
-    return () => clearInterval(interval);
-  }, [hero.mode, hero.slides.length]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -33,6 +34,10 @@ export function HeroSection() {
   if (hero.mode === 'slider' && hero.slides.length > 0) {
     return (
       <section className="relative h-screen overflow-hidden bg-black">
+        {/* Preload first slide so it appears instantly */}
+        {hero.slides[0] && (
+          <link rel="preload" as="image" href={hero.slides[0]} />
+        )}
         {hero.slides.map((src, i) => (
           <div
             key={i}

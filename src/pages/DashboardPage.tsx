@@ -12,7 +12,7 @@ import {
 import { useUsers } from '../hooks/useUsers';
 import { useAuth } from '../contexts/AuthContext';
 import { useSiteConfigContext } from '../contexts/SiteConfigContext';
-import { useContactMessages } from '../hooks/useContactMessages';
+import { useContactMessages, CREATE_CONTACT_MESSAGES_SQL } from '../hooks/useContactMessages';
 import { usePages } from '../hooks/usePages';
 import { ImageUpload } from '../components/ImageUpload';
 import { RichTextEditor } from '../components/RichTextEditor';
@@ -120,8 +120,26 @@ function ResumenTab() {
 
 // ── MENSAJES TAB ───────────────────────────────────────────────
 function MensajesTab() {
-  const { messages, loading, markRead, deleteMessage, unread } = useContactMessages();
+  const { messages, loading, dbError, markRead, deleteMessage, unread } = useContactMessages();
   const [expandedMsg, setExpandedMsg] = useState<string | null>(null);
+
+  if (dbError) {
+    return (
+      <div className="bg-white rounded-2xl shadow-md p-8 space-y-4">
+        <div className="flex items-start gap-3 text-red-700 bg-red-50 border border-red-200 rounded-xl p-4">
+          <span className="text-xl flex-shrink-0">⚠️</span>
+          <div>
+            <p className="font-semibold">La tabla <code className="bg-red-100 px-1 rounded">contact_messages</code> no existe en Supabase</p>
+            <p className="text-sm text-red-600 mt-1">Ve a <strong>Supabase → SQL Editor</strong> y ejecuta el SQL para crearla:</p>
+          </div>
+        </div>
+        <pre className="bg-stone-900 text-green-400 rounded-xl p-4 text-xs overflow-auto max-h-80 leading-relaxed whitespace-pre-wrap">
+          {CREATE_CONTACT_MESSAGES_SQL}
+        </pre>
+        <p className="text-xs text-stone-400">Después de ejecutar el SQL, recarga la página.</p>
+      </div>
+    );
+  }
 
   const handleExpand = (id: string) => {
     setExpandedMsg(expandedMsg === id ? null : id);
