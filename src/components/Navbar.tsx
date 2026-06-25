@@ -73,26 +73,29 @@ export function Navbar({ onSearch }: NavbarProps) {
   return (
     <nav className="bg-white/95 backdrop-blur-sm shadow-md sticky top-0 z-50 border-b border-stone-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center h-20 gap-3">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden">
+          <Link to="/" className="flex items-center gap-2.5 shrink-0">
+            <div className="w-10 h-10 rounded-full overflow-hidden">
               <img
                 src={branding.logo_url || '/android-chrome-192x192.png'}
                 alt={branding.site_name}
                 className="w-full h-full object-cover"
               />
             </div>
-            <div>
-              <span className="font-serif text-2xl text-primary font-semibold">{branding.site_name}</span>
+            <div className="hidden lg:block leading-tight">
+              <span className="font-serif text-xl text-primary font-semibold block">{branding.site_name}</span>
               {branding.tagline && (
-                <span className="block text-xs text-gold font-medium tracking-wider">{branding.tagline}</span>
+                <span className="text-xs text-gold font-medium tracking-wider">{branding.tagline}</span>
               )}
             </div>
+            <span className="lg:hidden font-serif text-xl text-primary font-semibold">
+              {branding.site_name.split(' ')[0]}
+            </span>
           </Link>
 
-          {/* Nav links — desktop */}
-          <div className="hidden md:flex items-center gap-8">
+          {/* Nav links — centered, takes remaining space */}
+          <div className="hidden md:flex flex-1 items-center justify-center gap-0.5 min-w-0 overflow-hidden">
             {navItems.map(({ path, label }) => {
               const isActive = location.pathname === path;
               return (
@@ -100,15 +103,15 @@ export function Navbar({ onSearch }: NavbarProps) {
                   key={path}
                   to={path}
                   className={cn(
-                    'relative text-sm font-medium transition-colors duration-200',
-                    isActive ? 'text-primary' : 'text-stone-600 hover:text-primary'
+                    'relative px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-200 whitespace-nowrap',
+                    isActive ? 'text-primary' : 'text-stone-600 hover:text-primary hover:bg-stone-50'
                   )}
                 >
                   {label}
                   {isActive && (
                     <motion.div
                       layoutId="underline"
-                      className="absolute -bottom-1 left-0 right-0 h-0.5 bg-gold"
+                      className="absolute -bottom-1 left-3 right-3 h-0.5 bg-gold"
                       transition={{ type: 'spring', bounce: 0.3, duration: 0.5 }}
                     />
                   )}
@@ -117,43 +120,34 @@ export function Navbar({ onSearch }: NavbarProps) {
             })}
           </div>
 
-          {/* Search — desktop */}
-          <button
-            onClick={onSearch}
-            className="hidden md:flex items-center gap-2 px-3 py-2 text-stone-400 hover:text-primary bg-stone-50 hover:bg-stone-100 rounded-xl transition-colors text-sm"
-            title="Buscar (Ctrl+K)"
-          >
-            <Search size={16} />
-            <span className="text-stone-400">Buscar...</span>
-            <kbd className="text-xs bg-stone-200 text-stone-500 px-1.5 py-0.5 rounded">⌘K</kbd>
-          </button>
+          {/* Right side: search + auth — desktop only */}
+          <div className="hidden md:flex items-center gap-2 shrink-0">
+            <button
+              onClick={onSearch}
+              className="flex items-center gap-1.5 px-3 py-2 text-stone-400 hover:text-primary bg-stone-50 hover:bg-stone-100 rounded-xl transition-colors text-sm"
+              title="Buscar (Ctrl+K)"
+            >
+              <Search size={16} />
+              <span className="hidden lg:inline">Buscar...</span>
+              <kbd className="text-xs bg-stone-200 text-stone-500 px-1.5 py-0.5 rounded hidden lg:inline">⌘K</kbd>
+            </button>
 
-          {/* Auth — desktop */}
-          <div className="hidden md:flex items-center gap-4">
             {user && profile ? (
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setDropdownOpen(v => !v)}
                   className="flex items-center gap-2 hover:bg-stone-50 rounded-xl px-3 py-2 transition-colors"
                 >
-                  <div className="w-9 h-9 bg-primary rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm font-semibold shrink-0">
                     {initials}
                   </div>
-                  <div className="text-left">
-                    <p className="text-sm font-medium text-stone-800 leading-tight">
-                      {profile.display_name}
-                    </p>
-                    <span className={cn(
-                      'text-xs px-2 py-0.5 rounded-full font-medium',
-                      roleColors[profile.role]
-                    )}>
+                  <div className="text-left hidden lg:block">
+                    <p className="text-sm font-medium text-stone-800 leading-tight">{profile.display_name}</p>
+                    <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium', roleColors[profile.role])}>
                       {roleLabels[profile.role]}
                     </span>
                   </div>
-                  <ChevronDown size={16} className={cn(
-                    'text-stone-400 transition-transform',
-                    dropdownOpen && 'rotate-180'
-                  )} />
+                  <ChevronDown size={15} className={cn('text-stone-400 transition-transform', dropdownOpen && 'rotate-180')} />
                 </button>
 
                 <AnimatePresence>
@@ -191,28 +185,22 @@ export function Navbar({ onSearch }: NavbarProps) {
                 </AnimatePresence>
               </div>
             ) : (
-              <Link
-                to="/login"
-                className="flex items-center gap-2 btn-primary text-sm"
-              >
+              <Link to="/login" className="flex items-center gap-2 btn-primary text-sm">
                 <LogIn size={18} />
                 Iniciar Sesión
               </Link>
             )}
           </div>
 
-          {/* Search mobile icon */}
-          <button onClick={onSearch} className="md:hidden p-2 text-stone-500 hover:text-primary">
-            <Search size={22} />
-          </button>
-
-          {/* Mobile toggle */}
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-2 text-stone-600"
-          >
-            {mobileOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+          {/* Mobile: search + hamburger */}
+          <div className="md:hidden flex items-center gap-1 ml-auto">
+            <button onClick={onSearch} className="p-2 text-stone-500 hover:text-primary">
+              <Search size={22} />
+            </button>
+            <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 text-stone-600">
+              {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </div>
       </div>
 
