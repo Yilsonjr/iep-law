@@ -75,56 +75,45 @@ export function DynamicPage() {
 
   return (
     <div className="min-h-screen bg-stone-50">
-      {/* Hero */}
-      {page.cover_image ? (
-        <section
-          className="relative py-32 overflow-hidden"
-          style={{ backgroundImage: `url(${page.cover_image})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+      {/* Cover image — full width banner, no text on top */}
+      {page.cover_image && (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}
+          className="w-full h-64 sm:h-80 md:h-[420px] overflow-hidden"
         >
-          <div className="absolute inset-0 bg-black/60" />
-          <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-              className="font-serif text-5xl md:text-6xl font-bold mb-4"
-            >
-              {page.title}
-            </motion.h1>
-            {page.subtitle && (
-              <motion.p
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                className="text-xl text-stone-200 max-w-2xl mx-auto"
-              >
-                {page.subtitle}
-              </motion.p>
-            )}
-          </div>
-        </section>
-      ) : (
-        <section className="bg-gradient-to-br from-primary to-primary-700 text-white py-24">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-              className="font-serif text-5xl md:text-6xl font-bold mb-4"
-            >
-              {page.title}
-            </motion.h1>
-            {page.subtitle && (
-              <motion.p
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                className="text-xl text-stone-300 max-w-2xl mx-auto"
-              >
-                {page.subtitle}
-              </motion.p>
-            )}
-          </div>
-        </section>
+          <img
+            src={page.cover_image}
+            alt={page.title}
+            className="w-full h-full object-cover object-center"
+          />
+        </motion.div>
       )}
 
+      {/* Page title section — always below the image */}
+      <section className={page.cover_image ? 'bg-white border-b border-stone-100 py-10' : 'bg-linear-to-br from-primary to-primary/80 text-white py-20'}>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <motion.h1
+            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+            className={`font-serif text-4xl md:text-5xl font-bold mb-3 ${page.cover_image ? 'text-primary' : 'text-white'}`}
+          >
+            {page.title}
+          </motion.h1>
+          {page.subtitle && (
+            <motion.p
+              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
+              className={`text-lg max-w-2xl mx-auto ${page.cover_image ? 'text-stone-500' : 'text-white/80'}`}
+            >
+              {page.subtitle}
+            </motion.p>
+          )}
+        </div>
+      </section>
+
       {/* Content */}
-      <section className="py-16">
+      <section className="py-14">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.article
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
             className="bg-white rounded-2xl shadow-md p-8 md:p-12"
           >
             <div
