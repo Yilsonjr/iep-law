@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { preload } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Cross, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -17,6 +18,13 @@ export function HeroSection() {
     return () => clearInterval(interval);
   }, [loading, hero.mode, hero.slides.length]);
 
+  // Preload first slide image using React 19 API (hoists to <head> automatically)
+  useEffect(() => {
+    if (!loading && hero.mode === 'slider' && hero.slides[0]) {
+      preload(hero.slides[0], { as: 'image' });
+    }
+  }, [loading, hero.mode, hero.slides]);
+
   if (loading) {
     return <div className="h-screen bg-black animate-pulse" />;
   }
@@ -34,10 +42,6 @@ export function HeroSection() {
   if (hero.mode === 'slider' && hero.slides.length > 0) {
     return (
       <section className="relative h-screen overflow-hidden bg-black">
-        {/* Preload first slide so it appears instantly */}
-        {hero.slides[0] && (
-          <link rel="preload" as="image" href={hero.slides[0]} />
-        )}
         {hero.slides.map((src, i) => (
           <div
             key={i}

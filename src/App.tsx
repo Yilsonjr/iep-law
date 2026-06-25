@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { Component, useState, useEffect, type ReactNode, type ErrorInfo } from 'react';
 import { AuthProvider } from './contexts/AuthContext';
 import { SiteConfigProvider } from './contexts/SiteConfigContext';
 import { Layout } from './layouts/MainLayout';
@@ -16,6 +16,28 @@ import { PostsPage } from './pages/PostsPage';
 import { PostDetailPage } from './pages/PostDetailPage';
 import { DynamicPage } from './pages/DynamicPage';
 import { useSeoMeta } from './hooks/useSeoMeta';
+
+class AppErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
+  state = { error: null };
+  static getDerivedStateFromError(err: Error) { return { error: err.message }; }
+  componentDidCatch(err: Error, info: ErrorInfo) { console.error('[AppErrorBoundary]', err, info); }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-stone-50 text-stone-700 p-8">
+          <p className="text-4xl">⚠️</p>
+          <h1 className="text-xl font-semibold">Algo salió mal</h1>
+          <p className="text-sm text-stone-400 max-w-md text-center">{this.state.error}</p>
+          <button onClick={() => window.location.reload()}
+            className="mt-2 px-5 py-2 rounded-xl bg-primary text-white text-sm hover:bg-primary/90 transition-colors">
+            Recargar página
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function AppInner() {
   useSeoMeta();
@@ -64,11 +86,13 @@ function AppInner() {
 function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <SiteConfigProvider>
-          <AppInner />
-        </SiteConfigProvider>
-      </AuthProvider>
+      <AppErrorBoundary>
+        <AuthProvider>
+          <SiteConfigProvider>
+            <AppInner />
+          </SiteConfigProvider>
+        </AuthProvider>
+      </AppErrorBoundary>
     </BrowserRouter>
   );
 }
