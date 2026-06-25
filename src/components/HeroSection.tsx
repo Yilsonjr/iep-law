@@ -6,9 +6,13 @@ import { useSiteConfigContext } from '../contexts/SiteConfigContext';
 import { cn } from '../utils';
 
 export function HeroSection() {
-  const { config } = useSiteConfigContext();
+  const { config, loading } = useSiteConfigContext();
   const hero = config.hero;
   const [slide, setSlide] = useState(0);
+
+  if (loading) {
+    return <div className="h-screen bg-black animate-pulse" />;
+  }
 
   useEffect(() => {
     if (hero.mode !== 'slider' || hero.slides.length < 2) return;
@@ -101,7 +105,7 @@ export function HeroSection() {
 
   // ── TEXT MODE (default) ────────────────────────────────────
   return (
-    <section className="relative bg-gradient-to-br from-primary via-primary-700 to-primary-800 text-white py-32 overflow-hidden">
+    <section className="relative bg-linear-to-br from-primary via-primary-700 to-primary-800 text-white py-32 overflow-hidden">
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0" style={{
           backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.3) 1px, transparent 0)',
