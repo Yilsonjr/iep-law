@@ -4,7 +4,7 @@ import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
-import TextStyle from '@tiptap/extension-text-style';
+import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
 import Image from '@tiptap/extension-image';
@@ -20,7 +20,7 @@ import {
   List, ListOrdered, ListChecks, Heading2, Heading3,
   Link as LinkIcon, Undo, Redo, Quote,
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
-  Minus, ImageIcon, Youtube as YoutubeIcon,
+  Minus, ImageIcon, Video as YoutubeIcon,
   Superscript as SuperscriptIcon, Subscript as SubscriptIcon,
   Highlighter, Type, Upload, X,
 } from 'lucide-react';
@@ -178,7 +178,7 @@ export function RichTextEditor({
   useEffect(() => {
     if (!editor) return;
     if (value !== editor.getHTML()) {
-      editor.commands.setContent(value, false);
+      editor.commands.setContent(value, { emitUpdate: false });
     }
   }, [value, editor]);
 

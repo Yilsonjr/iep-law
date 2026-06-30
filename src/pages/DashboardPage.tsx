@@ -7,7 +7,7 @@ import {
   Inbox, Eye, CheckCheck, Trash, ImageIcon, PanelLeft,
   ExternalLink, GripVertical, MessageSquare, Home,
   Type, Columns, Zap, TrendingUp, AlignCenter, AlignLeft,
-  Palette, X, AlertCircle, User, Lock,
+  Palette, X, AlertCircle, User, Lock, Quote, Images,
 } from 'lucide-react';
 import { useUsers } from '../hooks/useUsers';
 import { useAuth } from '../contexts/AuthContext';
@@ -224,6 +224,8 @@ const BLOCK_TYPES: { type: HomeBlockType; label: string; icon: typeof Home; desc
   { type: 'stats', label: 'Estadísticas', icon: TrendingUp, desc: 'Fila de números destacados' },
   { type: 'rich_text', label: 'Texto libre', icon: Type, desc: 'Bloque de contenido HTML con editor rico' },
   { type: 'contact_form', label: 'Formulario', icon: MessageSquare, desc: 'Formulario de contacto integrado en la página' },
+  { type: 'testimonials', label: 'Testimonios', icon: Quote, desc: 'Citas o testimonios de miembros en carrusel' },
+  { type: 'gallery', label: 'Galería', icon: Images, desc: 'Grid de fotos con lightbox' },
 ];
 
 const BG_OPTIONS: { value: HomeBlock['bg']; label: string; preview: string }[] = [
@@ -253,6 +255,8 @@ function emptyBlock(type: HomeBlockType, order: number): HomeBlock {
     html: '',
     text_align: 'center',
     color_bg: '', color_heading: '', color_text: '', color_accent: '',
+    testimonials: type === 'testimonials' ? [{ quote: '', author: '', role: '', avatar_url: '' }] : [],
+    gallery: type === 'gallery' ? [{ image_url: '', caption: '' }] : [],
   };
 }
 
@@ -561,6 +565,81 @@ function InicioTab() {
                 </div>
               </div>
               <RichTextEditor value={editing.html} onChange={v => upd({ html: v })} placeholder="Escribe el contenido aquí..." />
+            </div>
+          )}
+
+          {/* ── Testimonials ── */}
+          {editing.type === 'testimonials' && (
+            <div className="space-y-4 border-t border-stone-100 pt-5">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-stone-700">Testimonios</label>
+                <button type="button" onClick={() => upd({ testimonials: [...editing.testimonials, { quote: '', author: '', role: '', avatar_url: '' }] })}
+                  className="flex items-center gap-1 text-xs text-primary hover:text-gold transition-colors">
+                  <Plus size={14} /> Agregar testimonio
+                </button>
+              </div>
+              {editing.testimonials.map((t, i) => (
+                <div key={i} className="border border-stone-200 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-stone-500">Testimonio {i + 1}</span>
+                    <button type="button" onClick={() => upd({ testimonials: editing.testimonials.filter((_, idx) => idx !== i) })}
+                      className="text-red-400 hover:text-red-600"><Trash2 size={14} /></button>
+                  </div>
+                  <textarea placeholder="Cita o testimonio..." value={t.quote} rows={3}
+                    onChange={e => { const testimonials = [...editing.testimonials]; testimonials[i] = { ...t, quote: e.target.value }; upd({ testimonials }); }}
+                    className={INPUT + ' resize-none'} />
+                  <div className="flex gap-3 items-start">
+                    <ImageUpload value={t.avatar_url} onChange={v => { const testimonials = [...editing.testimonials]; testimonials[i] = { ...t, avatar_url: v }; upd({ testimonials }); }}
+                      folder="home-blocks/testimonials" label="Foto (opcional)" variant="logo" />
+                    <div className="flex-1 space-y-2 pt-0">
+                      <input type="text" placeholder="Nombre" value={t.author}
+                        onChange={e => { const testimonials = [...editing.testimonials]; testimonials[i] = { ...t, author: e.target.value }; upd({ testimonials }); }}
+                        className={INPUT_SM + ' w-full'} />
+                      <input type="text" placeholder="Rol (ej: Miembro desde 2018)" value={t.role}
+                        onChange={e => { const testimonials = [...editing.testimonials]; testimonials[i] = { ...t, role: e.target.value }; upd({ testimonials }); }}
+                        className={INPUT_SM + ' w-full'} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── Gallery ── */}
+          {editing.type === 'gallery' && (
+            <div className="space-y-4 border-t border-stone-100 pt-5">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-stone-700">Fotos</label>
+                <div className="flex items-center gap-3">
+                  <select value={editing.card_cols}
+                    onChange={e => upd({ card_cols: parseInt(e.target.value) as 2 | 3 | 4 })}
+                    className="px-3 py-1.5 border border-stone-200 rounded-lg text-sm bg-white">
+                    <option value={2}>2 columnas</option>
+                    <option value={3}>3 columnas</option>
+                    <option value={4}>4 columnas</option>
+                  </select>
+                  <button type="button" onClick={() => upd({ gallery: [...editing.gallery, { image_url: '', caption: '' }] })}
+                    className="flex items-center gap-1 text-xs text-primary hover:text-gold transition-colors">
+                    <Plus size={14} /> Agregar foto
+                  </button>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {editing.gallery.map((g, i) => (
+                  <div key={i} className="border border-stone-200 rounded-xl p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-stone-500">Foto {i + 1}</span>
+                      <button type="button" onClick={() => upd({ gallery: editing.gallery.filter((_, idx) => idx !== i) })}
+                        className="text-red-400 hover:text-red-600"><Trash2 size={14} /></button>
+                    </div>
+                    <ImageUpload value={g.image_url} onChange={v => { const gallery = [...editing.gallery]; gallery[i] = { ...g, image_url: v }; upd({ gallery }); }}
+                      folder="home-blocks/gallery" />
+                    <input type="text" placeholder="Descripción (opcional)" value={g.caption}
+                      onChange={e => { const gallery = [...editing.gallery]; gallery[i] = { ...g, caption: e.target.value }; upd({ gallery }); }}
+                      className={INPUT_SM + ' w-full'} />
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

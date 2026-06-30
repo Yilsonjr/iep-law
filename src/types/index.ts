@@ -96,7 +96,9 @@ export type HomeBlockType =
   | 'cta_banner'
   | 'stats'
   | 'rich_text'
-  | 'contact_form';
+  | 'contact_form'
+  | 'testimonials'
+  | 'gallery';
 
 export type HomeBlockBg = 'white' | 'light' | 'primary' | 'gradient' | 'custom';
 
@@ -118,6 +120,18 @@ export interface HomeBlockColumnItem {
   image_url: string;
   btn_label: string;
   btn_href: string;
+}
+
+export interface HomeBlockTestimonialItem {
+  quote: string;
+  author: string;
+  role: string;
+  avatar_url: string;
+}
+
+export interface HomeBlockGalleryItem {
+  image_url: string;
+  caption: string;
 }
 
 export interface HomeBlock {
@@ -148,6 +162,10 @@ export interface HomeBlock {
   // rich_text
   html: string;
   text_align: 'left' | 'center';
+  // testimonials
+  testimonials: HomeBlockTestimonialItem[];
+  // gallery
+  gallery: HomeBlockGalleryItem[];
 }
 
 export interface SiteConfigMap {

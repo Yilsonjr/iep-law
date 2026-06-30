@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Send, CheckCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Send, CheckCircle, Quote, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { HeroSection } from '../components/HeroSection';
 import { useSiteConfigContext } from '../contexts/SiteConfigContext';
 import { useContactMessages } from '../hooks/useContactMessages';
@@ -252,6 +252,157 @@ function RichTextBlock({ block }: { block: HomeBlock }) {
   );
 }
 
+function TestimonialsBlock({ block }: { block: HomeBlock }) {
+  const dark = isDarkBg(block.bg);
+  const s = bc(block);
+  const items = block.testimonials;
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (items.length <= 1) return;
+    const t = setInterval(() => setIndex(i => (i + 1) % items.length), 6000);
+    return () => clearInterval(t);
+  }, [items.length]);
+
+  if (items.length === 0) return null;
+  const t = items[index % items.length];
+
+  return (
+    <section className={cn('py-20', !block.color_bg && sectionBgClass(block.bg))} style={s.section}>
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        {(block.title || block.subtitle) && (
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
+            {block.title && (
+              <h2 className={cn('font-serif text-4xl font-bold mb-3', !block.color_heading && (dark ? 'text-white' : 'text-primary'))} style={s.heading}>
+                {block.title}
+              </h2>
+            )}
+            <div className="w-16 h-0.5 bg-gold mx-auto my-4" />
+            {block.subtitle && (
+              <p className={cn('text-lg max-w-3xl mx-auto leading-relaxed', !block.color_text && (dark ? 'text-stone-200' : 'text-stone-600'))} style={s.text}>
+                {block.subtitle}
+              </p>
+            )}
+          </motion.div>
+        )}
+
+        <div className="relative text-center min-h-[220px] flex flex-col items-center justify-center">
+          <Quote size={36} className={cn('mx-auto mb-4', dark ? 'text-white/30' : 'text-primary/20')} />
+          <AnimatePresence mode="wait">
+            <motion.div key={index}
+              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.4 }}>
+              <p className={cn('text-xl md:text-2xl font-serif italic leading-relaxed mb-6', !block.color_text && (dark ? 'text-white' : 'text-stone-700'))} style={s.text}>
+                "{t.quote}"
+              </p>
+              <div className="flex items-center justify-center gap-3">
+                {t.avatar_url && (
+                  <img src={t.avatar_url} alt={t.author} className="w-12 h-12 rounded-full object-cover border-2 border-gold" />
+                )}
+                <div className="text-left">
+                  {t.author && (
+                    <p className={cn('font-semibold', !block.color_heading && (dark ? 'text-white' : 'text-primary'))} style={s.heading}>{t.author}</p>
+                  )}
+                  {t.role && (
+                    <p className={cn('text-sm', !block.color_text && (dark ? 'text-stone-300' : 'text-stone-500'))} style={s.text}>{t.role}</p>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+
+          {items.length > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-8">
+              {items.map((_, i) => (
+                <button key={i} onClick={() => setIndex(i)}
+                  aria-label={`Testimonio ${i + 1}`}
+                  className={cn('w-2.5 h-2.5 rounded-full transition-all', i === index ? 'bg-gold w-6' : (dark ? 'bg-white/30' : 'bg-stone-300'))} />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function GalleryBlock({ block }: { block: HomeBlock }) {
+  const dark = isDarkBg(block.bg);
+  const s = bc(block);
+  const cols = { 2: 'sm:grid-cols-2', 3: 'sm:grid-cols-2 md:grid-cols-3', 4: 'sm:grid-cols-2 md:grid-cols-4' };
+  const [lightbox, setLightbox] = useState<number | null>(null);
+  const items = block.gallery;
+
+  if (items.length === 0) return null;
+
+  return (
+    <section className={cn('py-20', !block.color_bg && sectionBgClass(block.bg))} style={s.section}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {(block.title || block.subtitle) && (
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-14">
+            {block.title && (
+              <h2 className={cn('font-serif text-4xl font-bold mb-3', !block.color_heading && (dark ? 'text-white' : 'text-primary'))} style={s.heading}>
+                {block.title}
+              </h2>
+            )}
+            <div className="w-16 h-0.5 bg-gold mx-auto my-4" />
+            {block.subtitle && (
+              <p className={cn('text-lg max-w-3xl mx-auto leading-relaxed', !block.color_text && (dark ? 'text-stone-200' : 'text-stone-600'))} style={s.text}>
+                {block.subtitle}
+              </p>
+            )}
+          </motion.div>
+        )}
+
+        <div className={cn('grid grid-cols-1 gap-4', cols[block.card_cols])}>
+          {items.map((item, i) => (
+            <motion.button key={i} type="button" onClick={() => setLightbox(i)}
+              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}
+              className="relative group rounded-2xl overflow-hidden shadow-md aspect-square">
+              <img src={item.image_url} alt={item.caption || ''} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+              {item.caption && (
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-end opacity-0 group-hover:opacity-100">
+                  <p className="text-white text-sm p-3 text-left">{item.caption}</p>
+                </div>
+              )}
+            </motion.button>
+          ))}
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {lightbox !== null && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setLightbox(null)}
+            className="fixed inset-0 bg-black/90 z-100 flex items-center justify-center p-4 cursor-zoom-out">
+            <button onClick={() => setLightbox(null)} className="absolute top-5 right-5 text-white/70 hover:text-white">
+              <X size={28} />
+            </button>
+            {lightbox > 0 && (
+              <button onClick={e => { e.stopPropagation(); setLightbox(l => (l ?? 0) - 1); }}
+                className="absolute left-4 text-white/70 hover:text-white">
+                <ChevronLeft size={32} />
+              </button>
+            )}
+            {lightbox < items.length - 1 && (
+              <button onClick={e => { e.stopPropagation(); setLightbox(l => (l ?? 0) + 1); }}
+                className="absolute right-4 text-white/70 hover:text-white">
+                <ChevronRight size={32} />
+              </button>
+            )}
+            <motion.div onClick={e => e.stopPropagation()} initial={{ scale: 0.95 }} animate={{ scale: 1 }} className="max-w-4xl max-h-[85vh]">
+              <img src={items[lightbox].image_url} alt={items[lightbox].caption || ''} className="max-w-full max-h-[85vh] object-contain rounded-lg" />
+              {items[lightbox].caption && (
+                <p className="text-white/80 text-center mt-3 text-sm">{items[lightbox].caption}</p>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
+  );
+}
+
 function ContactFormBlock({ block }: { block: HomeBlock }) {
   const dark = isDarkBg(block.bg);
   const s = bc(block);
@@ -379,6 +530,10 @@ export function HomePage({ onContact }: HomePageProps) {
             return <RichTextBlock key={block.id} block={block} />;
           case 'contact_form':
             return <ContactFormBlock key={block.id} block={block} />;
+          case 'testimonials':
+            return <TestimonialsBlock key={block.id} block={block} />;
+          case 'gallery':
+            return <GalleryBlock key={block.id} block={block} />;
           default:
             return null;
         }
