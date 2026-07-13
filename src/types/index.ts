@@ -9,6 +9,7 @@ export interface HeroButton {
 
 export interface HeroConfig {
   mode: 'text' | 'image' | 'slider';
+  prefix: string;
   title: string;
   subtitle: string;
   bg_url: string;

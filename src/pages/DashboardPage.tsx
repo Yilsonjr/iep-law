@@ -910,6 +910,10 @@ function SitioTab() {
               </div>
             </div>
             <div>
+              <label className="block text-sm font-medium text-stone-600 mb-1">Prefijo (sobre el título)</label>
+              <input type="text" value={hero.prefix ?? ''} onChange={e => setHero({ ...hero, prefix: e.target.value })} placeholder='Ej: "Bienvenidos a"' className={INPUT} />
+            </div>
+            <div>
               <label className="block text-sm font-medium text-stone-600 mb-1">Título principal</label>
               <input type="text" value={hero.title} onChange={e => setHero({ ...hero, title: e.target.value })} className={INPUT} />
             </div>
