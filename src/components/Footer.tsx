@@ -306,8 +306,6 @@ export function Footer({ onContact }: FooterProps) {
   const C = footer.colors ?? { bg: '#8D000A', heading: '#F5C842', body: '#d6d3d1', link: '#e7e5e4' };
 
   const ctaEnabled = footer.cta?.enabled ?? true;
-  const schedulesEnabled = footer.schedules?.enabled ?? true;
-  const scheduleItems = footer.schedules?.items ?? [];
 
   const ctaTitle = footer.cta?.title || '¿Tienes preguntas?';
   const ctaSubtitle = footer.cta?.subtitle || 'Estamos aquí para acompañarte. No estás solo/a.';
@@ -327,22 +325,20 @@ export function Footer({ onContact }: FooterProps) {
   };
 
   return (
-    <footer style={{ backgroundColor: C.bg }}>
-
-      {/* ── CTA Band ──────────────────────────────────────────── */}
+    <>
+      {/* ── CTA Band — fuera del footer, fondo claro para respiración visual */}
       {ctaEnabled && (
-        <div className="border-b border-white/10 bg-black/20">
+        <section className="bg-stone-50 border-t border-stone-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
-              <h3 className="font-serif text-2xl md:text-3xl font-bold text-white">{ctaTitle}</h3>
-              <p className="text-white/70 mt-1 text-sm md:text-base">{ctaSubtitle}</p>
+              <h3 className="font-serif text-2xl md:text-3xl font-bold text-primary">{ctaTitle}</h3>
+              <p className="text-stone-500 mt-1 text-sm md:text-base">{ctaSubtitle}</p>
             </div>
             <div className="flex flex-col sm:flex-row items-center gap-3">
               <motion.button
                 whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
                 onClick={onContact}
-                className="flex items-center gap-2 font-semibold px-6 py-3 rounded-xl transition-colors shadow-lg text-sm"
-                style={{ backgroundColor: C.heading, color: C.bg }}>
+                className="btn-primary flex items-center gap-2 text-sm">
                 <Mail size={16} />Escribirnos
               </motion.button>
               {waUrl && (
@@ -355,28 +351,10 @@ export function Footer({ onContact }: FooterProps) {
               )}
             </div>
           </div>
-        </div>
+        </section>
       )}
 
-      {/* ── Horarios Band ─────────────────────────────────────── */}
-      {schedulesEnabled && scheduleItems.length > 0 && (
-        <div className="border-b border-white/10 bg-white/5">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-            <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10">
-              <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider" style={{ color: C.heading }}>
-                <Clock size={14} />Horarios de servicio
-              </span>
-              {scheduleItems.map((s, i) => (
-                <div key={i} className="flex items-center gap-3 text-sm">
-                  <span className="font-medium" style={{ color: C.heading }}>{s.day}</span>
-                  <span style={{ color: C.body }}>{s.time}</span>
-                  {s.label && <span className="hidden sm:inline" style={{ color: `${C.body}99` }}>· {s.label}</span>}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      <footer style={{ backgroundColor: C.bg }}>
 
       {/* ── Widget columns ────────────────────────────────────── */}
       {widgets.length > 0 && (
@@ -434,6 +412,7 @@ export function Footer({ onContact }: FooterProps) {
           </div>
         </div>
       </div>
-    </footer>
+      </footer>
+    </>
   );
 }
