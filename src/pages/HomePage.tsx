@@ -125,13 +125,7 @@ function CardsBlock({ block }: { block: HomeBlock }) {
               transition={{ delay: i * 0.1 }}
               className="flex flex-col items-center text-center group"
             >
-              {/* Icon circle */}
-              <div className={cn(
-                'w-20 h-20 rounded-full flex items-center justify-center mb-5 shadow-md transition-transform duration-300 group-hover:-translate-y-1',
-                dark ? 'bg-white/15' : 'bg-gold/15'
-              )}>
-                <span className="text-4xl leading-none">{card.emoji}</span>
-              </div>
+              <div className={cn('w-8 h-0.5 mb-5', dark ? 'bg-white/40' : 'bg-gold')} />
               <h3
                 className={cn('text-sm font-bold tracking-widest uppercase mb-3', !block.color_heading && (dark ? 'text-white' : 'text-stone-800'))}
                 style={s.heading}
