@@ -47,7 +47,7 @@ const defaultBlocks: HomeBlock[] = [
     ],
     col_items: [], cta_btn1_label: '', cta_btn1_href: '/', cta_btn2_label: '', cta_btn2_href: '/',
     stats: [], html: '', text_align: 'center',
-    testimonials: [], gallery: [],
+    testimonials: [], gallery: [], team_members: [],
   },
   {
     id: 'default-2', type: 'columns',
@@ -68,7 +68,7 @@ const defaultBlocks: HomeBlock[] = [
     ],
     cta_btn1_label: '', cta_btn1_href: '/', cta_btn2_label: '', cta_btn2_href: '/',
     stats: [], html: '', text_align: 'left',
-    testimonials: [], gallery: [],
+    testimonials: [], gallery: [], team_members: [],
   },
   {
     id: 'default-3', type: 'stats',
@@ -84,7 +84,7 @@ const defaultBlocks: HomeBlock[] = [
       { emoji: '🌍', value: '3', label: 'Países' },
     ],
     html: '', text_align: 'center',
-    testimonials: [], gallery: [],
+    testimonials: [], gallery: [], team_members: [],
   },
   {
     id: 'default-4', type: 'cta_banner',
@@ -96,7 +96,7 @@ const defaultBlocks: HomeBlock[] = [
     cta_btn1_label: 'Contactar', cta_btn1_href: '#contact',
     cta_btn2_label: 'Ver en Vivo', cta_btn2_href: '/live',
     stats: [], html: '', text_align: 'center',
-    testimonials: [], gallery: [],
+    testimonials: [], gallery: [], team_members: [],
   },
 ];
 

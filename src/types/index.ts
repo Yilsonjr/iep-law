@@ -99,7 +99,8 @@ export type HomeBlockType =
   | 'rich_text'
   | 'contact_form'
   | 'testimonials'
-  | 'gallery';
+  | 'gallery'
+  | 'team';
 
 export type HomeBlockBg = 'white' | 'light' | 'primary' | 'gradient' | 'custom';
 
@@ -135,6 +136,13 @@ export interface HomeBlockGalleryItem {
   caption: string;
 }
 
+export interface HomeBlockTeamMember {
+  name: string;
+  role: string;
+  photo_url: string;
+  bio: string;
+}
+
 export interface HomeBlock {
   id: string;
   type: HomeBlockType;
@@ -167,6 +175,8 @@ export interface HomeBlock {
   testimonials: HomeBlockTestimonialItem[];
   // gallery
   gallery: HomeBlockGalleryItem[];
+  // team
+  team_members: HomeBlockTeamMember[];
 }
 
 export interface SiteConfigMap {

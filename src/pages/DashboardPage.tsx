@@ -20,6 +20,7 @@ import type {
   UserProfile, UserRole, Page,
   HeroConfig, BrandingConfig, FooterConfig, SeoConfig,
   HomeBlock, HomeBlockType, FooterWidget, FooterWidgetType,
+  HomeBlockTeamMember,
 } from '../types';
 import { cn } from '../utils';
 
@@ -228,6 +229,7 @@ const BLOCK_TYPES: { type: HomeBlockType; label: string; icon: typeof Home; desc
   { type: 'contact_form', label: 'Formulario', icon: MessageSquare, desc: 'Formulario de contacto integrado en la página' },
   { type: 'testimonials', label: 'Testimonios', icon: Quote, desc: 'Citas o testimonios de miembros en carrusel' },
   { type: 'gallery', label: 'Galería', icon: Images, desc: 'Grid de fotos con lightbox' },
+  { type: 'team', label: 'Directiva', icon: Users, desc: 'Tarjetas de miembros con foto, cargo y biografía' },
 ];
 
 const BG_OPTIONS: { value: HomeBlock['bg']; label: string; preview: string }[] = [
@@ -259,6 +261,7 @@ function emptyBlock(type: HomeBlockType, order: number): HomeBlock {
     color_bg: '', color_heading: '', color_text: '', color_accent: '',
     testimonials: type === 'testimonials' ? [{ quote: '', author: '', role: '', avatar_url: '' }] : [],
     gallery: type === 'gallery' ? [{ image_url: '', caption: '' }] : [],
+    team_members: type === 'team' ? [{ name: '', role: '', photo_url: '', bio: '' }] : [],
   };
 }
 
@@ -602,6 +605,47 @@ function InicioTab() {
                         className={INPUT_SM + ' w-full'} />
                     </div>
                   </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── Team ── */}
+          {editing.type === 'team' && (
+            <div className="space-y-4 border-t border-stone-100 pt-5">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-stone-700">Miembros de la directiva</label>
+                <button type="button"
+                  onClick={() => upd({ team_members: [...editing.team_members, { name: '', role: '', photo_url: '', bio: '' } as HomeBlockTeamMember] })}
+                  className="flex items-center gap-1 text-xs text-primary hover:text-gold transition-colors">
+                  <Plus size={14} /> Agregar miembro
+                </button>
+              </div>
+              {editing.team_members.map((m, i) => (
+                <div key={i} className="border border-stone-200 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Miembro {i + 1}</span>
+                    <button type="button"
+                      onClick={() => upd({ team_members: editing.team_members.filter((_, idx) => idx !== i) })}
+                      className="text-red-400 hover:text-red-600"><Trash2 size={14} /></button>
+                  </div>
+                  <div className="flex gap-4 items-start">
+                    <ImageUpload
+                      value={m.photo_url}
+                      onChange={v => { const team_members = [...editing.team_members]; team_members[i] = { ...m, photo_url: v }; upd({ team_members }); }}
+                      folder="home-blocks/team" label="Foto" variant="logo" />
+                    <div className="flex-1 space-y-2">
+                      <input type="text" placeholder="Nombre completo" value={m.name}
+                        onChange={e => { const team_members = [...editing.team_members]; team_members[i] = { ...m, name: e.target.value }; upd({ team_members }); }}
+                        className={INPUT_SM + ' w-full'} />
+                      <input type="text" placeholder="Cargo (ej: Pastor Principal)" value={m.role}
+                        onChange={e => { const team_members = [...editing.team_members]; team_members[i] = { ...m, role: e.target.value }; upd({ team_members }); }}
+                        className={INPUT_SM + ' w-full'} />
+                    </div>
+                  </div>
+                  <textarea placeholder="Biografía breve..." value={m.bio} rows={3}
+                    onChange={e => { const team_members = [...editing.team_members]; team_members[i] = { ...m, bio: e.target.value }; upd({ team_members }); }}
+                    className={INPUT + ' resize-none'} />
                 </div>
               ))}
             </div>

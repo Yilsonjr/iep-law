@@ -492,6 +492,70 @@ function GalleryBlock({ block }: { block: HomeBlock }) {
   );
 }
 
+// ── TEAM BLOCK ────────────────────────────────────────────────
+function TeamBlock({ block }: { block: HomeBlock }) {
+  const dark = isDarkBg(block.bg);
+  const s = bc(block);
+  const members = block.team_members;
+  if (members.length === 0) return null;
+
+  const colClass = members.length === 2
+    ? 'sm:grid-cols-2'
+    : members.length === 4
+      ? 'sm:grid-cols-2 lg:grid-cols-4'
+      : 'sm:grid-cols-2 lg:grid-cols-3';
+
+  return (
+    <section className={cn('py-20', !block.color_bg && sectionBgClass(block.bg))} style={s.section}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <SectionHeader block={block} dark={dark} s={s} />
+        <div className={cn('grid grid-cols-1 gap-8', colClass)}>
+          {members.map((member, i) => (
+            <motion.div
+              key={i}
+              variants={fadeUp}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }}
+              className={cn(
+                'rounded-2xl p-6 flex flex-col items-center text-center border transition-shadow hover:shadow-md',
+                dark ? 'bg-white/10 border-white/10' : 'bg-white border-stone-100'
+              )}
+            >
+              {member.photo_url ? (
+                <img
+                  src={member.photo_url}
+                  alt={member.name}
+                  className="w-24 h-24 rounded-full object-cover border-4 border-[#F8F5F0] shadow-sm mb-4"
+                />
+              ) : (
+                <div className={cn('w-24 h-24 rounded-full mb-4 flex items-center justify-center text-3xl font-serif font-bold border-4',
+                  dark ? 'bg-white/10 border-white/10 text-white/60' : 'bg-stone-100 border-stone-50 text-stone-400'
+                )}>
+                  {member.name ? member.name.charAt(0).toUpperCase() : '?'}
+                </div>
+              )}
+              <div className="w-6 h-0.5 bg-gold mb-3" />
+              <h3 className={cn('font-serif text-lg font-bold mb-0.5', !block.color_heading && (dark ? 'text-white' : 'text-[#1A1014]'))} style={s.heading}>
+                {member.name}
+              </h3>
+              <p className={cn('text-xs font-semibold tracking-widest uppercase mb-3', dark ? 'text-gold/80' : 'text-gold')}>
+                {member.role}
+              </p>
+              {member.bio && (
+                <p className={cn('text-sm leading-relaxed', !block.color_text && (dark ? 'text-stone-300' : 'text-stone-500'))} style={s.text}>
+                  {member.bio}
+                </p>
+              )}
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ── CONTACT FORM BLOCK ─────────────────────────────────────────
 function ContactFormBlock({ block }: { block: HomeBlock }) {
   const dark = isDarkBg(block.bg);
@@ -602,6 +666,7 @@ export function HomePage({ onContact }: HomePageProps) {
           case 'contact_form':return <ContactFormBlock key={block.id} block={block} />;
           case 'testimonials':return <TestimonialsBlock key={block.id} block={block} />;
           case 'gallery':     return <GalleryBlock key={block.id} block={block} />;
+          case 'team':        return <TeamBlock key={block.id} block={block} />;
           default:            return null;
         }
       })}
