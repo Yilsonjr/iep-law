@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Church, Mail, Lock, User, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 type Mode = 'login' | 'register';
@@ -53,74 +53,108 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 flex">
+    <div className="min-h-screen flex">
       {/* Panel izquierdo — branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary to-primary-700 flex-col items-center justify-center p-16 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="absolute rounded-full border border-white"
-              style={{
-                width: `${(i + 1) * 180}px`,
-                height: `${(i + 1) * 180}px`,
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-              }}
-            />
-          ))}
-        </div>
+      <div className="hidden lg:flex lg:w-[45%] flex-col justify-between p-14 relative overflow-hidden"
+        style={{ backgroundColor: '#12100E' }}>
+
+        {/* Subtle dot grid background */}
+        <div className="absolute inset-0 opacity-[0.07]"
+          style={{
+            backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
+            backgroundSize: '28px 28px',
+          }}
+        />
+        {/* Gold gradient glow bottom-right */}
+        <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full blur-3xl opacity-10"
+          style={{ background: 'radial-gradient(circle, #B8931A, transparent)' }}
+        />
+
+        {/* Top: logo */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center relative z-10"
+          transition={{ duration: 0.5 }}
+          className="relative z-10 flex items-center gap-3"
         >
-          <div className="w-24 h-24 bg-gold rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl">
-            <Church size={48} className="text-primary" />
+          <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ring-1 ring-white/10">
+            <img src="/android-chrome-192x192.png" alt="Ebenezer" className="w-full h-full object-cover" />
           </div>
-          <h1 className="font-serif text-5xl text-white font-bold mb-3">Ebenezer M.I.</h1>
-          <p className="text-stone-300 text-xl mb-10 italic">"Hasta aquí nos ayudó el Señor"</p>
-          <div className="space-y-3 text-left bg-white/10 rounded-2xl p-6 backdrop-blur-sm">
+          <div>
+            <p className="font-serif text-[15px] font-bold text-white leading-tight">Ebenezer M.I.</p>
+            <p className="text-[10px] uppercase tracking-[0.14em] text-white/35 mt-0.5">Iglesia Cristiana</p>
+          </div>
+        </motion.div>
+
+        {/* Center: headline */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="relative z-10"
+        >
+          <div className="w-8 h-0.5 bg-[#B8931A] mb-8" />
+          <h1 className="font-serif text-4xl xl:text-5xl text-white font-bold leading-tight mb-4 text-wrap-balance">
+            Bienvenido de vuelta
+          </h1>
+          <p className="text-white/45 text-[15px] leading-relaxed max-w-xs">
+            Accede a tu cuenta para gestionar el contenido, ver prédicas y participar de la comunidad.
+          </p>
+
+          <div className="mt-10 space-y-3">
             {[
-              'Accede a prédicas y sermones',
-              'Participa en cultos en vivo',
-              'Mantente al día con los eventos',
-              'Comparte contenido con la iglesia',
+              'Prédicas y sermones en línea',
+              'Cultos en vivo cada semana',
+              'Eventos y actividades de la iglesia',
+              'Comunidad y noticias internas',
             ].map((item) => (
-              <div key={item} className="flex items-center gap-3 text-stone-200">
-                <div className="w-2 h-2 rounded-full bg-gold flex-shrink-0" />
-                <span>{item}</span>
+              <div key={item} className="flex items-center gap-3">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#B8931A] flex-shrink-0" />
+                <span className="text-[13px] text-white/55">{item}</span>
               </div>
             ))}
           </div>
         </motion.div>
+
+        {/* Bottom: quote */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="relative z-10 text-[11px] text-white/25 italic"
+        >
+          "Hasta aquí nos ha ayudado el Señor" — 1 Samuel 7:12
+        </motion.p>
       </div>
 
       {/* Panel derecho — formulario */}
-      <div className="flex-1 flex items-center justify-center p-8">
+      <div className="flex-1 flex items-center justify-center bg-[#F8F5F0] p-8">
         <motion.div
-          initial={{ opacity: 0, x: 30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-          className="w-full max-w-md"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="w-full max-w-[380px]"
         >
-          <div className="lg:hidden flex justify-center mb-8">
-            <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center">
-              <Church size={32} className="text-white" />
+          {/* Mobile logo */}
+          <div className="lg:hidden flex items-center gap-2.5 mb-10">
+            <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 bg-primary">
+              <img src="/android-chrome-192x192.png" alt="Ebenezer" className="w-full h-full object-cover" />
             </div>
+            <span className="font-serif text-[17px] font-bold text-primary">Ebenezer M.I.</span>
           </div>
 
-          <div className="bg-white rounded-3xl shadow-xl p-8">
-            <h2 className="font-serif text-3xl text-primary mb-1">
+          <div className="mb-8">
+            <h2 className="font-serif text-[28px] font-bold text-[#1A1014] leading-tight mb-1.5">
               {mode === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta'}
             </h2>
-            <p className="text-stone-500 mb-8 text-sm">
+            <p className="text-[13px] text-[#6B626A]">
               {mode === 'login'
-                ? 'Bienvenido de vuelta a la comunidad'
+                ? 'Ingresa tus credenciales para continuar'
                 : 'Únete a la comunidad de Ebenezer M.I.'}
             </p>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-[#E8E2E4] shadow-sm p-7">
 
             {error && (
               <motion.div
@@ -204,29 +238,31 @@ export function LoginPage() {
                   : (mode === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta')}
               </button>
             </form>
-
-            <div className="mt-6 text-center">
-              <span className="text-stone-500 text-sm">
-                {mode === 'login' ? '¿No tienes cuenta? ' : '¿Ya tienes cuenta? '}
-              </span>
-              <button
-                onClick={() => { setMode(m => m === 'login' ? 'register' : 'login'); setError(''); }}
-                className="text-primary font-semibold text-sm hover:text-gold transition-colors"
-              >
-                {mode === 'login' ? 'Regístrate' : 'Inicia sesión'}
-              </button>
-            </div>
-
-            <div className="mt-4 text-center">
-              <Link to="/" className="text-stone-400 text-sm hover:text-stone-600 transition-colors">
-                ← Volver al sitio
-              </Link>
-            </div>
           </div>
 
-          <p className="text-center text-stone-400 text-xs mt-6">
-            Al registrarte, serás asignado como miembro. Un pastor puede actualizar tu rol.
-          </p>
+          <div className="mt-5 flex items-center justify-between">
+            <span className="text-[12px] text-[#6B626A]">
+              {mode === 'login' ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}
+            </span>
+            <button
+              onClick={() => { setMode(m => m === 'login' ? 'register' : 'login'); setError(''); }}
+              className="text-[12px] font-semibold text-primary hover:text-[#6C0008] transition-colors"
+            >
+              {mode === 'login' ? 'Regístrate' : 'Iniciar sesión'}
+            </button>
+          </div>
+
+          <div className="mt-5 text-center">
+            <Link to="/" className="text-[11px] text-[#6B626A]/60 hover:text-[#6B626A] transition-colors">
+              ← Volver al sitio público
+            </Link>
+          </div>
+
+          {mode === 'register' && (
+            <p className="text-center text-[11px] text-[#6B626A]/50 mt-4 leading-relaxed">
+              Serás asignado como miembro. Un pastor puede actualizar tu rol.
+            </p>
+          )}
         </motion.div>
       </div>
     </div>

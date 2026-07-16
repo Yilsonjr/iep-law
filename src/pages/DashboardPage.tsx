@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, Search, Filter, Mail, Phone, Calendar,
-  UserCheck, Shield, ChevronDown, BarChart3, Settings,
+  UserCheck, Shield, ChevronDown, BarChart3,
   Save, Plus, Trash2, Globe, Layout, FileText,
   Inbox, Eye, CheckCheck, Trash, ImageIcon, PanelLeft,
   ExternalLink, GripVertical, MessageSquare, Home,
@@ -54,63 +54,65 @@ type TabId = 'resumen' | 'inicio' | 'mensajes' | 'sitio' | 'paginas' | 'usuarios
 function ResumenTab() {
   const { users } = useUsers();
   const { unread } = useContactMessages();
-  const stats = {
-    total: users.length,
-    active: users.filter(u => u.status === 'active').length,
-    pastors: users.filter(u => u.role === 'pastor' || u.role === 'admin').length,
-    leaders: users.filter(u => u.role === 'leader').length,
-  };
+  const stats = [
+    { label: 'Total Miembros', value: users.length, trend: 'Usuarios registrados', icon: Users },
+    { label: 'Activos', value: users.filter(u => u.status === 'active').length, trend: 'En estado activo', icon: UserCheck },
+    { label: 'Pastores / Admin', value: users.filter(u => u.role === 'pastor' || u.role === 'admin').length, trend: 'Con acceso completo', icon: Shield },
+    { label: 'Líderes', value: users.filter(u => u.role === 'leader').length, trend: 'Rol de liderazgo', icon: User },
+  ];
+
+  const quickLinks = [
+    { href: '/sermons', label: 'Prédicas', icon: MessageSquare },
+    { href: '/live', label: 'En Vivo', icon: Eye },
+    { href: '/events', label: 'Eventos', icon: Calendar },
+    { href: '/posts', label: 'Comunidad', icon: FileText },
+  ];
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      {/* Metric cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Total Miembros', value: stats.total, color: 'bg-primary' },
-          { label: 'Activos', value: stats.active, color: 'bg-green-500' },
-          { label: 'Pastores/Admin', value: stats.pastors, color: 'bg-gold' },
-          { label: 'Líderes', value: stats.leaders, color: 'bg-blue-500' },
-        ].map(({ label, value, color }, i) => (
+        {stats.map(({ label, value, trend, icon: Icon }, i) => (
           <motion.div key={label}
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-            className="bg-white rounded-xl shadow-md p-5">
-            <div className="flex items-center gap-3">
-              <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', color)}>
-                <Users size={20} className="text-white" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-stone-800">{value}</p>
-                <p className="text-xs text-stone-500">{label}</p>
-              </div>
+            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
+            className="bg-white border border-[#E4E4EC] rounded-lg p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#6B7080]">{label}</p>
+              <Icon size={14} className="text-[#C4C4D0]" />
             </div>
+            <p className="text-[26px] font-bold text-[#111218] font-variant-numeric leading-none mb-1"
+               style={{ fontVariantNumeric: 'tabular-nums' }}>{value}</p>
+            <p className="text-[11px] text-[#8888A0]">{trend}</p>
           </motion.div>
         ))}
       </div>
 
-      <div className="bg-white rounded-2xl shadow-md p-6">
-        <h3 className="font-serif text-xl text-primary mb-4">Accesos Rápidos</h3>
+      {/* Quick links */}
+      <div className="bg-white border border-[#E4E4EC] rounded-lg p-5">
+        <h3 className="text-[12px] font-semibold uppercase tracking-[0.1em] text-[#6B7080] mb-4">Accesos rápidos</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[
-            { href: '/sermons', label: 'Prédicas', icon: '🎙️' },
-            { href: '/live', label: 'En Vivo', icon: '📡' },
-            { href: '/events', label: 'Eventos', icon: '📅' },
-            { href: '/posts', label: 'Comunidad', icon: '✍️' },
-          ].map(({ href, label, icon }) => (
-            <a key={href} href={href}
-              className="flex flex-col items-center gap-2 p-4 bg-stone-50 hover:bg-stone-100 rounded-xl transition-colors text-center">
-              <span className="text-2xl">{icon}</span>
-              <span className="text-sm font-medium text-stone-700">{label}</span>
+          {quickLinks.map(({ href, label, icon: Icon }) => (
+            <a key={href} href={href} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-2.5 p-3 bg-[#F4F4F8] hover:bg-[#EEEEF4] rounded-lg transition-colors">
+              <Icon size={14} className="text-[#6B7080] flex-shrink-0" />
+              <span className="text-[12.5px] font-medium text-[#111218]">{label}</span>
+              <ExternalLink size={10} className="text-[#C4C4D0] ml-auto flex-shrink-0" />
             </a>
           ))}
         </div>
       </div>
 
+      {/* Unread messages alert */}
       {unread > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-5 flex items-center gap-4">
-          <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
-            <Mail size={20} className="text-white" />
+        <div className="bg-[#FEF2F2] border border-[#FECACA] rounded-lg p-4 flex items-center gap-3">
+          <div className="w-8 h-8 bg-[#B91C1C] rounded-lg flex items-center justify-center flex-shrink-0">
+            <Mail size={14} className="text-white" />
           </div>
           <div>
-            <p className="font-semibold text-red-800">Tienes {unread} mensaje{unread > 1 ? 's' : ''} sin leer</p>
-            <p className="text-sm text-red-600">Ve a la pestaña <strong>Mensajes</strong> para revisarlos.</p>
+            <p className="text-[13px] font-semibold text-[#7F1D1D]">
+              {unread} mensaje{unread > 1 ? 's' : ''} sin leer
+            </p>
+            <p className="text-[11px] text-[#B91C1C]">Ve a <strong>Mensajes</strong> para revisarlos.</p>
           </div>
         </div>
       )}
@@ -2011,56 +2013,111 @@ function UsuariosTab() {
 
 // ── MAIN DASHBOARD ─────────────────────────────────────────────
 export function DashboardPage() {
-  const { profile: currentProfile } = useAuth();
+  const { profile: currentProfile, signOut } = useAuth();
   const { unread } = useContactMessages();
   const [activeTab, setActiveTab] = useState<TabId>('resumen');
 
-  const tabs: { id: TabId; label: string; icon: typeof BarChart3; badge?: number }[] = [
-    { id: 'resumen', label: 'Resumen', icon: BarChart3 },
-    { id: 'inicio', label: 'Inicio', icon: Home },
-    { id: 'mensajes', label: 'Mensajes', icon: MessageSquare, badge: unread },
-    { id: 'sitio', label: 'Sitio Web', icon: Settings },
-    { id: 'paginas', label: 'Páginas', icon: PanelLeft },
-    { id: 'usuarios', label: 'Usuarios', icon: Users },
+  const navGroups = [
+    {
+      label: 'General',
+      items: [
+        { id: 'resumen' as TabId, label: 'Resumen', icon: BarChart3 },
+        { id: 'inicio' as TabId, label: 'Inicio', icon: Home },
+        { id: 'mensajes' as TabId, label: 'Mensajes', icon: MessageSquare, badge: unread },
+      ],
+    },
+    {
+      label: 'Configuración',
+      items: [
+        { id: 'sitio' as TabId, label: 'Sitio Web', icon: Globe },
+        { id: 'paginas' as TabId, label: 'Páginas', icon: PanelLeft },
+        { id: 'usuarios' as TabId, label: 'Usuarios', icon: Users },
+      ],
+    },
   ];
 
+  const activeLabel = navGroups.flatMap(g => g.items).find(i => i.id === activeTab)?.label ?? '';
+  const initials = (currentProfile?.display_name ?? 'U').slice(0, 2).toUpperCase();
+
   return (
-    <div className="min-h-screen bg-stone-50">
-      <section className="bg-gradient-to-br from-primary to-primary/80 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-gold rounded-full flex items-center justify-center">
-              <Shield size={32} className="text-primary" />
-            </div>
-            <div>
-              <h1 className="font-serif text-4xl font-bold">Dashboard</h1>
-              <p className="text-stone-300">{currentProfile?.display_name} · {roleLabels[currentProfile?.role ?? 'member']}</p>
-            </div>
-          </motion.div>
-
-          <div className="flex gap-1 mt-8 bg-white/10 rounded-xl p-1 w-fit overflow-x-auto max-w-full">
-            {tabs.map(({ id, label, icon: Icon, badge }) => (
-              <button key={id} onClick={() => setActiveTab(id)}
-                className={cn('flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all relative whitespace-nowrap flex-shrink-0',
-                  activeTab === id ? 'bg-white text-primary shadow-md' : 'text-white/80 hover:text-white hover:bg-white/10'
-                )}>
-                <Icon size={15} />
-                {label}
-                {badge && badge > 0 ? (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-4 h-4 rounded-full flex items-center justify-center">{badge}</span>
-                ) : null}
-              </button>
-            ))}
-          </div>
+    <div className="flex h-screen overflow-hidden">
+      {/* ── Sidebar navy ── */}
+      <aside className="w-56 flex-shrink-0 bg-[#1C1C32] flex flex-col">
+        {/* Brand */}
+        <div className="px-5 py-[18px] border-b border-white/[0.07]">
+          <p className="font-serif text-[13px] font-bold text-white leading-tight">Ebenezer M.I.</p>
+          <p className="text-[9px] uppercase tracking-[0.12em] text-white/30 mt-0.5">Panel de administración</p>
         </div>
-      </section>
 
-      <section className="py-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Navigation */}
+        <nav className="flex-1 py-2 overflow-y-auto">
+          {navGroups.map(group => (
+            <div key={group.label}>
+              <p className="px-4 pt-4 pb-1.5 text-[9px] uppercase tracking-[0.14em] text-white/25 font-semibold">
+                {group.label}
+              </p>
+              {group.items.map(({ id, label, icon: Icon, badge }) => (
+                <button key={id} onClick={() => setActiveTab(id)}
+                  className={cn(
+                    'w-full flex items-center gap-2.5 px-4 py-[9px] text-[12.5px] transition-all border-l-2 text-left',
+                    activeTab === id
+                      ? 'border-[#8D000A] bg-white/[0.06] text-white font-medium'
+                      : 'border-transparent text-white/45 hover:text-white/75 hover:bg-white/[0.04]'
+                  )}>
+                  <Icon size={14} className="flex-shrink-0" />
+                  <span className="flex-1">{label}</span>
+                  {badge && badge > 0 ? (
+                    <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
+                      {badge}
+                    </span>
+                  ) : null}
+                </button>
+              ))}
+            </div>
+          ))}
+        </nav>
+
+        {/* User row */}
+        <div className="px-4 py-3 border-t border-white/[0.07] flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-full bg-[#8D000A] flex items-center justify-center flex-shrink-0">
+            <span className="text-white text-[10px] font-bold">{initials}</span>
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[11.5px] text-white font-medium truncate leading-tight">
+              {currentProfile?.display_name}
+            </p>
+            <p className="text-[9.5px] text-white/35 truncate">
+              {roleLabels[currentProfile?.role ?? 'member']}
+            </p>
+          </div>
+          <button onClick={signOut} title="Cerrar sesión"
+            className="text-white/25 hover:text-white/60 transition-colors flex-shrink-0 p-1">
+            <Lock size={12} />
+          </button>
+        </div>
+      </aside>
+
+      {/* ── Main area ── */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#F4F4F8]">
+        {/* Top header */}
+        <header className="bg-white border-b border-[#E4E4EC] px-6 h-14 flex items-center justify-between flex-shrink-0">
+          <div>
+            <h1 className="text-[14px] font-semibold text-[#111218] leading-tight">{activeLabel}</h1>
+            <p className="text-[10.5px] text-[#8888A0] leading-tight">Dashboard / {activeLabel}</p>
+          </div>
+          <a href="/" target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-[11.5px] text-[#6B7080] hover:text-[#111218] transition-colors">
+            <ExternalLink size={12} />
+            Ver sitio
+          </a>
+        </header>
+
+        {/* Content */}
+        <main className="flex-1 overflow-auto p-6">
           <AnimatePresence mode="wait">
             <motion.div key={activeTab}
-              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.2 }}>
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.18 }}>
               {activeTab === 'resumen' && <ResumenTab />}
               {activeTab === 'inicio' && <InicioTab />}
               {activeTab === 'mensajes' && <MensajesTab />}
@@ -2069,8 +2126,8 @@ export function DashboardPage() {
               {activeTab === 'usuarios' && <UsuariosTab />}
             </motion.div>
           </AnimatePresence>
-        </div>
-      </section>
+        </main>
+      </div>
     </div>
   );
 }

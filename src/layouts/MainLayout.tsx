@@ -2,12 +2,12 @@ import { Outlet } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 
-interface LayoutProps {
+interface PublicLayoutProps {
   onSearch: () => void;
   onContact: () => void;
 }
 
-export function Layout({ onSearch, onContact }: LayoutProps) {
+export function PublicLayout({ onSearch, onContact }: PublicLayoutProps) {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar onSearch={onSearch} />
@@ -18,3 +18,6 @@ export function Layout({ onSearch, onContact }: LayoutProps) {
     </div>
   );
 }
+
+// Keep backward-compatible alias
+export { PublicLayout as Layout };

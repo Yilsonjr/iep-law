@@ -51,19 +51,19 @@ export function ContactModal({ open, onClose }: ContactModalProps) {
             onClick={e => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-primary to-primary-700 rounded-t-2xl p-6 text-white">
+            <div className="border-b border-stone-100 px-6 py-5 rounded-t-2xl">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                    <Mail size={20} />
+                  <div className="w-9 h-9 bg-primary/10 rounded-xl flex items-center justify-center">
+                    <Mail size={18} className="text-primary" />
                   </div>
                   <div>
-                    <h2 className="font-serif text-xl font-bold">Contáctanos</h2>
-                    <p className="text-stone-300 text-sm">Estamos aquí para ayudarte</p>
+                    <h2 className="font-serif text-[17px] font-bold text-[#1A1014]">Contáctanos</h2>
+                    <p className="text-stone-400 text-[12px]">Estamos aquí para ayudarte</p>
                   </div>
                 </div>
-                <button onClick={handleClose} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-                  <X size={20} />
+                <button onClick={handleClose} className="p-1.5 hover:bg-stone-100 rounded-lg transition-colors text-stone-400 hover:text-stone-600">
+                  <X size={18} />
                 </button>
               </div>
             </div>

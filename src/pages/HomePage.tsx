@@ -332,7 +332,7 @@ function StatsBlock({ block }: { block: HomeBlock }) {
               transition={{ delay: i * 0.1 }}
               className="text-center"
             >
-              {stat.emoji && <span className="text-4xl block mb-3">{stat.emoji}</span>}
+              <div className={cn('w-6 h-0.5 mx-auto mb-4', dark ? 'bg-gold/60' : 'bg-gold')} />
               <p className={cn('text-4xl md:text-5xl font-bold font-serif mb-1', !block.color_heading && (dark ? 'text-gold' : 'text-primary'))} style={s.heading}>
                 {stat.value}
               </p>

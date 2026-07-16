@@ -90,22 +90,19 @@ export function DynamicPage() {
       )}
 
       {/* Page title section — always below the image */}
-      <section className={page.cover_image ? 'bg-white border-b border-stone-100 py-10' : 'bg-linear-to-br from-primary to-primary/80 text-white py-20'}>
+      <section className="bg-[#F8F5F0] border-b border-stone-200 py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.h1
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-            className={`font-serif text-4xl md:text-5xl font-bold mb-3 ${page.cover_image ? 'text-primary' : 'text-white'}`}
-          >
-            {page.title}
-          </motion.h1>
-          {page.subtitle && (
-            <motion.p
-              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
-              className={`text-lg max-w-2xl mx-auto ${page.cover_image ? 'text-stone-500' : 'text-white/80'}`}
-            >
-              {page.subtitle}
-            </motion.p>
-          )}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+            <div className="w-8 h-0.5 bg-gold mx-auto mb-4" />
+            <h1 className="font-serif text-4xl md:text-5xl font-bold text-[#1A1014] mb-3">
+              {page.title}
+            </h1>
+            {page.subtitle && (
+              <p className="text-lg max-w-2xl mx-auto text-stone-500">
+                {page.subtitle}
+              </p>
+            )}
+          </motion.div>
         </div>
       </section>
 

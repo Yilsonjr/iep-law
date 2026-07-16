@@ -2,7 +2,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Component, useState, useEffect, type ReactNode, type ErrorInfo } from 'react';
 import { AuthProvider } from './contexts/AuthContext';
 import { SiteConfigProvider } from './contexts/SiteConfigContext';
-import { Layout } from './layouts/MainLayout';
+import { PublicLayout } from './layouts/MainLayout';
+import { AdminLayout } from './layouts/AdminLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { SearchModal } from './components/SearchModal';
 import { ContactModal } from './components/ContactModal';
@@ -58,8 +59,9 @@ function AppInner() {
   return (
     <>
       <Routes>
+        {/* ── Rutas públicas — con Navbar + Footer ── */}
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/" element={<Layout onSearch={() => setSearchOpen(true)} onContact={() => setContactOpen(true)} />}>
+        <Route path="/" element={<PublicLayout onSearch={() => setSearchOpen(true)} onContact={() => setContactOpen(true)} />}>
           <Route index element={<HomePage onContact={() => setContactOpen(true)} />} />
           <Route path="sermons" element={<SermonsPage />} />
           <Route path="live" element={<LivePage />} />
@@ -67,14 +69,18 @@ function AppInner() {
           <Route path="posts" element={<PostsPage />} />
           <Route path="posts/:id" element={<PostDetailPage />} />
           <Route path="p/:slug" element={<DynamicPage />} />
-          <Route
-            path="dashboard"
-            element={
-              <ProtectedRoute requireDashboard>
-                <DashboardPage />
-              </ProtectedRoute>
-            }
-          />
+        </Route>
+
+        {/* ── Rutas de admin — sin Navbar ni Footer ── */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute requireDashboard>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<DashboardPage />} />
         </Route>
       </Routes>
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
