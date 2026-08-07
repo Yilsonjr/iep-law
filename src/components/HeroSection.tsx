@@ -23,7 +23,7 @@ export function HeroSection() {
   // ── SLIDER MODE ───────────────────────────────────────────────
   if (hero.mode === 'slider' && hero.slides.length > 0) {
     return (
-      <section className="relative h-[100svh] min-h-[580px] overflow-hidden bg-stone-900">
+      <section className="relative h-[60vh] sm:h-[100svh] min-h-[380px] sm:min-h-[580px] overflow-hidden bg-stone-900">
         {hero.slides.map((src, i) => (
           <AnimatePresence key={i}>
             {i === slide && (
@@ -35,17 +35,17 @@ export function HeroSection() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 1.2 }}
-                className="absolute inset-0 w-full h-full object-cover"
+                className="absolute inset-0 w-full h-full object-cover object-top sm:object-center"
               />
             )}
           </AnimatePresence>
         ))}
 
-        {/* Gradient overlay — heavier at top and bottom for text legibility */}
+        {/* Overlay más opaco en móvil para cubrir texto de la imagen */}
         <div
           className="absolute inset-0"
           style={{
-            background: `linear-gradient(to bottom, rgba(0,0,0,${hero.overlay * 0.5}) 0%, rgba(0,0,0,${hero.overlay}) 50%, rgba(0,0,0,${hero.overlay * 0.8}) 100%)`,
+            background: `linear-gradient(to bottom, rgba(0,0,0,${Math.min(hero.overlay + 0.25, 0.85)}) 0%, rgba(0,0,0,${Math.min(hero.overlay + 0.15, 0.75)}) 50%, rgba(0,0,0,${Math.min(hero.overlay + 0.2, 0.8)}) 100%)`,
           }}
         />
 
@@ -64,17 +64,16 @@ export function HeroSection() {
   // ── IMAGE MODE ────────────────────────────────────────────────
   if (hero.mode === 'image' && hero.bg_url) {
     return (
-      <section className="relative h-[100svh] min-h-[580px] overflow-hidden bg-stone-900">
+      <section className="relative h-[60vh] sm:h-[100svh] min-h-[380px] sm:min-h-[580px] overflow-hidden bg-stone-900">
         <img
           src={hero.bg_url}
           alt=""
-          className="absolute inset-0 w-full h-full object-cover object-center sm:object-center"
-          style={{ objectPosition: 'center 30%' }}
+          className="absolute inset-0 w-full h-full object-cover object-top sm:object-center"
         />
         <div
           className="absolute inset-0"
           style={{
-            background: `linear-gradient(to bottom, rgba(0,0,0,${hero.overlay * 0.4}) 0%, rgba(0,0,0,${hero.overlay}) 55%, rgba(0,0,0,${hero.overlay * 0.7}) 100%)`,
+            background: `linear-gradient(to bottom, rgba(0,0,0,${hero.overlay * 0.5}) 0%, rgba(0,0,0,${hero.overlay}) 55%, rgba(0,0,0,${hero.overlay * 0.8}) 100%)`,
           }}
         />
         <HeroContent hero={hero} />
@@ -84,7 +83,7 @@ export function HeroSection() {
 
   // ── TEXT MODE (default — gradient bg) ─────────────────────────
   return (
-    <section className="relative h-[100svh] min-h-[580px] overflow-hidden flex items-center">
+    <section className="relative h-[60vh] sm:h-[100svh] min-h-[380px] sm:min-h-[580px] overflow-hidden flex items-center">
       {/* Background pattern */}
       <div className="absolute inset-0 bg-primary" />
       <div
