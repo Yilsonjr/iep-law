@@ -111,34 +111,43 @@ function HeroContent({ hero, textMode = false }: { hero: ReturnType<typeof useSi
   };
 
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center text-white text-center z-10"
-      style={{ padding: '0 clamp(1rem, 5vw, 3rem)' }}
-    >
-      {hero.prefix && (
-        <motion.p
-          custom={0} variants={item} initial="hidden" animate="visible"
-          className="w-full text-white/80 font-light uppercase mb-2 truncate"
-          style={{ fontSize: 'clamp(0.65rem, 2.5vw, 1rem)', letterSpacing: '0.15em' }}
-        >
-          {hero.prefix}
-        </motion.p>
-      )}
-
-      <motion.h1
-        custom={1} variants={item} initial="hidden" animate="visible"
-        className="w-full font-serif font-bold leading-tight mb-3 md:mb-4"
+    /* Outer: ocupa todo el hero y centra verticalmente */
+    <div className="absolute inset-0 flex items-center justify-center z-10">
+      {/* Inner: ancho fijo con padding — los hijos son bloques normales, nunca flex-shrink */}
+      <div
+        className="text-white text-center"
         style={{
-          fontSize: 'clamp(2rem, 8vw, 6rem)',
-          textShadow: '0 4px 24px rgba(0,0,0,0.5)',
-          wordBreak: 'break-word',
-          overflowWrap: 'break-word',
+          width: '100%',
+          maxWidth: '56rem',
+          paddingLeft:  'clamp(1rem, 6vw, 3rem)',
+          paddingRight: 'clamp(1rem, 6vw, 3rem)',
+          boxSizing: 'border-box',
         }}
       >
-        {textMode ? (
-          hero.title
-        ) : (
-          <>
-            {(() => {
+        {hero.prefix && (
+          <motion.p
+            custom={0} variants={item} initial="hidden" animate="visible"
+            className="text-white/80 font-light uppercase mb-2"
+            style={{ fontSize: 'clamp(0.6rem, 2.5vw, 1rem)', letterSpacing: '0.15em' }}
+          >
+            {hero.prefix}
+          </motion.p>
+        )}
+
+        <motion.h1
+          custom={1} variants={item} initial="hidden" animate="visible"
+          className="font-serif font-bold leading-tight mb-3"
+          style={{
+            fontSize: 'clamp(1.9rem, 7.5vw, 6rem)',
+            textShadow: '0 4px 24px rgba(0,0,0,0.55)',
+            overflowWrap: 'break-word',
+            wordBreak: 'break-word',
+          }}
+        >
+          {textMode ? (
+            hero.title
+          ) : (
+            (() => {
               const words = hero.title.split(' ');
               const lastWord = words.pop();
               return (
@@ -147,44 +156,44 @@ function HeroContent({ hero, textMode = false }: { hero: ReturnType<typeof useSi
                   <span className="text-gold">{lastWord}</span>
                 </>
               );
-            })()}
-          </>
+            })()
+          )}
+        </motion.h1>
+
+        {hero.subtitle && (
+          <motion.p
+            custom={2} variants={item} initial="hidden" animate="visible"
+            className="text-white/75 font-light mb-8"
+            style={{ fontSize: 'clamp(0.85rem, 2.8vw, 1.25rem)' }}
+          >
+            {hero.subtitle}
+          </motion.p>
         )}
-      </motion.h1>
 
-      {hero.subtitle && (
-        <motion.p
-          custom={2} variants={item} initial="hidden" animate="visible"
-          className="w-full text-white/75 mb-8 md:mb-10 font-light"
-          style={{ fontSize: 'clamp(0.85rem, 2.8vw, 1.25rem)', maxWidth: '36rem', margin: '0 auto 2rem' }}
-        >
-          {hero.subtitle}
-        </motion.p>
-      )}
+        {hero.buttons.length > 0 && (
+          <motion.div
+            custom={3} variants={item} initial="hidden" animate="visible"
+            className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center"
+          >
+            {hero.buttons.map((btn, i) => (
+              <Link
+                key={i}
+                to={btn.href}
+                className={cn(
+                  'block sm:inline-block px-7 py-3 sm:px-8 sm:py-3.5 rounded-full font-semibold text-sm tracking-wide transition-all duration-300 text-center',
+                  btn.variant === 'primary'
+                    ? 'bg-gold text-stone-900 hover:bg-gold/90 shadow-lg hover:shadow-gold/30 hover:shadow-xl hover:-translate-y-0.5'
+                    : 'border-2 border-white/70 text-white hover:bg-white/10 hover:border-white backdrop-blur-sm'
+                )}
+              >
+                {btn.label}
+              </Link>
+            ))}
+          </motion.div>
+        )}
+      </div>
 
-      {hero.buttons.length > 0 && (
-        <motion.div
-          custom={3} variants={item} initial="hidden" animate="visible"
-          className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center w-full"
-        >
-          {hero.buttons.map((btn, i) => (
-            <Link
-              key={i}
-              to={btn.href}
-              className={cn(
-                'w-full sm:w-auto px-7 py-3 sm:px-8 sm:py-3.5 rounded-full font-semibold text-sm tracking-wide transition-all duration-300 text-center',
-                btn.variant === 'primary'
-                  ? 'bg-gold text-stone-900 hover:bg-gold/90 shadow-lg hover:shadow-gold/30 hover:shadow-xl hover:-translate-y-0.5'
-                  : 'border-2 border-white/70 text-white hover:bg-white/10 hover:border-white backdrop-blur-sm'
-              )}
-            >
-              {btn.label}
-            </Link>
-          ))}
-        </motion.div>
-      )}
-
-      {/* Scroll indicator */}
+      {/* Scroll indicator — posicionado relativo al hero, no al inner wrapper */}
       <motion.div
         custom={4} variants={item} initial="hidden" animate="visible"
         className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-white/50"
