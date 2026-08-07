@@ -23,7 +23,7 @@ export function HeroSection() {
   // ── SLIDER MODE ───────────────────────────────────────────────
   if (hero.mode === 'slider' && hero.slides.length > 0) {
     return (
-      <section className="relative h-screen min-h-[600px] overflow-hidden bg-stone-900">
+      <section className="relative h-[100svh] min-h-[580px] overflow-hidden bg-stone-900">
         {hero.slides.map((src, i) => (
           <AnimatePresence key={i}>
             {i === slide && (
@@ -64,12 +64,12 @@ export function HeroSection() {
   // ── IMAGE MODE ────────────────────────────────────────────────
   if (hero.mode === 'image' && hero.bg_url) {
     return (
-      <section className="relative h-screen min-h-[600px] overflow-hidden bg-stone-900">
+      <section className="relative h-[100svh] min-h-[580px] overflow-hidden bg-stone-900">
         <img
           src={hero.bg_url}
           alt=""
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{ transform: 'scale(1.02)' }}
+          className="absolute inset-0 w-full h-full object-cover object-center sm:object-center"
+          style={{ objectPosition: 'center 30%' }}
         />
         <div
           className="absolute inset-0"
@@ -84,7 +84,7 @@ export function HeroSection() {
 
   // ── TEXT MODE (default — gradient bg) ─────────────────────────
   return (
-    <section className="relative h-screen min-h-[600px] overflow-hidden flex items-center">
+    <section className="relative h-[100svh] min-h-[580px] overflow-hidden flex items-center">
       {/* Background pattern */}
       <div className="absolute inset-0 bg-primary" />
       <div
@@ -111,11 +111,14 @@ function HeroContent({ hero, textMode = false }: { hero: ReturnType<typeof useSi
   };
 
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center text-white text-center px-4 z-10">
+    <div className="absolute inset-0 flex flex-col items-center justify-center text-white text-center z-10"
+      style={{ padding: '0 clamp(1rem, 5vw, 3rem)' }}
+    >
       {hero.prefix && (
         <motion.p
           custom={0} variants={item} initial="hidden" animate="visible"
-          className="text-base md:text-lg text-white/80 font-light tracking-[0.25em] uppercase mb-2"
+          className="w-full text-white/80 font-light uppercase mb-2 truncate"
+          style={{ fontSize: 'clamp(0.65rem, 2.5vw, 1rem)', letterSpacing: '0.15em' }}
         >
           {hero.prefix}
         </motion.p>
@@ -123,14 +126,18 @@ function HeroContent({ hero, textMode = false }: { hero: ReturnType<typeof useSi
 
       <motion.h1
         custom={1} variants={item} initial="hidden" animate="visible"
-        className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold leading-tight mb-4"
-        style={{ textShadow: '0 4px 24px rgba(0,0,0,0.5)' }}
+        className="w-full font-serif font-bold leading-tight mb-3 md:mb-4"
+        style={{
+          fontSize: 'clamp(2rem, 8vw, 6rem)',
+          textShadow: '0 4px 24px rgba(0,0,0,0.5)',
+          wordBreak: 'break-word',
+          overflowWrap: 'break-word',
+        }}
       >
         {textMode ? (
           hero.title
         ) : (
           <>
-            {/* Split last word and give it a gold color for visual impact */}
             {(() => {
               const words = hero.title.split(' ');
               const lastWord = words.pop();
@@ -148,7 +155,8 @@ function HeroContent({ hero, textMode = false }: { hero: ReturnType<typeof useSi
       {hero.subtitle && (
         <motion.p
           custom={2} variants={item} initial="hidden" animate="visible"
-          className="text-lg md:text-xl text-white/75 mb-10 max-w-xl tracking-wide font-light"
+          className="w-full text-white/75 mb-8 md:mb-10 font-light"
+          style={{ fontSize: 'clamp(0.85rem, 2.8vw, 1.25rem)', maxWidth: '36rem', margin: '0 auto 2rem' }}
         >
           {hero.subtitle}
         </motion.p>
@@ -157,14 +165,14 @@ function HeroContent({ hero, textMode = false }: { hero: ReturnType<typeof useSi
       {hero.buttons.length > 0 && (
         <motion.div
           custom={3} variants={item} initial="hidden" animate="visible"
-          className="flex flex-col sm:flex-row gap-4 justify-center"
+          className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center w-full"
         >
           {hero.buttons.map((btn, i) => (
             <Link
               key={i}
               to={btn.href}
               className={cn(
-                'px-8 py-3.5 rounded-full font-semibold text-sm tracking-wide transition-all duration-300',
+                'w-full sm:w-auto px-7 py-3 sm:px-8 sm:py-3.5 rounded-full font-semibold text-sm tracking-wide transition-all duration-300 text-center',
                 btn.variant === 'primary'
                   ? 'bg-gold text-stone-900 hover:bg-gold/90 shadow-lg hover:shadow-gold/30 hover:shadow-xl hover:-translate-y-0.5'
                   : 'border-2 border-white/70 text-white hover:bg-white/10 hover:border-white backdrop-blur-sm'
