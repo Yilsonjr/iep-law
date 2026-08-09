@@ -17,35 +17,49 @@ export function HeroSection() {
   }, [loading, hero.mode, hero.slides.length]);
 
   if (loading) {
-    return <div className="h-screen bg-stone-900 animate-pulse" />;
+    return <div className="h-[56vw] sm:h-screen min-h-[260px] sm:min-h-[580px] bg-stone-900 animate-pulse" />;
   }
 
   // ── SLIDER MODE ───────────────────────────────────────────────
   if (hero.mode === 'slider' && hero.slides.length > 0) {
     return (
-      <section className="relative h-[60vh] sm:h-[100svh] min-h-[380px] sm:min-h-[580px] overflow-hidden bg-stone-900">
+      <section className="relative h-[56vw] sm:h-[100svh] min-h-[260px] sm:min-h-[580px] overflow-hidden bg-stone-900">
         {hero.slides.map((src, i) => (
           <AnimatePresence key={i}>
             {i === slide && (
-              <motion.img
+              <motion.div
                 key={src}
-                src={src}
-                alt=""
-                initial={{ opacity: 0, scale: 1.04 }}
-                animate={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 1.2 }}
-                className="absolute inset-0 w-full h-full object-cover object-top sm:object-center"
-              />
+                className="absolute inset-0"
+              >
+                {/*
+                 * Mobile: fondo desenfocado rellena las barras del letterbox.
+                 * La imagen principal usa object-contain → composición completa visible sin recorte.
+                 * Desktop (sm:): object-cover normal, fondo desenfocado oculto.
+                 */}
+                <img
+                  src={src}
+                  aria-hidden="true"
+                  className="absolute inset-0 w-full h-full object-cover sm:hidden"
+                  style={{ filter: 'blur(24px) brightness(0.35) saturate(0.4)', transform: 'scale(1.15)' }}
+                />
+                <img
+                  src={src}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-contain sm:object-cover"
+                />
+              </motion.div>
             )}
           </AnimatePresence>
         ))}
 
-        {/* Overlay más opaco en móvil para cubrir texto de la imagen */}
         <div
           className="absolute inset-0"
           style={{
-            background: `linear-gradient(to bottom, rgba(0,0,0,${Math.min(hero.overlay + 0.25, 0.85)}) 0%, rgba(0,0,0,${Math.min(hero.overlay + 0.15, 0.75)}) 50%, rgba(0,0,0,${Math.min(hero.overlay + 0.2, 0.8)}) 100%)`,
+            background: `linear-gradient(to bottom, rgba(0,0,0,${Math.min(hero.overlay + 0.15, 0.75)}) 0%, rgba(0,0,0,${hero.overlay}) 50%, rgba(0,0,0,${Math.min(hero.overlay + 0.1, 0.72)}) 100%)`,
           }}
         />
 
@@ -64,11 +78,18 @@ export function HeroSection() {
   // ── IMAGE MODE ────────────────────────────────────────────────
   if (hero.mode === 'image' && hero.bg_url) {
     return (
-      <section className="relative h-[60vh] sm:h-[100svh] min-h-[380px] sm:min-h-[580px] overflow-hidden bg-stone-900">
+      <section className="relative h-[56vw] sm:h-[100svh] min-h-[260px] sm:min-h-[580px] overflow-hidden bg-stone-900">
+        {/* Blurred fill — mobile only */}
+        <img
+          src={hero.bg_url}
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-full object-cover sm:hidden"
+          style={{ filter: 'blur(24px) brightness(0.35) saturate(0.4)', transform: 'scale(1.15)' }}
+        />
         <img
           src={hero.bg_url}
           alt=""
-          className="absolute inset-0 w-full h-full object-cover object-top sm:object-center"
+          className="absolute inset-0 w-full h-full object-contain sm:object-cover"
         />
         <div
           className="absolute inset-0"
@@ -83,7 +104,7 @@ export function HeroSection() {
 
   // ── TEXT MODE (default — gradient bg) ─────────────────────────
   return (
-    <section className="relative h-[60vh] sm:h-[100svh] min-h-[380px] sm:min-h-[580px] overflow-hidden flex items-center">
+    <section className="relative h-[56vw] sm:h-[100svh] min-h-[260px] sm:min-h-[580px] overflow-hidden flex items-center">
       {/* Background pattern */}
       <div className="absolute inset-0 bg-primary" />
       <div
