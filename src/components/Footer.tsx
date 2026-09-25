@@ -339,26 +339,30 @@ export function Footer({ onContact }: FooterProps) {
 
   return (
     <>
-      {/* ── CTA Band — fuera del footer, fondo cálido para respiración visual */}
+      {/* ── CTA Band — editorial pre-footer */}
       {ctaEnabled && (
-        <section className="bg-paper border-t border-stone-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 flex flex-col md:flex-row items-center justify-between gap-8">
+        <section className="relative overflow-hidden" style={{ background: 'linear-gradient(160deg, #1E0002 0%, #3D0004 50%, #1A0002 100%)' }}>
+          <div aria-hidden="true" className="absolute inset-0 pointer-events-none opacity-[0.025]"
+            style={{ backgroundImage: 'radial-gradient(circle at 1.5px 1.5px, #D4AF37 1px, transparent 0)', backgroundSize: '28px 28px' }} />
+          <div aria-hidden="true" className="absolute -top-20 right-0 w-64 h-64 rounded-full pointer-events-none"
+            style={{ background: 'radial-gradient(ellipse, rgba(212,175,55,0.12) 0%, transparent 70%)' }} />
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
             <div className="text-center md:text-left max-w-xl">
-              <h3 className="font-serif text-2xl md:text-3xl font-semibold text-primary-700 leading-snug">{ctaTitle}</h3>
-              <p className="text-stone-500 text-sm md:text-base mt-2 max-w-lg leading-relaxed">{ctaSubtitle}</p>
+              <h3 className="font-serif text-2xl md:text-3xl font-semibold text-white leading-snug">{ctaTitle}</h3>
+              <p className="text-white/55 text-sm md:text-base mt-2 max-w-lg leading-relaxed">{ctaSubtitle}</p>
             </div>
             <div className="flex flex-col sm:flex-row items-center gap-3">
               <motion.button
                 whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                 onClick={onContact}
-                className="btn-primary text-sm">
+                className="inline-flex items-center justify-center gap-2 bg-gold text-[#241B0B] px-6 py-3 rounded-full font-semibold text-sm transition-all hover:bg-gold-400 shadow-[0_4px_20px_rgba(212,175,55,0.3)]">
                 <Mail size={16} />Escribirnos
               </motion.button>
               {waUrl && (
                 <motion.a
                   whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                   href={waUrl} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 border border-green-500/40 text-green-600 bg-green-50 font-semibold px-5 py-2.5 rounded-[0.625rem] text-sm transition-colors hover:bg-green-100">
+                  className="inline-flex items-center gap-2 border border-green-400/35 text-green-400 bg-green-500/10 font-semibold px-5 py-2.5 rounded-full text-sm transition-colors hover:bg-green-500/20">
                   <IconWhatsApp className="w-4 h-4" />WhatsApp
                 </motion.a>
               )}
@@ -369,13 +373,17 @@ export function Footer({ onContact }: FooterProps) {
 
       <footer
         style={{
-          backgroundColor: C.bg,
-          backgroundImage: 'linear-gradient(rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.05) 100%), radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.55) 1px, transparent 0)',
-          backgroundSize: 'auto, 22px 22px',
+          background: 'linear-gradient(160deg, #120002 0%, #1C0003 35%, #0F0001 70%, #0A0001 100%)',
+          backgroundImage: 'radial-gradient(circle at 1.5px 1.5px, rgba(212,175,55,0.055) 1px, transparent 0)',
+          backgroundSize: '26px 26px',
         }}
       >
-        {/* Gold hairline signature */}
-        <div aria-hidden="true" className="h-px bg-gold/70" />
+        {/* Gold accent top border */}
+        <div
+          aria-hidden="true"
+          className="h-[2px]"
+          style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(212,175,55,0.6) 15%, #D4AF37 50%, rgba(212,175,55,0.6) 85%, transparent 100%)' }}
+        />
 
         {/* ── Widget columns ────────────────────────────────────── */}
         {widgets.length > 0 && (

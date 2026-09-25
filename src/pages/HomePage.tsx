@@ -222,72 +222,123 @@ function ServiceCard() {
   );
 }
 
-// ── SCROLL STORY SECTION ───────────────────────────────────────
+// ── SCROLL STORY SECTION (HP-3 Impact) ────────────────────────
 const storyWords = ['Una', 'casa', 'para', 'encontrar', 'a', 'Dios,', 'crecer', 'en', 'fe', 'y', 'servir', 'a', 'la', 'comunidad.'];
 
 function ScrollStorySection() {
   const { config } = useSiteConfigContext();
-  const { branding, hero } = config;
+  const { branding, hero, footer } = config;
   const imgSrc = hero.slides[0] || hero.bg_url || '';
+  const serviceCount = footer.schedules?.items?.length ?? 2;
+
+  const stats = [
+    { value: '14+', label: 'Años sirviendo' },
+    { value: String(serviceCount), label: 'Servicios por semana' },
+    { value: '∞',  label: 'Puertas abiertas' },
+  ];
 
   return (
-    <section className="py-24 bg-paper overflow-hidden">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 items-center">
-          {/* Text */}
+    <section className="relative overflow-hidden" style={{ background: '#0C0807' }}>
+      {/* Gold dot grain */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none opacity-[0.022]"
+        style={{
+          backgroundImage: 'radial-gradient(circle at 1.5px 1.5px, #D4AF37 1px, transparent 0)',
+          backgroundSize: '30px 30px',
+        }}
+      />
+      {/* Warm radial glow */}
+      <div
+        aria-hidden="true"
+        className="absolute -top-48 left-1/2 -translate-x-1/2 w-[700px] h-[500px] rounded-full pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse, rgba(212,175,55,0.07) 0%, transparent 65%)' }}
+      />
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-24 relative z-10">
+        {/* Eyebrow */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="flex items-center gap-3 mb-16"
+        >
+          <span aria-hidden="true" className="w-10 h-px bg-gold/35" />
+          <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-gold/65">Nuestra historia</span>
+        </motion.div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-24 items-center">
+          {/* Text column */}
           <motion.div
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: '-60px' }}
-            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.045 } } }}
+            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.038 } } }}
           >
-            <motion.p
-              variants={fadeUp}
-              className="text-[10px] font-bold uppercase tracking-[0.22em] text-gold mb-5"
+            <h2
+              className="font-serif text-5xl md:text-6xl font-bold leading-[1.08] mb-8"
+              aria-label={storyWords.join(' ')}
             >
-              {branding.tagline || 'Lawrence, Massachusetts'}
-            </motion.p>
-
-            <h2 className="font-serif text-4xl md:text-5xl font-bold text-ink leading-tight mb-6" aria-label={storyWords.join(' ')}>
               {storyWords.map((word, i) => (
                 <motion.span
                   key={i}
                   variants={{
-                    hidden: { opacity: 0, y: 18 },
-                    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
+                    hidden: { opacity: 0, y: 22 },
+                    visible: { opacity: 1, y: 0, transition: { duration: 0.52, ease: 'easeOut' } },
                   }}
-                  className="inline-block mr-[0.22em]"
+                  className={cn(
+                    'inline-block mr-[0.22em]',
+                    (word === 'Dios,' || word === 'fe') ? 'text-gold' : 'text-white'
+                  )}
                 >
                   {word}
                 </motion.span>
               ))}
             </h2>
 
-            <motion.div variants={fadeUp} aria-hidden="true" className="w-14 h-px bg-gold mb-6" />
+            <motion.div variants={fadeUp} aria-hidden="true" className="w-14 h-px bg-gold/55 mb-8" />
 
-            <motion.p variants={fadeUp} className="text-base text-stone-600 leading-relaxed max-w-sm">
+            <motion.p variants={fadeUp} className="text-stone-400 text-base leading-relaxed max-w-sm mb-10">
               Desde Lawrence, Massachusetts, somos una comunidad que celebra la vida, honra la fe y abre sus puertas a todos.
             </motion.p>
 
-            <motion.div variants={fadeUp} className="mt-8">
+            {/* Impact stats */}
+            <motion.div
+              variants={fadeUp}
+              className="flex gap-8 sm:gap-12 py-8 border-y border-white/[0.07] mb-10"
+            >
+              {stats.map((stat, i) => (
+                <div key={i} className="flex flex-col gap-1.5">
+                  <span className="font-serif text-3xl md:text-4xl font-bold text-gold leading-none tabular-nums">
+                    {stat.value}
+                  </span>
+                  <span className="text-[9px] font-semibold uppercase tracking-[0.15em] text-stone-500">
+                    {stat.label}
+                  </span>
+                </div>
+              ))}
+            </motion.div>
+
+            <motion.div variants={fadeUp}>
               <Link
                 to="/p/quienes-somos"
-                className="inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.12em] uppercase text-primary hover:text-primary/70 transition-colors"
+                className="inline-flex items-center gap-3 text-[11px] font-semibold tracking-[0.14em] uppercase text-white/45 hover:text-gold transition-colors duration-300 group"
               >
                 Conócenos
-                <span aria-hidden="true" className="inline-block w-8 h-px bg-primary/60" />
+                <span aria-hidden="true" className="inline-block w-10 h-px bg-gold/40 group-hover:w-14 transition-all duration-300" />
               </Link>
             </motion.div>
           </motion.div>
 
-          {/* Image */}
+          {/* Image column */}
           {imgSrc ? (
             <motion.div
-              initial={{ opacity: 0, x: 32 }}
+              initial={{ opacity: 0, x: 40 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.85, ease: 'easeOut' }}
-              className="relative rounded-3xl overflow-hidden aspect-[4/5] max-h-[520px] shadow-[0_24px_64px_rgba(34,26,20,0.14)]"
+              transition={{ duration: 0.9, ease: 'easeOut' }}
+              className="relative rounded-3xl overflow-hidden aspect-[4/5] max-h-[560px] shadow-[0_40px_90px_rgba(0,0,0,0.65)]"
             >
               <img
                 src={imgSrc}
@@ -296,15 +347,25 @@ function ScrollStorySection() {
                 decoding="async"
                 className="w-full h-full object-cover object-center"
               />
-              <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-ink/20 to-transparent pointer-events-none" />
-              {/* Gold corner accent */}
-              <div aria-hidden="true" className="absolute top-0 left-0 w-16 h-16 border-t-[1.5px] border-l-[1.5px] border-gold/55 rounded-tl-3xl pointer-events-none" />
-              <div aria-hidden="true" className="absolute bottom-0 right-0 w-16 h-16 border-b-[1.5px] border-r-[1.5px] border-gold/30 rounded-br-3xl pointer-events-none" />
+              {/* Film burn gradient */}
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 pointer-events-none"
+                style={{ background: 'linear-gradient(to bottom, rgba(12,8,7,0.08) 0%, transparent 35%, rgba(12,8,7,0.72) 100%)' }}
+              />
+              {/* Gold corner brackets */}
+              <div aria-hidden="true" className="absolute top-5 left-5 w-10 h-10 border-t-[1.5px] border-l-[1.5px] border-gold/55 pointer-events-none" />
+              <div aria-hidden="true" className="absolute bottom-5 right-5 w-10 h-10 border-b-[1.5px] border-r-[1.5px] border-gold/35 pointer-events-none" />
+              {/* Bottom label */}
+              <div className="absolute bottom-7 left-7 right-7">
+                <p className="text-white/65 text-xs font-light tracking-wide">
+                  {branding.tagline || 'Lawrence, Massachusetts'}
+                </p>
+              </div>
             </motion.div>
           ) : (
-            // Placeholder when no image configured
-            <div className="rounded-3xl aspect-[4/5] max-h-[520px] bg-stone-200 flex items-center justify-center">
-              <span className="text-stone-400 text-sm">Sin imagen configurada</span>
+            <div className="rounded-3xl aspect-[4/5] max-h-[560px] bg-stone-900 border border-white/[0.06] flex items-center justify-center">
+              <span className="text-stone-600 text-sm">Sin imagen configurada</span>
             </div>
           )}
         </div>
@@ -383,6 +444,51 @@ function SermonFeatureSection() {
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             />
+          </motion.div>
+        )}
+
+        {/* Live — cinematic placeholder when no embed URL */}
+        {live.is_live && !embedUrl && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
+            className="rounded-2xl overflow-hidden aspect-video mb-8 flex flex-col items-center justify-center gap-5 relative"
+            style={{
+              background: 'linear-gradient(135deg, #1A0003 0%, #0D0001 60%, #110806 100%)',
+              boxShadow: '0 0 60px rgba(239,68,68,0.10), 0 16px 48px rgba(0,0,0,0.5)',
+            }}
+          >
+            {/* Pulsing red atmosphere */}
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 rounded-2xl pointer-events-none"
+              style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 40%, rgba(239,68,68,0.08) 0%, transparent 70%)' }}
+            />
+            <div className="flex items-center gap-2.5 relative z-10">
+              <span className="flex h-3 w-3 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
+              </span>
+              <span className="text-red-400 font-bold text-sm uppercase tracking-[0.16em]">Transmisión en vivo</span>
+            </div>
+            {live.title && (
+              <h3 className="font-serif text-2xl md:text-3xl text-white text-center px-8 relative z-10 text-balance">
+                {live.title}
+              </h3>
+            )}
+            {live.speaker && (
+              <p className="text-gold text-sm relative z-10">{live.speaker}</p>
+            )}
+            {live.stream_url && (
+              <a
+                href={live.stream_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 flex items-center gap-2 px-7 py-3 rounded-full bg-red-600/20 border border-red-500/35 text-red-400 text-sm font-semibold hover:bg-red-600/30 transition-colors relative z-10"
+              >
+                <Play size={14} fill="currentColor" />
+                Ver en YouTube
+              </a>
+            )}
           </motion.div>
         )}
 
@@ -590,58 +696,109 @@ function EventsStripSection() {
   );
 }
 
-// ── CARDS BLOCK ────────────────────────────────────────────────
+// ── CARDS BLOCK (HP-3 bento + 3D depth) ───────────────────────
 function CardsBlock({ block }: { block: HomeBlock }) {
   const dark = isDarkBg(block.bg);
-  const cols = { 2: 'md:grid-cols-2', 3: 'md:grid-cols-3', 4: 'md:grid-cols-2 lg:grid-cols-4' };
   const s = bc(block);
+  const cols: Record<number, string> = { 2: 'md:grid-cols-2', 3: 'md:grid-cols-3', 4: 'md:grid-cols-2 lg:grid-cols-4' };
+  const isBento = block.cards.length === 3;
+
+  const cardClass = (featured: boolean) => cn(
+    'relative group overflow-hidden card-3d',
+    featured ? 'flex flex-row items-start gap-7 p-9 sm:p-10' : 'flex flex-col items-center text-center p-8 sm:p-10',
+    !block.color_bg && !dark && [
+      'rounded-2xl border border-stone-200/70 bg-white',
+      'hover:border-gold/45 hover:shadow-[0_16px_56px_rgba(212,175,55,0.18),0_0_0_1px_rgba(212,175,55,0.18)]',
+    ],
+  );
+
+  const renderCardContent = (card: HomeBlock['cards'][number], featured: boolean) => (
+    <>
+      {!block.color_bg && !dark && (
+        <div aria-hidden="true" className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-gold/45 to-transparent rounded-t-2xl" />
+      )}
+      <span
+        aria-hidden="true"
+        className={cn(
+          'rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-300',
+          featured ? 'w-20 h-20 text-3xl' : 'w-16 h-16 text-2xl',
+          dark ? 'bg-white/10' : 'bg-primary/[0.09] group-hover:bg-gold/[0.18] group-hover:scale-110'
+        )}
+        style={dark ? undefined : { boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 8px rgba(141,0,10,0.10)' }}
+      >
+        {card.emoji || '✦'}
+      </span>
+      <div className={featured ? 'flex-1 min-w-0' : 'mt-5 flex flex-col items-center'}>
+        <h3
+          className={cn(
+            'font-serif font-bold',
+            featured ? 'text-xl md:text-2xl mb-3 text-left' : 'text-sm tracking-[0.12em] uppercase text-center',
+            !block.color_heading && (dark ? 'text-white' : 'text-ink')
+          )}
+          style={s.heading}
+        >
+          {card.title}
+        </h3>
+        <div aria-hidden="true" className={cn('h-px bg-gold/55', featured ? 'w-10 mb-4' : 'w-10 my-3')} />
+        <p
+          className={cn(
+            'leading-relaxed',
+            featured ? 'text-base text-left' : 'text-sm max-w-xs text-center',
+            !block.color_text && (dark ? 'text-stone-300' : 'text-stone-600')
+          )}
+          style={s.text}
+        >
+          {card.description}
+        </p>
+      </div>
+    </>
+  );
 
   return (
-    <section className={cn('py-20', !block.color_bg && sectionBgClass(block.bg), !dark && !block.color_bg && 'border-t border-stone-100')} style={s.section}>
+    <section
+      className={cn('py-20', !block.color_bg && sectionBgClass(block.bg), !dark && !block.color_bg && 'border-t border-stone-100')}
+      style={s.section}
+    >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeader block={block} dark={dark} s={s} />
-        <div className={cn('grid grid-cols-1 gap-6 lg:gap-8', cols[block.card_cols])}>
-          {block.cards.map((card, i) => (
+
+        {isBento ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+            {/* Featured card — spans 2 cols */}
             <motion.div
-              key={i}
-              variants={fadeUp}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.12 }}
-              className={cn(
-                'relative flex flex-col items-center text-center group',
-                !block.color_bg && !dark && 'rounded-2xl border border-stone-200/70 bg-white p-8 sm:p-10 transition-all duration-300 hover:border-gold/50 hover:shadow-[0_10px_40px_rgba(212,175,55,0.16),0_0_0_1px_rgba(212,175,55,0.18)] motion-safe:hover:-translate-y-1.5'
-              )}
+              variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
+              className={cn(cardClass(true), 'lg:col-span-2')}
             >
-              {!block.color_bg && !dark && (
-                <div aria-hidden="true" className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-gold/40 to-transparent rounded-t-2xl" />
-              )}
-              <span
-                aria-hidden="true"
-                className={cn(
-                  'w-16 h-16 rounded-2xl flex items-center justify-center text-2xl transition-all duration-300',
-                  dark ? 'bg-white/10' : 'bg-primary/[0.11] group-hover:bg-gold/[0.15] group-hover:scale-[1.07]'
-                )}
-              >
-                {card.emoji || '✦'}
-              </span>
-              <h3
-                className={cn('mt-5 text-sm font-bold tracking-[0.12em] uppercase', !block.color_heading && (dark ? 'text-white' : 'text-ink'))}
-                style={s.heading}
-              >
-                {card.title}
-              </h3>
-              <div aria-hidden="true" className="w-10 h-px bg-gold/60 my-3" />
-              <p
-                className={cn('text-sm leading-relaxed max-w-xs mx-auto', !block.color_text && (dark ? 'text-stone-300' : 'text-stone-700'))}
-                style={s.text}
-              >
-                {card.description}
-              </p>
+              {renderCardContent(block.cards[0], true)}
             </motion.div>
-          ))}
-        </div>
+            {/* Two secondary cards stacked */}
+            <div className="flex flex-col gap-6">
+              {block.cards.slice(1).map((card, i) => (
+                <motion.div
+                  key={i}
+                  variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
+                  transition={{ delay: (i + 1) * 0.1 }}
+                  className={cn(cardClass(false), 'flex-1')}
+                >
+                  {renderCardContent(card, false)}
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className={cn('grid grid-cols-1 gap-6 lg:gap-8', cols[block.card_cols])}>
+            {block.cards.map((card, i) => (
+              <motion.div
+                key={i}
+                variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
+                transition={{ delay: i * 0.12 }}
+                className={cardClass(false)}
+              >
+                {renderCardContent(card, false)}
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
