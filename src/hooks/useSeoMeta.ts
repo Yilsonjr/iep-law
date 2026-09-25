@@ -1,29 +1,30 @@
 import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useSiteConfigContext } from '../contexts/SiteConfigContext';
+import { setDocMeta } from '../utils';
 
 export function useSeoMeta() {
   const { config } = useSiteConfigContext();
   const { seo, branding } = config;
+  const location = useLocation();
 
   useEffect(() => {
     const title = seo.title || branding.site_name;
+    const description = seo.description || '';
+    const image = seo.og_image || `${window.location.origin}/android-chrome-512x512.png`;
+
     document.title = title;
 
-    const setMeta = (name: string, content: string, property = false) => {
-      const attr = property ? 'property' : 'name';
-      let el = document.querySelector(`meta[${attr}="${name}"]`) as HTMLMetaElement;
-      if (!el) {
-        el = document.createElement('meta');
-        el.setAttribute(attr, name);
-        document.head.appendChild(el);
-      }
-      el.setAttribute('content', content);
-    };
-
-    if (seo.description) setMeta('description', seo.description);
-    setMeta('og:title', title, true);
-    if (seo.description) setMeta('og:description', seo.description, true);
-    if (seo.og_image) setMeta('og:image', seo.og_image, true);
-    setMeta('og:type', 'website', true);
-  }, [seo, branding.site_name]);
+    if (description) setDocMeta('description', description);
+    setDocMeta('og:title', title, true);
+    if (description) setDocMeta('og:description', description, true);
+    setDocMeta('og:image', image, true);
+    setDocMeta('og:type', 'website', true);
+    setDocMeta('og:url', window.location.href, true);
+    setDocMeta('og:site_name', branding.site_name, true);
+    setDocMeta('twitter:card', 'summary_large_image');
+    setDocMeta('twitter:title', title);
+    if (description) setDocMeta('twitter:description', description);
+    setDocMeta('twitter:image', image);
+  }, [seo, branding.site_name, location.pathname]);
 }

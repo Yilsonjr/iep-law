@@ -56,6 +56,14 @@ function wc(widget: FooterWidget, C: GlobalColors) {
   };
 }
 
+function widgetHeading(title: string, color: string) {
+  return (
+    <h4 className="text-[11px] font-semibold uppercase tracking-[0.16em] mb-5" style={{ color }}>
+      {title}
+    </h4>
+  );
+}
+
 // ── Widget renderers ───────────────────────────────────────────
 function LogoInfoWidget({ widget, footer, branding, C }: {
   widget: FooterWidget; footer: FooterConfig; branding: BrandingConfig; C: GlobalColors;
@@ -63,34 +71,23 @@ function LogoInfoWidget({ widget, footer, branding, C }: {
   const { h, t } = wc(widget, C);
   return (
     <div>
-      {widget.title && (
-        <h4 className="font-semibold text-sm uppercase tracking-wider mb-5" style={{ color: h }}>{widget.title}</h4>
-      )}
-      {!widget.title && (
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-white/20">
-            <img src={branding.logo_url || '/android-chrome-192x192.png'} alt={branding.site_name} className="w-full h-full object-cover" />
-          </div>
-          <div>
-            <p className="font-serif text-lg font-bold text-white leading-tight">{branding.site_name}</p>
-            {branding.tagline && <p className="text-xs font-medium tracking-wider" style={{ color: h }}>{branding.tagline}</p>}
-          </div>
-        </div>
-      )}
-      {widget.title && (
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-white/20">
-            <img src={branding.logo_url || '/android-chrome-192x192.png'} alt={branding.site_name} className="w-full h-full object-cover" />
-          </div>
-          <div>
-            <p className="font-serif text-lg font-bold text-white leading-tight">{branding.site_name}</p>
-            {branding.tagline && <p className="text-xs font-medium tracking-wider" style={{ color: h }}>{branding.tagline}</p>}
-          </div>
-        </div>
-      )}
+      <div className="flex items-center gap-3 mb-5">
+        <span className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-gold/60">
+          <img src={branding.logo_url || '/android-chrome-192x192.png'} alt="" className="w-full h-full object-cover" />
+        </span>
+        <span className="text-left leading-tight">
+          <span className="block font-serif text-lg font-semibold text-white tracking-tight">{branding.site_name}</span>
+          {branding.tagline && (
+            <span className="block text-[10px] font-medium uppercase tracking-[0.18em] mt-0.5" style={{ color: C.heading }}>
+              {branding.tagline}
+            </span>
+          )}
+        </span>
+      </div>
+      {widget.title && widgetHeading(widget.title, h)}
       <p className="text-sm leading-relaxed mb-5" style={{ color: t }}>{footer.text}</p>
       {footer.contact.address && (
-        <div className="flex items-start gap-2 text-sm" style={{ color: t }}>
+        <div className="flex items-start gap-2 text-sm leading-relaxed" style={{ color: t }}>
           <MapPin size={15} className="mt-0.5 flex-shrink-0" style={{ color: h }} />
           <span>{footer.contact.address}</span>
         </div>
@@ -106,11 +103,11 @@ function ContactWidget({ widget, footer, C }: {
   const waUrl = whatsappUrl(footer.contact.whatsapp ?? footer.contact.phone ?? '');
   return (
     <div>
-      {widget.title && <h4 className="font-semibold text-sm uppercase tracking-wider mb-5" style={{ color: h }}>{widget.title}</h4>}
+      {widget.title && widgetHeading(widget.title, h)}
       <ul className="space-y-4">
         {footer.contact.phone && (
           <li>
-            <a href={`tel:${footer.contact.phone.replace(/\s/g, '')}`} className="flex items-center gap-3 text-sm" style={{ color: t }}>
+            <a href={`tel:${footer.contact.phone.replace(/\s/g, '')}`} className="flex items-center gap-3 text-sm transition-opacity hover:opacity-75" style={{ color: t }}>
               <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>
                 <Phone size={14} style={{ color: h }} />
               </span>
@@ -120,7 +117,7 @@ function ContactWidget({ widget, footer, C }: {
         )}
         {footer.contact.email && (
           <li>
-            <a href={`mailto:${footer.contact.email}`} className="flex items-center gap-3 text-sm" style={{ color: t }}>
+            <a href={`mailto:${footer.contact.email}`} className="flex items-center gap-3 text-sm transition-opacity hover:opacity-75" style={{ color: t }}>
               <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>
                 <Mail size={14} style={{ color: h }} />
               </span>
@@ -130,7 +127,7 @@ function ContactWidget({ widget, footer, C }: {
         )}
         {waUrl && (
           <li>
-            <a href={waUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-sm" style={{ color: t }}>
+            <a href={waUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-sm transition-opacity hover:opacity-75" style={{ color: t }}>
               <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>
                 <IconWhatsApp className="w-3.5 h-3.5 text-green-400" />
               </span>
@@ -143,7 +140,7 @@ function ContactWidget({ widget, footer, C }: {
         )}
       </ul>
       <div className="mt-6 pt-5 border-t border-white/10">
-        <a href="/live" className="flex items-center gap-2 text-sm" style={{ color: t }}>
+        <a href="/live" className="flex items-center gap-2 text-sm transition-opacity hover:opacity-75" style={{ color: t }}>
           <MessageCircle size={14} style={{ color: h }} />
           Transmisiones en vivo
         </a>
@@ -165,7 +162,7 @@ function NavLinksWidget({ widget, C, onContact }: {
   ];
   return (
     <div>
-      {widget.title && <h4 className="font-semibold text-sm uppercase tracking-wider mb-5" style={{ color: h }}>{widget.title}</h4>}
+      {widget.title && widgetHeading(widget.title, h)}
       <ul className="space-y-2">
         {links.map(({ label, href }, i) => (
           <li key={i}>
@@ -199,7 +196,7 @@ function SocialWidget({ widget, footer, C, onContact }: {
 
   return (
     <div>
-      {widget.title && <h4 className="font-semibold text-sm uppercase tracking-wider mb-5" style={{ color: h }}>{widget.title}</h4>}
+      {widget.title && widgetHeading(widget.title, h)}
       <p className="text-sm mb-5 leading-relaxed" style={{ color: `${t}cc` }}>
         Síguenos y sé parte de nuestra comunidad digital.
       </p>
@@ -234,7 +231,7 @@ function ScheduleWidget({ widget, footer, C }: {
   return (
     <div>
       {widget.title && (
-        <h4 className="font-semibold text-sm uppercase tracking-wider mb-5 flex items-center gap-2" style={{ color: h }}>
+        <h4 className="text-[11px] font-semibold uppercase tracking-[0.16em] mb-5 flex items-center gap-2" style={{ color: h }}>
           <Clock size={14} />{widget.title}
         </h4>
       )}
@@ -242,7 +239,7 @@ function ScheduleWidget({ widget, footer, C }: {
         <ul className="space-y-3">
           {items.map((s, i) => (
             <li key={i} className="text-sm flex items-baseline gap-2">
-              <span className="font-medium" style={{ color: h }}>{s.day}</span>
+              <span className="font-semibold" style={{ color: h }}>{s.day}</span>
               <span style={{ color: t }}>{s.time}</span>
               {s.label && <span className="text-xs" style={{ color: `${t}99` }}>· {s.label}</span>}
             </li>
@@ -261,7 +258,7 @@ function CustomHtmlWidget({ widget, C }: {
   const { h, t } = wc(widget, C);
   return (
     <div>
-      {widget.title && <h4 className="font-semibold text-sm uppercase tracking-wider mb-5" style={{ color: h }}>{widget.title}</h4>}
+      {widget.title && widgetHeading(widget.title, h)}
       {widget.html && (
         <div className="text-sm prose prose-invert max-w-none" style={{ color: t }}
           dangerouslySetInnerHTML={{ __html: widget.html }} />
@@ -277,7 +274,7 @@ function OnlineCtaWidget({ widget, footer, C, onContact }: {
   const waUrl = whatsappUrl(footer.contact.whatsapp ?? footer.contact.phone ?? '');
   return (
     <div>
-      {widget.title && <h4 className="font-semibold text-sm uppercase tracking-wider mb-5" style={{ color: h }}>{widget.title}</h4>}
+      {widget.title && widgetHeading(widget.title, h)}
       <p className="text-sm mb-4 leading-relaxed" style={{ color: t }}>
         También puedes conectarte con nosotros en línea.
       </p>
@@ -303,7 +300,7 @@ export function Footer({ onContact }: FooterProps) {
   const { config } = useSiteConfigContext();
   const { branding, footer } = config;
 
-  const C = footer.colors ?? { bg: '#8D000A', heading: '#F5C842', body: '#d6d3d1', link: '#e7e5e4' };
+  const C = footer.colors ?? { bg: '#8D000A', heading: '#D4AF37', body: '#d6d3d1', link: '#e7e5e4' };
 
   const ctaEnabled = footer.cta?.enabled ?? true;
 
@@ -326,26 +323,26 @@ export function Footer({ onContact }: FooterProps) {
 
   return (
     <>
-      {/* ── CTA Band — fuera del footer, fondo claro para respiración visual */}
+      {/* ── CTA Band — fuera del footer, fondo cálido para respiración visual */}
       {ctaEnabled && (
-        <section className="bg-stone-50 border-t border-stone-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div>
-              <h3 className="font-serif text-2xl md:text-3xl font-bold text-primary">{ctaTitle}</h3>
-              <p className="text-stone-500 mt-1 text-sm md:text-base">{ctaSubtitle}</p>
+        <section className="bg-paper border-t border-stone-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="text-center md:text-left max-w-xl">
+              <h3 className="font-serif text-2xl md:text-3xl font-semibold text-primary-700 leading-snug">{ctaTitle}</h3>
+              <p className="text-stone-500 text-sm md:text-base mt-2 max-w-lg leading-relaxed">{ctaSubtitle}</p>
             </div>
             <div className="flex flex-col sm:flex-row items-center gap-3">
               <motion.button
-                whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
+                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                 onClick={onContact}
-                className="btn-primary flex items-center gap-2 text-sm">
+                className="btn-primary text-sm">
                 <Mail size={16} />Escribirnos
               </motion.button>
               {waUrl && (
                 <motion.a
-                  whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
+                  whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                   href={waUrl} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-3 rounded-xl transition-colors shadow-lg text-sm">
+                  className="inline-flex items-center gap-2 border border-green-500/40 text-green-600 bg-green-50 font-semibold px-5 py-2.5 rounded-[0.625rem] text-sm transition-colors hover:bg-green-100">
                   <IconWhatsApp className="w-4 h-4" />WhatsApp
                 </motion.a>
               )}
@@ -354,64 +351,72 @@ export function Footer({ onContact }: FooterProps) {
         </section>
       )}
 
-      <footer style={{ backgroundColor: C.bg }}>
+      <footer
+        style={{
+          backgroundColor: C.bg,
+          backgroundImage: 'linear-gradient(rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.05) 100%), radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.55) 1px, transparent 0)',
+          backgroundSize: 'auto, 22px 22px',
+        }}
+      >
+        {/* Gold hairline signature */}
+        <div aria-hidden="true" className="h-px bg-gold/70" />
 
-      {/* ── Widget columns ────────────────────────────────────── */}
-      {widgets.length > 0 && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-          <div className={`grid grid-cols-1 sm:grid-cols-2 ${gridCols[colCount] ?? 'lg:grid-cols-4'} gap-10`}>
-            {widgets.map(widget => (
-              <div key={widget.id}>
-                {widget.type === 'logo_info' && (
-                  <LogoInfoWidget widget={widget} footer={footer} branding={branding} C={C} />
-                )}
-                {widget.type === 'contact' && (
-                  <ContactWidget widget={widget} footer={footer} C={C} />
-                )}
-                {widget.type === 'nav_links' && (
-                  <NavLinksWidget widget={widget} C={C} onContact={onContact} />
-                )}
-                {widget.type === 'social' && (
-                  <SocialWidget widget={widget} footer={footer} C={C} onContact={onContact} />
-                )}
-                {widget.type === 'schedule' && (
-                  <ScheduleWidget widget={widget} footer={footer} C={C} />
-                )}
-                {widget.type === 'custom_html' && (
-                  <CustomHtmlWidget widget={widget} C={C} />
-                )}
-                {widget.type === 'online_cta' && (
-                  <OnlineCtaWidget widget={widget} footer={footer} C={C} onContact={onContact} />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Bottom bar ────────────────────────────────────────── */}
-      <div className="border-t border-white/10 bg-black/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-3 text-xs" style={{ color: `${C.body}99` }}>
-            <p className="flex items-center gap-1.5">
-              <Heart size={11} style={{ color: C.heading, fill: C.heading }} />
-              {footer.copyright || `© ${new Date().getFullYear()} ${branding.site_name}. Todos los derechos reservados.`}
-            </p>
-            <div className="flex items-center gap-4">
-              <Link to="/p/privacidad" className="hover:text-white transition-colors">Privacidad</Link>
-              <span style={{ color: `${C.body}40` }}>·</span>
-              <Link to="/p/terminos" className="hover:text-white transition-colors">Términos</Link>
+        {/* ── Widget columns ────────────────────────────────────── */}
+        {widgets.length > 0 && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+            <div className={`grid grid-cols-1 sm:grid-cols-2 ${gridCols[colCount] ?? 'lg:grid-cols-4'} gap-x-10 gap-y-12`}>
+              {widgets.map(widget => (
+                <div key={widget.id}>
+                  {widget.type === 'logo_info' && (
+                    <LogoInfoWidget widget={widget} footer={footer} branding={branding} C={C} />
+                  )}
+                  {widget.type === 'contact' && (
+                    <ContactWidget widget={widget} footer={footer} C={C} />
+                  )}
+                  {widget.type === 'nav_links' && (
+                    <NavLinksWidget widget={widget} C={C} onContact={onContact} />
+                  )}
+                  {widget.type === 'social' && (
+                    <SocialWidget widget={widget} footer={footer} C={C} onContact={onContact} />
+                  )}
+                  {widget.type === 'schedule' && (
+                    <ScheduleWidget widget={widget} footer={footer} C={C} />
+                  )}
+                  {widget.type === 'custom_html' && (
+                    <CustomHtmlWidget widget={widget} C={C} />
+                  )}
+                  {widget.type === 'online_cta' && (
+                    <OnlineCtaWidget widget={widget} footer={footer} C={C} onContact={onContact} />
+                  )}
+                </div>
+              ))}
             </div>
-            <p style={{ fontSize: '12px', color: C.body }}>
-              Desarrollado por{' '}
-              <a href="https://portafolio-yilson.vercel.app/" target="_blank" rel="noopener noreferrer"
-                className="font-semibold underline underline-offset-2 hover:text-white transition-colors" style={{ color: C.link }}>
-                YilsonDev
-              </a>
-            </p>
+          </div>
+        )}
+
+        {/* ── Bottom bar ────────────────────────────────────────── */}
+        <div className="border-t border-white/10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs" style={{ color: `${C.body}cc` }}>
+              <p className="flex items-center gap-1.5">
+                <Heart size={11} className="flex-shrink-0" style={{ color: C.heading, fill: C.heading }} />
+                {footer.copyright || `© ${new Date().getFullYear()} ${branding.site_name}. Todos los derechos reservados.`}
+              </p>
+              <div className="flex items-center gap-5">
+                <Link to="/p/privacidad" className="transition-colors hover:text-white">Privacidad</Link>
+                <span style={{ color: `${C.body}55` }}>·</span>
+                <Link to="/p/terminos" className="transition-colors hover:text-white">Términos</Link>
+              </div>
+              <p style={{ color: `${C.body}cc` }}>
+                Desarrollado por{' '}
+                <a href="https://portafolio-yilson.vercel.app/" target="_blank" rel="noopener noreferrer"
+                  className="font-semibold underline underline-offset-2 transition-colors hover:text-white" style={{ color: C.link }}>
+                  YilsonDev
+                </a>
+              </p>
+            </div>
           </div>
         </div>
-      </div>
       </footer>
     </>
   );

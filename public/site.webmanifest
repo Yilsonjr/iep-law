@@ -1,11 +1,15 @@
 {
   "name": "Iglesia Ebenezer M.I.",
-  "short_name": "IEP-Law",
+  "short_name": "Ebenezer",
+  "description": "Iglesia Ebenezer M.I. — Hasta aquí nos ha ayudado el Señor",
+  "theme_color": "#8D000A",
+  "background_color": "#F8F4EF",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/",
+  "lang": "es",
   "icons": [
-    { "src": "/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png" }
-  ],
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff",
-  "display": "standalone"
+    { "src": "/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
 }

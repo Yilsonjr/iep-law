@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, Plus, X, Edit2, Trash2, Check,
-  Filter, ChevronDown, CheckCircle, AlertCircle,
+  Filter, ChevronDown, CheckCircle, AlertCircle, ChevronRight,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { usePosts } from '../hooks/usePosts';
 import { useAuth } from '../contexts/AuthContext';
+import { EmptyState } from '../components/EmptyState';
+import { ShareActions } from '../components/ShareActions';
 import { ImageUpload } from '../components/ImageUpload';
 import { RichTextEditor } from '../components/RichTextEditor';
 import type { Post, PostCategory } from '../types';
@@ -120,9 +122,9 @@ export function PostsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-paper">
       {/* Page header */}
-      <section className="bg-[#F8F5F0] border-b border-stone-200 py-12">
+      <section className="bg-paper border-b border-stone-200 py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <motion.div
@@ -130,11 +132,11 @@ export function PostsPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
             >
-              <div className="w-8 h-0.5 bg-gold mb-4" />
-              <h1 className="font-serif text-4xl md:text-5xl font-bold text-[#1A1014] mb-2">
+              <div aria-hidden="true" className="w-10 h-px bg-gold/60 mb-5" />
+              <h1 className="font-serif text-4xl md:text-5xl font-semibold text-ink leading-tight">
                 Comunidad
               </h1>
-              <p className="text-stone-500 text-base">
+              <p className="text-stone-500 text-base mt-3">
                 Reflexiones bíblicas, testimonios y devocionales de nuestra comunidad
               </p>
             </motion.div>
@@ -144,9 +146,9 @@ export function PostsPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.15 }}
                 onClick={openCreate}
-                className="flex items-center gap-2 bg-primary text-white font-semibold px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-colors shadow-sm self-start md:self-auto text-sm"
+                className="btn-primary text-sm self-start md:self-auto"
               >
-                <Plus size={18} />
+                <Plus size={16} />
                 Publicar
               </motion.button>
             )}
@@ -155,18 +157,19 @@ export function PostsPage() {
       </section>
 
       {/* Filtros */}
-      <section className="py-6 bg-white border-b">
+      <section className="py-5 bg-white border-b border-stone-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2 text-stone-600">
-              <Filter size={18} />
+              <Filter size={16} />
               <span className="font-medium text-sm">Filtrar:</span>
             </div>
             <button
               onClick={() => setFilterCat('all')}
+              aria-pressed={filterCat === 'all'}
               className={cn(
                 'px-4 py-2 rounded-full text-sm font-medium transition-all',
-                filterCat === 'all' ? 'bg-primary text-white shadow-md' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                filterCat === 'all' ? 'bg-primary text-white shadow-sm' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
               )}
             >
               Todos
@@ -175,9 +178,10 @@ export function PostsPage() {
               <button
                 key={key}
                 onClick={() => setFilterCat(key)}
+                aria-pressed={filterCat === key}
                 className={cn(
                   'px-4 py-2 rounded-full text-sm font-medium transition-all',
-                  filterCat === key ? 'bg-primary text-white shadow-md' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                  filterCat === key ? 'bg-primary text-white shadow-sm' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
                 )}
               >
                 {cat.label}
@@ -187,17 +191,17 @@ export function PostsPage() {
         </div>
       </section>
 
-      <section className="py-12">
+      <section className="py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
           {/* Posts pendientes de aprobación */}
           {showAll && pending.length > 0 && (
             <div className="mb-12">
-              <h2 className="font-serif text-2xl text-stone-700 mb-6 flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-amber-400 inline-block" />
+              <h2 className="font-serif text-xl font-semibold text-amber-700 flex items-center gap-2.5">
+                <span aria-hidden="true" className="w-2 h-2 rounded-full bg-amber-400" />
                 Pendientes de aprobación ({pending.length})
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {pending.map((post, i) => (
                   <PostCard
                     key={post.id}
@@ -217,22 +221,36 @@ export function PostsPage() {
 
           {/* Posts publicados */}
           {loading ? (
-            <div className="flex items-center justify-center py-24">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent" />
+            <div className="flex items-center justify-center py-16" role="status" aria-label="Cargando publicaciones">
+              <div className="animate-spin rounded-full h-10 w-10 border-3 border-primary border-t-transparent" />
             </div>
           ) : published.length === 0 ? (
-            <div className="text-center py-24 text-stone-400">
-              <BookOpen size={56} className="mx-auto mb-4 opacity-30" />
-              <p className="text-lg mb-2">No hay publicaciones aún</p>
-              {canPost && (
-                <button onClick={openCreate} className="mt-4 btn-primary">
-                  Sé el primero en publicar
-                </button>
-              )}
-              {!user && (
-                <p className="text-sm mt-2">
-                  <a href="/login" className="text-primary hover:underline">Inicia sesión</a> para compartir una reflexión
-                </p>
+            <div className="py-12">
+              {filterCat === 'all' ? (
+                <EmptyState
+                  icon={BookOpen}
+                  title={showAll && pending.length > 0
+                    ? 'Solo hay publicaciones pendientes'
+                    : 'Todavía no hay publicaciones'}
+                  description={showAll && pending.length > 0
+                    ? 'Las publicaciones de arriba esperan tu aprobación. Cuando las apruebes, aparecerán aquí.'
+                    : 'Comparte una reflexión, testimonio o devocional con nuestra comunidad.'}
+                  actionLabel={canPost ? 'Publicar la primera' : undefined}
+                  onAction={openCreate}
+                  hint={!user && (
+                    <span>
+                      <Link to="/login" className="text-primary hover:underline">Inicia sesión</Link> para compartir una reflexión
+                    </span>
+                  )}
+                />
+              ) : (
+                <EmptyState
+                  icon={BookOpen}
+                  title={`No hay «${categoryConfig[filterCat as PostCategory].label}» publicadas`}
+                  description="Puede que haya publicaciones en otras categorías o que ninguna se haya publicado en esta todavía."
+                  secondaryLabel="Ver todas las categorías"
+                  onSecondary={() => setFilterCat('all')}
+                />
               )}
             </div>
           ) : (
@@ -263,6 +281,7 @@ export function PostsPage() {
             className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-60 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-white text-sm font-medium ${
               toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'
             }`}
+            role="status"
           >
             {toast.type === 'success'
               ? <CheckCircle size={18} />
@@ -289,7 +308,7 @@ export function PostsPage() {
                 <h2 className="font-serif text-2xl text-primary">
                   {editingPost ? 'Editar Publicación' : 'Nueva Publicación'}
                 </h2>
-                <button onClick={() => setModalOpen(false)} className="p-2 hover:bg-stone-100 rounded-lg">
+                <button onClick={() => setModalOpen(false)} aria-label="Cerrar" className="p-2 hover:bg-stone-100 rounded-lg">
                   <X size={24} className="text-stone-500" />
                 </button>
               </div>
@@ -405,6 +424,7 @@ interface PostCardProps {
 function PostCard({ post, index, onEdit, onDelete, onApprove, canEdit, canApprove, showPending }: PostCardProps) {
   const cat = categoryConfig[post.category];
   const initials = post.author_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+  const excerpt = post.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 
   return (
     <motion.div
@@ -412,34 +432,34 @@ function PostCard({ post, index, onEdit, onDelete, onApprove, canEdit, canApprov
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.07 }}
       className={cn(
-        'bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-lg transition-shadow flex flex-col',
+        'group bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col',
         showPending && 'ring-2 ring-amber-300'
       )}
     >
       {post.image_url && (
-        <Link to={`/posts/${post.id}`} className="aspect-video overflow-hidden block">
-          <img src={post.image_url} alt={post.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+        <Link to={`/posts/${post.id}`} aria-label={`Leer: ${post.title}`} className="relative aspect-video overflow-hidden block">
+          <img src={post.image_url} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
         </Link>
       )}
 
       <div className="p-6 flex flex-col flex-1">
-        <div className="flex items-center justify-between mb-3">
-          <span className={cn('text-xs font-semibold px-3 py-1 rounded-full', cat.bg, cat.color)}>
+        <div className="flex items-center gap-2">
+          <span className={cn('text-[11px] font-semibold px-2.5 py-1 rounded-full', cat.bg, cat.color)}>
             {cat.label}
           </span>
           {showPending && (
-            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full font-medium">
+            <span className="text-[11px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
               Pendiente
             </span>
           )}
         </div>
 
-        <Link to={`/posts/${post.id}`} className="font-serif text-xl text-primary mb-3 line-clamp-2 hover:text-gold transition-colors">
+        <Link to={`/posts/${post.id}`} className="mt-3 font-serif text-xl text-primary mb-2 line-clamp-2 hover:text-gold transition-colors">
           {post.title}
         </Link>
 
         <p className="text-stone-500 text-sm leading-relaxed line-clamp-3 flex-1 mb-4">
-          {post.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}
+          {excerpt}
         </p>
 
         <div className="flex items-center gap-2 text-sm text-stone-400 mb-4">
@@ -447,17 +467,25 @@ function PostCard({ post, index, onEdit, onDelete, onApprove, canEdit, canApprov
             {initials}
           </div>
           <span>{post.author_name}</span>
-          <span>•</span>
+          <span aria-hidden="true">•</span>
           <span>{new Date(post.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
         </div>
 
         <div className="flex items-center gap-2 pt-3 border-t border-stone-100">
           <Link
             to={`/posts/${post.id}`}
-            className="flex-1 text-sm text-center text-primary font-medium py-2 rounded-lg hover:bg-primary/5 transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 flex-1 text-sm text-primary font-medium py-2 rounded-lg hover:bg-primary/5 transition-colors"
           >
             Leer más
+            <ChevronRight size={14} />
           </Link>
+          {!showPending && (
+            <ShareActions
+              title={post.title}
+              description={excerpt.slice(0, 160) || undefined}
+              url={`${window.location.origin}/posts/${post.id}`}
+            />
+          )}
           {canApprove && onApprove && (
             <button
               onClick={onApprove}
@@ -469,10 +497,10 @@ function PostCard({ post, index, onEdit, onDelete, onApprove, canEdit, canApprov
           )}
           {canEdit && (
             <>
-              <button onClick={onEdit} className="p-2 hover:bg-stone-100 rounded-lg transition-colors">
+              <button onClick={onEdit} aria-label="Editar publicación" className="p-2 hover:bg-stone-100 rounded-lg transition-colors">
                 <Edit2 size={15} className="text-stone-500" />
               </button>
-              <button onClick={onDelete} className="p-2 hover:bg-red-50 rounded-lg transition-colors">
+              <button onClick={onDelete} aria-label="Eliminar publicación" className="p-2 hover:bg-red-50 rounded-lg transition-colors">
                 <Trash2 size={15} className="text-red-500" />
               </button>
             </>

@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Clock, Filter, Plus, Edit2, Trash2, X, Eye, EyeOff, ChevronDown } from 'lucide-react';
+import { Play, Clock, Calendar, User, Filter, Plus, Edit2, Trash2, X, Eye, EyeOff, ChevronDown } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { useSermons } from '../hooks/useSermons';
 import { useAuth } from '../contexts/AuthContext';
+import { EmptyState } from '../components/EmptyState';
+import { ShareActions } from '../components/ShareActions';
 import { ImageUpload } from '../components/ImageUpload';
 import { RichTextEditor } from '../components/RichTextEditor';
 import type { Sermon, SermonCategory } from '../types';
-import { cn } from '../utils';
+import { cn, setDocMeta } from '../utils';
 
 const categoryLabels: Record<SermonCategory, string> = {
   Sunday: 'Domingo',
@@ -40,8 +43,9 @@ export function SermonsPage() {
 
   // Admins/pastors see all (including unpublished); others only see published
   const publishedOnly = !profile || (profile.role !== 'admin' && profile.role !== 'pastor');
-  const { sermons, addSermon, updateSermon, deleteSermon } = useSermons(publishedOnly);
+  const { sermons, loading, addSermon, updateSermon, deleteSermon } = useSermons(publishedOnly);
 
+  const [searchParams] = useSearchParams();
   const [filterCat, setFilterCat] = useState<string>('Todos');
   const [filterSeries, setFilterSeries] = useState<string>('');
   const [selectedSermon, setSelectedSermon] = useState<Sermon | null>(null);
@@ -50,6 +54,36 @@ export function SermonsPage() {
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
 
+  // Auto-open modal when URL contains ?id=<uuid>
+  const didAutoOpen = useRef(false);
+  useEffect(() => {
+    if (loading || didAutoOpen.current) return;
+    const id = searchParams.get('id');
+    if (!id) return;
+    const target = sermons.find(s => s.id === id && s.published);
+    if (!target) return;
+    didAutoOpen.current = true;
+    // Defer to satisfy react-hooks/set-state-in-effect: setState called in callback, not synchronously
+    const timer = window.setTimeout(() => setSelectedSermon(target), 0);
+    return () => window.clearTimeout(timer);
+  }, [loading, sermons, searchParams]);
+
+  // Close modal and clean URL param without triggering navigation
+  const handleCloseModal = () => {
+    setSelectedSermon(null);
+    if (new URLSearchParams(window.location.search).has('id')) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  };
+
+  useEffect(() => {
+    if (!selectedSermon) return;
+    const pageTitle = `${selectedSermon.title} | Prédicas | Iglesia Ebenezer M.I.`;
+    document.title = pageTitle;
+    setDocMeta('og:title', pageTitle, true);
+    setDocMeta('og:url', `${window.location.origin}/sermons?id=${selectedSermon.id}`, true);
+  }, [selectedSermon]);
+
   const allSeries = Array.from(new Set(sermons.map(s => s.series).filter(Boolean))) as string[];
 
   const filtered = sermons.filter(s => {
@@ -57,6 +91,11 @@ export function SermonsPage() {
     const matchSeries = !filterSeries || s.series === filterSeries;
     return matchCat && matchSeries;
   });
+
+  const clearFilters = () => {
+    setFilterCat('Todos');
+    setFilterSeries('');
+  };
 
   const openCreate = () => {
     setEditingSermon(null);
@@ -105,10 +144,14 @@ export function SermonsPage() {
     await deleteSermon(id);
   };
 
+  const formatDate = (date: string) => new Date(date).toLocaleDateString('es-ES', {
+    year: 'numeric', month: 'long', day: 'numeric',
+  });
+
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-paper">
       {/* Page header */}
-      <section className="bg-[#F8F5F0] border-b border-stone-200 py-12">
+      <section className="bg-paper border-b border-stone-200 py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <motion.div
@@ -116,11 +159,11 @@ export function SermonsPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
             >
-              <div className="w-8 h-0.5 bg-gold mb-4" />
-              <h1 className="font-serif text-4xl md:text-5xl font-bold text-[#1A1014] mb-2">
+              <div aria-hidden="true" className="w-10 h-px bg-gold/60 mb-5" />
+              <h1 className="font-serif text-4xl md:text-5xl font-semibold text-ink leading-tight">
                 Prédicas
               </h1>
-              <p className="text-stone-500 text-base">
+              <p className="text-stone-500 text-base mt-3">
                 Revive los mensajes de esperanza y fe
               </p>
             </motion.div>
@@ -130,9 +173,9 @@ export function SermonsPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.15 }}
                 onClick={openCreate}
-                className="flex items-center gap-2 bg-primary text-white font-semibold px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-colors shadow-sm self-start md:self-auto text-sm"
+                className="btn-primary text-sm self-start md:self-auto"
               >
-                <Plus size={18} />
+                <Plus size={16} />
                 Nueva Prédica
               </motion.button>
             )}
@@ -141,11 +184,11 @@ export function SermonsPage() {
       </section>
 
       {/* Filtros */}
-      <section className="py-6 bg-white border-b">
+      <section className="py-5 bg-white border-b border-stone-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-3">
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2 text-stone-600">
-              <Filter size={18} />
+              <Filter size={16} />
               <span className="font-medium text-sm">Categoría:</span>
             </div>
             {['Todos', ...categories].map(cat => (
@@ -155,7 +198,7 @@ export function SermonsPage() {
                 className={cn(
                   'px-4 py-2 rounded-full text-sm font-medium transition-all',
                   filterCat === cat
-                    ? 'bg-primary text-white shadow-md'
+                    ? 'bg-primary text-white shadow-sm'
                     : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
                 )}
               >
@@ -169,12 +212,12 @@ export function SermonsPage() {
               <button
                 onClick={() => setFilterSeries('')}
                 className={cn('px-4 py-1.5 rounded-full text-sm font-medium transition-all',
-                  !filterSeries ? 'bg-gold text-primary shadow-md' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                  !filterSeries ? 'bg-gold text-primary shadow-sm' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
                 )}>Todas</button>
               {allSeries.map(s => (
                 <button key={s} onClick={() => setFilterSeries(s === filterSeries ? '' : s)}
                   className={cn('px-4 py-1.5 rounded-full text-sm font-medium transition-all',
-                    filterSeries === s ? 'bg-gold text-primary shadow-md' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                    filterSeries === s ? 'bg-gold text-primary shadow-sm' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
                   )}>
                   {s}
                 </button>
@@ -185,16 +228,32 @@ export function SermonsPage() {
       </section>
 
       {/* Grid */}
-      <section className="py-16">
+      <section className="py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {filtered.length === 0 ? (
-            <div className="text-center py-20 text-stone-400">
-              <Play size={48} className="mx-auto mb-4 opacity-30" />
-              <p className="text-lg">No hay prédicas disponibles</p>
-              {canCreateContent && (
-                <button onClick={openCreate} className="mt-4 btn-primary">
-                  Agregar primera prédica
-                </button>
+          {loading ? (
+            <div className="flex items-center justify-center py-16" role="status" aria-label="Cargando prédicas">
+              <div className="animate-spin rounded-full h-10 w-10 border-3 border-primary border-t-transparent" />
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="py-12">
+              {filterCat === 'Todos' && !filterSeries ? (
+                <EmptyState
+                  icon={Play}
+                  title="Todavía no hay prédicas"
+                  description={canCreateContent
+                    ? 'Sube la primera prédica con su video o audio para que la comunidad pueda revivir los mensajes.'
+                    : 'Cuando el equipo de la iglesia publique prédicas, aparecerán aquí.'}
+                  actionLabel={canCreateContent ? 'Agregar primera prédica' : undefined}
+                  onAction={openCreate}
+                />
+              ) : (
+                <EmptyState
+                  icon={Play}
+                  title="Sin resultados en este filtro"
+                  description="No hay prédicas que coincidan con la categoría y serie seleccionadas."
+                  secondaryLabel="Restablecer filtros"
+                  onSecondary={clearFilters}
+                />
               )}
             </div>
           ) : (
@@ -205,10 +264,13 @@ export function SermonsPage() {
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.07 }}
-                  className={cn('card group relative', !sermon.published && 'opacity-75 ring-2 ring-stone-300')}
+                  className={cn(
+                    'group bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col relative',
+                    !sermon.published && 'ring-2 ring-stone-300'
+                  )}
                 >
                   {!sermon.published && (
-                    <div className="absolute top-3 left-3 z-10 flex items-center gap-1 bg-stone-700 text-white text-xs px-2 py-1 rounded-full">
+                    <div className="absolute top-3 left-3 z-10 flex items-center gap-1 bg-stone-800/90 text-white text-[11px] px-2 py-1 rounded-full">
                       <EyeOff size={12} />
                       Borrador
                     </div>
@@ -216,47 +278,81 @@ export function SermonsPage() {
                   <div
                     className="relative aspect-video bg-stone-200 overflow-hidden cursor-pointer"
                     onClick={() => setSelectedSermon(sermon)}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Ver prédica: ${sermon.title}`}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setSelectedSermon(sermon);
+                      }
+                    }}
                   >
-                    <img
-                      src={sermon.thumbnail || 'https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=400'}
-                      alt={sermon.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
+                    {sermon.thumbnail ? (
+                      <img
+                        src={sermon.thumbnail}
+                        alt={sermon.title}
+                        loading="lazy"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div
+                        aria-hidden="true"
+                        className="w-full h-full bg-gradient-to-br from-primary-900 to-primary flex items-center justify-center"
+                      >
+                        <Play size={46} strokeWidth={1.6} className="text-white/85 ml-1" />
+                      </div>
+                    )}
                     <div className="absolute inset-0 bg-primary/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-lg">
                         <Play size={24} className="text-primary ml-1" />
                       </div>
                     </div>
-                    <span className="absolute top-4 right-4 bg-gold text-primary text-xs font-bold px-3 py-1 rounded-full">
+                    <span className="absolute top-3 right-3 bg-gold/90 text-[#241B0B] text-[11px] font-semibold px-2.5 py-1 rounded-full">
                       {categoryLabels[sermon.category]}
                     </span>
                   </div>
-                  <div className="p-6">
+                  <div className="p-6 flex flex-col flex-1">
                     <h3
                       className="font-serif text-xl text-primary mb-2 line-clamp-2 cursor-pointer hover:text-gold transition-colors"
                       onClick={() => setSelectedSermon(sermon)}
                     >
                       {sermon.title}
                     </h3>
-                    <p className="text-stone-500 text-sm mb-4 line-clamp-2">{sermon.description}</p>
-                    <div className="flex items-center justify-between text-sm text-stone-500">
-                      <span>{sermon.speaker}</span>
-                      <div className="flex items-center gap-1">
-                        <Clock size={14} />
-                        {sermon.duration}
-                      </div>
+                    <p className="text-stone-500 text-sm mb-3 line-clamp-2">{sermon.description}</p>
+                    <div className="flex items-center gap-3 text-sm text-stone-500">
+                      <span className="flex items-center gap-1.5 min-w-0 truncate">
+                        <User size={14} />
+                        <span className="truncate">{sermon.speaker}</span>
+                      </span>
+                      {sermon.duration && (
+                        <span className="flex items-center gap-1.5 shrink-0">
+                          <Clock size={13} />
+                          {sermon.duration}
+                        </span>
+                      )}
                     </div>
-                    <div className="mt-2 text-sm text-stone-400">
-                      {new Date(sermon.date).toLocaleDateString('es-ES', {
-                        year: 'numeric', month: 'long', day: 'numeric'
-                      })}
+                    <div className="mt-2 flex items-center gap-1.5 text-sm text-stone-400">
+                      <Calendar size={13} />
+                      {formatDate(sermon.date)}
                     </div>
                     {sermon.series && (
                       <div className="mt-2">
                         <span className="text-xs bg-gold/10 text-gold font-medium px-2 py-0.5 rounded-full">
-                          📚 {sermon.series}
+                          <span aria-hidden="true">📚</span> {sermon.series}
                         </span>
                       </div>
+                    )}
+                    {sermon.published && (
+                      <ShareActions
+                        title={sermon.title}
+                        description={
+                          sermon.description.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120)
+                          || `${sermon.speaker} · ${formatDate(sermon.date)}`
+                        }
+                        url={`${window.location.origin}/sermons?id=${sermon.id}`}
+                        className="mt-3"
+                      />
                     )}
                     {canEditContent(sermon.author_id) && (
                       <div className="mt-4 flex items-center gap-2 pt-4 border-t border-stone-100">
@@ -299,7 +395,7 @@ export function SermonsPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
-            onClick={() => setSelectedSermon(null)}
+            onClick={handleCloseModal}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -316,10 +412,10 @@ export function SermonsPage() {
                     allowFullScreen
                     title={selectedSermon.title}
                   />
-                ) : (
+                ) : selectedSermon.thumbnail ? (
                   <>
                     <img
-                      src={selectedSermon.thumbnail || 'https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=400'}
+                      src={selectedSermon.thumbnail}
                       alt={selectedSermon.title}
                       className="w-full h-full object-cover opacity-50"
                     />
@@ -329,6 +425,15 @@ export function SermonsPage() {
                       </div>
                     </div>
                   </>
+                ) : (
+                  <div
+                    aria-hidden="true"
+                    className="w-full h-full bg-gradient-to-br from-primary-900 to-primary flex items-center justify-center"
+                  >
+                    <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-2xl">
+                      <Play size={40} className="text-primary ml-2" />
+                    </div>
+                  </div>
                 )}
               </div>
               <div className="p-8">
@@ -337,20 +442,35 @@ export function SermonsPage() {
                 </span>
                 <h2 className="font-serif text-3xl text-primary mt-2 mb-4">{selectedSermon.title}</h2>
                 <div className="flex flex-wrap items-center gap-4 text-stone-500 mb-6 text-sm">
-                  <span>{selectedSermon.speaker}</span>
-                  <span>•</span>
-                  <span>{new Date(selectedSermon.date).toLocaleDateString('es-ES')}</span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1"><Clock size={14} />{selectedSermon.duration}</span>
+                  <span className="flex items-center gap-1.5"><User size={14} />{selectedSermon.speaker}</span>
+                  <span aria-hidden="true">•</span>
+                  <span>{formatDate(selectedSermon.date)}</span>
+                  {selectedSermon.duration && (
+                    <>
+                      <span aria-hidden="true">•</span>
+                      <span className="flex items-center gap-1"><Clock size={14} />{selectedSermon.duration}</span>
+                    </>
+                  )}
                 </div>
-                <p className="text-stone-600 leading-relaxed mb-6">{selectedSermon.description}</p>
+                <div
+                  className="text-stone-600 leading-relaxed mb-6 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+                  dangerouslySetInnerHTML={{ __html: selectedSermon.description }}
+                />
                 {selectedSermon.notes && (
-                  <div className="bg-stone-50 rounded-xl p-6 border-l-4 border-gold">
+                  <div className="bg-paper rounded-xl p-6 border-l-4 border-gold">
                     <h4 className="font-serif text-lg text-primary mb-2">Notas del Sermón</h4>
                     <p className="text-stone-600 italic">{selectedSermon.notes}</p>
                   </div>
                 )}
-                <button onClick={() => setSelectedSermon(null)} className="mt-6 btn-primary w-full">
+                <div className="mt-6 pt-4 border-t border-stone-100 flex items-center justify-between">
+                  <span className="text-xs text-stone-400 font-medium uppercase tracking-wide">Compartir</span>
+                  <ShareActions
+                    title={selectedSermon.title}
+                    description={`${selectedSermon.speaker} · ${formatDate(selectedSermon.date)}`}
+                    url={`${window.location.origin}/sermons?id=${selectedSermon.id}`}
+                  />
+                </div>
+                <button onClick={handleCloseModal} className="mt-4 btn-primary w-full">
                   Cerrar
                 </button>
               </div>
@@ -380,7 +500,7 @@ export function SermonsPage() {
                 <h2 className="font-serif text-2xl text-primary">
                   {editingSermon ? 'Editar Prédica' : 'Nueva Prédica'}
                 </h2>
-                <button onClick={() => setModalOpen(false)} className="p-2 hover:bg-stone-100 rounded-lg">
+                <button onClick={() => setModalOpen(false)} aria-label="Cerrar" className="p-2 hover:bg-stone-100 rounded-lg">
                   <X size={24} className="text-stone-500" />
                 </button>
               </div>

@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+
+# Sitemap: Sitemap: https://iebenezerlaw.com/sitemap.xml

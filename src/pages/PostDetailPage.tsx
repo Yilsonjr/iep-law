@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Clock, Edit2, Trash2 } from 'lucide-react';
+import { ArrowLeft, Clock, Edit2, Trash2, BookOpen } from 'lucide-react';
 import { supabase } from '../config/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { ShareActions } from '../components/ShareActions';
 import type { Post, PostCategory } from '../types';
-import { cn } from '../utils';
+import { cn, setDocMeta } from '../utils';
 
 const categoryConfig: Record<PostCategory, { label: string; color: string; bg: string }> = {
   reflection:   { label: 'Reflexión Bíblica',    color: 'text-primary',    bg: 'bg-primary/10'  },
@@ -18,19 +19,43 @@ const categoryConfig: Record<PostCategory, { label: string; color: string; bg: s
 export function PostDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { canEditContent } = useAuth();
+  const { profile, canEditContent } = useAuth();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
+    if (!post) return;
+    const pageTitle = `${post.title} | Iglesia Ebenezer M.I.`;
+    const excerpt = post.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200);
+    const pageUrl = `${window.location.origin}/posts/${post.id}`;
+    document.title = pageTitle;
+    setDocMeta('description', excerpt);
+    setDocMeta('og:title', pageTitle, true);
+    setDocMeta('og:description', excerpt, true);
+    setDocMeta('og:url', pageUrl, true);
+    setDocMeta('og:type', 'article', true);
+    if (post.image_url) setDocMeta('og:image', post.image_url, true);
+    setDocMeta('twitter:title', pageTitle);
+    setDocMeta('twitter:description', excerpt);
+    if (post.image_url) setDocMeta('twitter:image', post.image_url);
+  }, [post]);
+
+  // Los borradores/pendientes solo son visibles para su autor o un admin/pastor
+  useEffect(() => {
     if (!id) return;
     supabase.from('posts').select('*').eq('id', id).maybeSingle().then(({ data }) => {
-      if (!data) setNotFound(true);
-      else setPost(data as Post);
+      const row = data as Post | null;
+      if (!row) {
+        setNotFound(true);
+      } else if (!row.published && !canEditContent(row.author_id)) {
+        setNotFound(true);
+      } else {
+        setPost(row);
+      }
       setLoading(false);
     });
-  }, [id]);
+  }, [id, profile, canEditContent]);
 
   const handleDelete = async () => {
     if (!post || !confirm('¿Eliminar esta publicación?')) return;
@@ -40,7 +65,7 @@ export function PostDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+      <div className="min-h-screen bg-paper flex items-center justify-center" role="status" aria-label="Cargando publicación">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent" />
       </div>
     );
@@ -48,8 +73,10 @@ export function PostDetailPage() {
 
   if (notFound || !post) {
     return (
-      <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center gap-4 text-stone-400">
-        <p className="text-xl">Publicación no encontrada</p>
+      <div className="min-h-screen bg-paper flex flex-col items-center justify-center gap-4 text-stone-500 py-20 text-center">
+        <BookOpen size={44} className="text-stone-300" aria-hidden="true" />
+        <p className="text-lg font-medium">Publicación no encontrada</p>
+        <p className="text-sm text-stone-400">Es posible que el enlace no exista o que la publicación aún no esté aprobada.</p>
         <Link to="/posts" className="btn-primary text-sm">Volver a Comunidad</Link>
       </div>
     );
@@ -60,7 +87,7 @@ export function PostDetailPage() {
   const canEdit = canEditContent(post.author_id);
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-paper">
       {/* Imagen de portada hero */}
       {post.image_url && (
         <div className="w-full h-72 md:h-[420px] overflow-hidden">
@@ -88,9 +115,9 @@ export function PostDetailPage() {
           </span>
 
           {/* Título */}
-          <h1 className="font-serif text-4xl md:text-5xl text-primary font-bold leading-tight mb-6">
-            {post.title}
-          </h1>
+<h1 className="font-serif text-4xl md:text-5xl text-primary font-semibold leading-tight mb-6">
+          {post.title}
+        </h1>
 
           {/* Meta */}
           <div className="flex items-center gap-3 text-stone-500 text-sm mb-8 pb-8 border-b border-stone-200">
@@ -137,10 +164,15 @@ export function PostDetailPage() {
           />
 
           {/* Footer del post */}
-          <div className="mt-12 pt-8 border-t border-stone-200">
+          <div className="mt-12 pt-8 border-t border-stone-200 flex flex-col sm:flex-row items-start sm:items-center gap-6">
+            <ShareActions
+              title={post.title}
+              description={post.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160) || undefined}
+              url={`${window.location.origin}/posts/${id}`}
+            />
             <Link
               to="/posts"
-              className="inline-flex items-center gap-2 text-sm text-stone-500 hover:text-primary transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-stone-500 hover:text-primary transition-colors ml-auto"
             >
               <ArrowLeft size={16} />
               Ver más publicaciones

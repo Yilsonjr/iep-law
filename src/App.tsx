@@ -1,5 +1,5 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Component, useState, useEffect, type ReactNode, type ErrorInfo } from 'react';
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { Component, lazy, Suspense, useState, useEffect, type ReactNode, type ErrorInfo } from 'react';
 import { AuthProvider } from './contexts/AuthContext';
 import { SiteConfigProvider } from './contexts/SiteConfigContext';
 import { PublicLayout } from './layouts/MainLayout';
@@ -7,16 +7,25 @@ import { AdminLayout } from './layouts/AdminLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { SearchModal } from './components/SearchModal';
 import { ContactModal } from './components/ContactModal';
-import { HomePage } from './pages/HomePage';
-import { SermonsPage } from './pages/SermonsPage';
-import { LivePage } from './pages/LivePage';
-import { EventsPage } from './pages/EventsPage';
-import { DashboardPage } from './pages/DashboardPage';
-import { LoginPage } from './pages/LoginPage';
-import { PostsPage } from './pages/PostsPage';
-import { PostDetailPage } from './pages/PostDetailPage';
-import { DynamicPage } from './pages/DynamicPage';
 import { useSeoMeta } from './hooks/useSeoMeta';
+
+const HomePage      = lazy(() => import('./pages/HomePage').then(m => ({ default: m.HomePage })));
+const SermonsPage   = lazy(() => import('./pages/SermonsPage').then(m => ({ default: m.SermonsPage })));
+const LivePage      = lazy(() => import('./pages/LivePage').then(m => ({ default: m.LivePage })));
+const EventsPage    = lazy(() => import('./pages/EventsPage').then(m => ({ default: m.EventsPage })));
+const PostsPage     = lazy(() => import('./pages/PostsPage').then(m => ({ default: m.PostsPage })));
+const PostDetailPage = lazy(() => import('./pages/PostDetailPage').then(m => ({ default: m.PostDetailPage })));
+const DynamicPage   = lazy(() => import('./pages/DynamicPage').then(m => ({ default: m.DynamicPage })));
+const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const LoginPage     = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })));
+
+function FullPageLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-paper">
+      <div className="animate-spin rounded-full h-10 w-10 border-4 border-primary border-t-transparent" />
+    </div>
+  );
+}
 
 class AppErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
   state = { error: null };
@@ -60,7 +69,7 @@ function AppInner() {
     <>
       <Routes>
         {/* ── Rutas públicas — con Navbar + Footer ── */}
-        <Route path="/login" element={<LoginPage />} />
+        <Route path="/login" element={<Suspense fallback={<FullPageLoader />}><LoginPage /></Suspense>} />
         <Route path="/" element={<PublicLayout onSearch={() => setSearchOpen(true)} onContact={() => setContactOpen(true)} />}>
           <Route index element={<HomePage onContact={() => setContactOpen(true)} />} />
           <Route path="sermons" element={<SermonsPage />} />
@@ -69,6 +78,13 @@ function AppInner() {
           <Route path="posts" element={<PostsPage />} />
           <Route path="posts/:id" element={<PostDetailPage />} />
           <Route path="p/:slug" element={<DynamicPage />} />
+          <Route path="*" element={
+            <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4 py-20">
+              <h1 className="font-serif text-6xl text-primary mb-4">404</h1>
+              <p className="text-stone-500 text-lg mb-8">Esta página no existe o no está disponible.</p>
+              <Link to="/" className="btn-primary">Volver al inicio</Link>
+            </div>
+          } />
         </Route>
 
         {/* ── Rutas de admin — sin Navbar ni Footer ── */}

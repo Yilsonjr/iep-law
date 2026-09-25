@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, CheckCircle, Quote, ChevronLeft, ChevronRight, X, Clock } from 'lucide-react';
+import { Send, CheckCircle, Quote, ChevronLeft, ChevronRight, X, Clock, MapPin } from 'lucide-react';
 import { HeroSection } from '../components/HeroSection';
 import { useSiteConfigContext } from '../contexts/SiteConfigContext';
 import { useContactMessages } from '../hooks/useContactMessages';
@@ -22,7 +22,7 @@ const fadeUp = {
 function sectionBgClass(bg: HomeBlock['bg']) {
   return ({
     white: 'bg-white',
-    light: 'bg-stone-50',
+    light: 'bg-paper',
     primary: 'bg-primary text-white',
     gradient: 'bg-linear-to-br from-primary to-primary/80 text-white',
     custom: '',
@@ -48,26 +48,26 @@ function SectionHeader({ block, dark, s, verse }: {
 }) {
   if (!block.title && !block.subtitle) return null;
   return (
-    <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
+    <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-12">
       {block.title && (
         <h2
-          className={cn('font-serif text-4xl md:text-5xl font-bold mb-3', !block.color_heading && (dark ? 'text-white' : 'text-primary'))}
+          className={cn('font-serif text-3xl md:text-4xl font-bold leading-tight text-balance', !block.color_heading && (dark ? 'text-white' : 'text-primary'))}
           style={s.heading}
         >
           {block.title}
         </h2>
       )}
-      <div className={cn('w-16 h-0.5 bg-gold mx-auto', block.title ? 'my-4' : 'my-2')} />
+      <div aria-hidden="true" className={cn('h-px bg-gradient-to-r from-transparent via-gold/65 to-transparent mx-auto w-24', block.title ? 'mt-4' : 'mt-2')} />
       {block.subtitle && (
         <p
-          className={cn('text-lg max-w-3xl mx-auto leading-relaxed', !block.color_text && (dark ? 'text-stone-200' : 'text-stone-500'))}
+          className={cn('mt-3 text-base md:text-lg leading-relaxed max-w-2xl mx-auto', !block.color_text && (dark ? 'text-stone-200' : 'text-stone-800'))}
           style={s.text}
         >
           {block.subtitle}
         </p>
       )}
       {verse && (
-        <p className="mt-5 text-sm font-medium text-gold tracking-widest uppercase">{verse}</p>
+        <p className="mt-4 text-xs font-semibold tracking-[0.18em] uppercase text-gold">{verse}</p>
       )}
     </motion.div>
   );
@@ -80,23 +80,32 @@ function ScheduleBar() {
   if (!schedules?.enabled || !schedules.items.length) return null;
 
   return (
-    <div className="bg-stone-900 text-white py-5">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row items-center gap-6 md:gap-10">
-          <div className="flex items-center gap-2.5 shrink-0">
-            <Clock size={18} className="text-gold" />
-            <span className="text-xs font-bold tracking-[0.18em] uppercase text-stone-300">
-              Horarios de Servicio
-            </span>
+    <div className="bg-ink text-white relative overflow-hidden">
+      {/* Gold gradient rule at top */}
+      <div aria-hidden="true" className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-gold/45 to-transparent" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+        <div className="flex items-center gap-0">
+          {/* Left label */}
+          <div className="flex items-center gap-2.5 shrink-0 pr-5 sm:pr-7 border-r border-white/10">
+            <Clock size={14} className="text-gold shrink-0" />
+            <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-gold/80">Servicios</span>
           </div>
-          <div className="hidden md:block w-px h-6 bg-stone-700 shrink-0" />
-          <div className="flex flex-wrap justify-center md:justify-start gap-6 md:gap-10">
-            {schedules.items.map((item, i) => (
-              <div key={i} className="text-center md:text-left">
-                <p className="text-sm font-bold text-white">{item.day}</p>
-                <p className="text-xs text-stone-400 mt-0.5">{item.time} &middot; {item.label}</p>
-              </div>
-            ))}
+
+          {/* Horizontal scroll on mobile, flex-wrap on sm+ */}
+          <div className="flex-1 pl-5 sm:pl-7 overflow-x-auto scrollbar-none">
+            <div className="flex gap-7 sm:gap-10 min-w-max sm:min-w-0 sm:flex-wrap sm:justify-center">
+              {schedules.items.map((item, i) => (
+                <div key={i} className="flex flex-col shrink-0">
+                  <span className="font-serif text-[15px] font-medium text-white/90 leading-none tracking-tight">
+                    {item.time}
+                  </span>
+                  <span className="mt-1 text-[9px] font-semibold uppercase tracking-[0.13em] text-stone-400">
+                    {item.day}{item.label ? ` · ${item.label}` : ''}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -104,17 +113,87 @@ function ScheduleBar() {
   );
 }
 
+// ── FLOATING SERVICE CARD ─────────────────────────────────────
+function ServiceCard() {
+  const { config } = useSiteConfigContext();
+  const { schedules, contact } = config.footer;
+  const first = schedules?.enabled && schedules.items.length > 0 ? schedules.items[0] : null;
+  if (!first && !contact.address) return null;
+
+  const mapsUrl = contact.address
+    ? `https://maps.google.com/?q=${encodeURIComponent(contact.address)}`
+    : null;
+
+  return (
+    <section className="bg-paper py-7">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8, duration: 0.55, ease: 'easeOut' }}
+          className="relative bg-white rounded-2xl
+            border border-stone-200/70
+            shadow-[0_8px_32px_rgba(34,26,20,0.09),0_2px_6px_rgba(34,26,20,0.05)]
+            px-5 py-5 sm:px-8 sm:py-6
+            flex flex-col sm:flex-row sm:items-center gap-5"
+        >
+          {/* Gold hairline top */}
+          <div aria-hidden="true" className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-gold/50 to-transparent rounded-t-2xl" />
+
+          {/* Next service */}
+          {first && (
+            <div className="flex items-center gap-4 flex-1 sm:pr-7 sm:border-r sm:border-stone-200">
+              <span className="w-10 h-10 rounded-xl bg-primary/[0.06] flex items-center justify-center shrink-0">
+                <Clock size={17} className="text-primary" />
+              </span>
+              <div>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-gold mb-0.5">Próximo servicio</p>
+                <p className="font-serif text-[17px] font-semibold text-ink leading-none">{first.time}</p>
+                <p className="text-[11px] text-stone-500 mt-0.5">{first.day}{first.label ? ` · ${first.label}` : ''}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Address */}
+          {contact.address && (
+            <div className={cn('flex items-center gap-4 flex-1', first && 'sm:pl-7')}>
+              <span className="w-10 h-10 rounded-xl bg-primary/[0.06] flex items-center justify-center shrink-0">
+                <MapPin size={17} className="text-primary" />
+              </span>
+              <div>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-gold mb-0.5">Nos encontramos en</p>
+                <p className="text-sm font-medium text-ink leading-snug">{contact.address}</p>
+              </div>
+            </div>
+          )}
+
+          {/* CTA */}
+          {mapsUrl && (
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 sm:ml-4 flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-full bg-primary text-white text-[11px] font-semibold tracking-[0.06em] hover:bg-primary/90 transition-colors focus-visible:ring-2 focus-visible:ring-gold focus-visible:outline-none"
+            >
+              <MapPin size={12} />
+              Cómo llegar
+            </a>
+          )}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
 // ── CARDS BLOCK ────────────────────────────────────────────────
 function CardsBlock({ block }: { block: HomeBlock }) {
   const dark = isDarkBg(block.bg);
-  const cols = { 2: 'sm:grid-cols-2', 3: 'sm:grid-cols-3', 4: 'sm:grid-cols-2 lg:grid-cols-4' };
+  const cols = { 2: 'md:grid-cols-2', 3: 'md:grid-cols-3', 4: 'md:grid-cols-2 lg:grid-cols-4' };
   const s = bc(block);
 
   return (
-    <section className={cn('py-20', !block.color_bg && sectionBgClass(block.bg))} style={s.section}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className={cn('py-20', !block.color_bg && sectionBgClass(block.bg), !dark && !block.color_bg && 'border-t border-stone-100')} style={s.section}>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeader block={block} dark={dark} s={s} />
-        <div className={cn('grid grid-cols-1 gap-8 md:gap-10', cols[block.card_cols])}>
+        <div className={cn('grid grid-cols-1 gap-6 lg:gap-8', cols[block.card_cols])}>
           {block.cards.map((card, i) => (
             <motion.div
               key={i}
@@ -122,18 +201,30 @@ function CardsBlock({ block }: { block: HomeBlock }) {
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className="flex flex-col items-center text-center group"
+              transition={{ delay: i * 0.12 }}
+              className={cn(
+                'flex flex-col items-center text-center group',
+                !block.color_bg && !dark && 'rounded-2xl border border-stone-200/70 bg-white p-8 sm:p-10 transition-all duration-300 hover:border-gold/50 hover:shadow-[0_8px_32px_rgba(212,175,55,0.13)] motion-safe:hover:-translate-y-1.5'
+              )}
             >
-              <div className={cn('w-8 h-0.5 mb-5', dark ? 'bg-white/40' : 'bg-gold')} />
+              <span
+                aria-hidden="true"
+                className={cn(
+                  'w-14 h-14 rounded-2xl flex items-center justify-center text-2xl transition-all duration-300',
+                  dark ? 'bg-white/10' : 'bg-primary/[0.08] group-hover:bg-gold/[0.14]'
+                )}
+              >
+                {card.emoji || '✦'}
+              </span>
               <h3
-                className={cn('text-sm font-bold tracking-widest uppercase mb-3', !block.color_heading && (dark ? 'text-white' : 'text-stone-800'))}
+                className={cn('mt-5 text-sm font-bold tracking-[0.12em] uppercase', !block.color_heading && (dark ? 'text-white' : 'text-ink'))}
                 style={s.heading}
               >
                 {card.title}
               </h3>
+              <div aria-hidden="true" className="w-10 h-px bg-gold/60 my-3" />
               <p
-                className={cn('text-sm leading-relaxed max-w-xs', !block.color_text && (dark ? 'text-stone-300' : 'text-stone-500'))}
+                className={cn('text-sm leading-relaxed max-w-xs mx-auto', !block.color_text && (dark ? 'text-stone-300' : 'text-stone-700'))}
                 style={s.text}
               >
                 {card.description}
@@ -153,8 +244,8 @@ function ColumnsBlock({ block, onContact }: { block: HomeBlock; onContact: () =>
   const s = bc(block);
 
   return (
-    <section className={cn('py-20', !block.color_bg && sectionBgClass(block.bg))} style={s.section}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className={cn('py-20', !block.color_bg && sectionBgClass(block.bg), !dark && !block.color_bg && 'border-t border-stone-100')} style={s.section}>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {(block.title || block.subtitle) && (
           <SectionHeader block={block} dark={dark} s={s} />
         )}
@@ -171,8 +262,9 @@ function ColumnsBlock({ block, onContact }: { block: HomeBlock; onContact: () =>
                 transition={{ delay: i * 0.15 }}
               >
                 {isPhotoOnly ? (
-                  <div className="rounded-2xl overflow-hidden shadow-xl h-full min-h-[320px]">
-                    <img src={col.image_url} alt="" className="w-full h-full object-cover" />
+                  <div className="relative rounded-2xl overflow-hidden shadow-[0_12px_40px_rgba(34,26,20,0.12)] h-full min-h-[320px]">
+                    <img src={col.image_url} alt="" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.02]" />
+                    <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-ink/15 to-transparent pointer-events-none" />
                   </div>
                 ) : (
                   <>
@@ -191,7 +283,7 @@ function ColumnsBlock({ block, onContact }: { block: HomeBlock; onContact: () =>
                     )}
                     {col.body && (
                       <div
-                        className={cn('prose prose-base max-w-none mb-6', dark ? 'prose-invert prose-p:text-stone-200' : 'prose-stone prose-p:text-stone-600')}
+                        className={cn('prose prose-base max-w-none mb-6', dark ? 'prose-invert prose-p:text-stone-200' : 'prose-stone prose-p:text-stone-700')}
                         dangerouslySetInnerHTML={{ __html: col.body }}
                       />
                     )}
@@ -222,90 +314,113 @@ function CtaBannerBlock({ block, onContact }: { block: HomeBlock; onContact: () 
   const dark = isDarkBg(block.bg);
   const s = bc(block);
 
+  const ctaBtn1Class = dark
+    ? 'px-8 py-3.5 rounded-full font-semibold text-sm tracking-wide bg-white/[0.08] border-2 border-white/85 text-white hover:bg-white/20 transition-colors'
+    : 'btn-primary';
+  const ctaBtn2Class = dark
+    ? 'px-8 py-3.5 rounded-full font-semibold text-sm tracking-wide bg-white/[0.12] border border-white/55 text-white hover:bg-white/25 transition-colors'
+    : 'btn-secondary';
+
   return (
-    <section className={cn('py-24 relative overflow-hidden', !block.color_bg && sectionBgClass(block.bg))} style={s.section}>
-      {/* Subtle pattern overlay for depth */}
+    <section
+      className={cn('py-20 relative overflow-hidden', !block.color_bg && sectionBgClass(block.bg))}
+      style={dark && !block.color_bg
+        ? { background: 'linear-gradient(135deg, #6A0006 0%, #8D000A 45%, #3D0004 100%)' }
+        : s.section}
+    >
+      {/* Fine dot texture */}
       {dark && (
         <div
-          className="absolute inset-0 opacity-5"
+          aria-hidden="true"
+          className="absolute inset-0 opacity-[0.035]"
           style={{
-            backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.6) 1px, transparent 0)',
-            backgroundSize: '32px 32px',
+            backgroundImage: 'radial-gradient(circle at 1.5px 1.5px, rgba(255,255,255,0.7) 1px, transparent 0)',
+            backgroundSize: '28px 28px',
           }}
         />
       )}
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-        <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-          {block.title && (
-            <h2
-              className={cn('font-serif text-4xl md:text-5xl font-bold mb-4', !block.color_heading && (dark ? 'text-white' : 'text-primary'))}
-              style={s.heading}
-            >
-              {block.title}
-            </h2>
-          )}
-          {block.subtitle && (
-            <p
-              className={cn('text-lg mb-10 max-w-2xl mx-auto leading-relaxed', !block.color_text && (dark ? 'text-stone-300' : 'text-stone-600'))}
-              style={s.text}
-            >
-              {block.subtitle}
-            </p>
-          )}
-          <div className="flex flex-wrap items-center justify-center gap-4">
-            {block.cta_btn1_label && (
-              block.cta_btn1_href === '#contact' ? (
-                <motion.button
-                  whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                  onClick={onContact}
-                  className={cn(
-                    'px-8 py-3.5 rounded-full font-semibold text-sm tracking-wide transition-all',
-                    dark ? 'border-2 border-white/60 text-white hover:bg-white/10' : 'btn-primary'
-                  )}
+      {/* Radial gold glow at top */}
+      {dark && (
+        <div
+          aria-hidden="true"
+          className="absolute -top-24 left-1/2 -translate-x-1/2 w-[500px] h-[280px] rounded-full opacity-[0.12] pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse, #D4AF37 0%, transparent 70%)' }}
+        />
+      )}
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <motion.div
+          variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
+          className="flex flex-col lg:flex-row lg:items-center lg:gap-16 text-center lg:text-left"
+        >
+          {/* Text */}
+          <div className="flex-1 min-w-0">
+            {block.title && (
+              <>
+                {dark && (
+                  <div className="flex items-center gap-2.5 mb-5 justify-center lg:justify-start">
+                    <span aria-hidden="true" className="w-8 h-px bg-gold/50" />
+                    <span aria-hidden="true" className="text-gold/55 text-[9px] tracking-[0.2em]">✦ ✦ ✦</span>
+                    <span aria-hidden="true" className="w-8 h-px bg-gold/50" />
+                  </div>
+                )}
+                <h2
+                  className={cn('font-serif text-4xl md:text-5xl font-bold mb-4 text-balance leading-snug', !block.color_heading && (dark ? 'text-white' : 'text-primary'))}
+                  style={s.heading}
                 >
-                  {block.cta_btn1_label}
-                </motion.button>
-              ) : (
-                <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-                  <Link
-                    to={block.cta_btn1_href}
-                    className={cn(
-                      'inline-block px-8 py-3.5 rounded-full font-semibold text-sm tracking-wide transition-all',
-                      dark ? 'border-2 border-white/60 text-white hover:bg-white/10' : 'btn-primary'
-                    )}
-                  >
-                    {block.cta_btn1_label}
-                  </Link>
-                </motion.div>
-              )
+                  {block.title}
+                </h2>
+              </>
             )}
-            {block.cta_btn2_label && (
-              block.cta_btn2_href === '#contact' ? (
-                <motion.button
-                  whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                  onClick={onContact}
-                  className={cn(
-                    'px-8 py-3.5 rounded-full font-semibold text-sm tracking-wide transition-all',
-                    dark ? 'bg-white text-stone-900 hover:bg-stone-100' : 'btn-secondary'
-                  )}
-                >
-                  {block.cta_btn2_label}
-                </motion.button>
-              ) : (
-                <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-                  <Link
-                    to={block.cta_btn2_href}
-                    className={cn(
-                      'inline-block px-8 py-3.5 rounded-full font-semibold text-sm tracking-wide transition-all',
-                      dark ? 'bg-white text-stone-900 hover:bg-stone-100' : 'btn-secondary'
-                    )}
-                  >
-                    {block.cta_btn2_label}
-                  </Link>
-                </motion.div>
-              )
+            {block.subtitle && (
+              <p
+                className={cn('text-lg leading-relaxed', !block.color_text && (dark ? 'text-white/90' : 'text-stone-600'))}
+                style={s.text}
+              >
+                {block.subtitle}
+              </p>
             )}
           </div>
+
+          {/* Buttons */}
+          {(block.cta_btn1_label || block.cta_btn2_label) && (
+            <div className="flex flex-col sm:flex-row lg:flex-col gap-3 mt-10 lg:mt-0 lg:shrink-0 items-center lg:items-stretch">
+              {block.cta_btn1_label && (
+                block.cta_btn1_href === '#contact' ? (
+                  <motion.button
+                    whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                    onClick={onContact}
+                    className={ctaBtn1Class}
+                  >
+                    {block.cta_btn1_label}
+                  </motion.button>
+                ) : (
+                  <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                    <Link to={block.cta_btn1_href} className={cn('inline-block text-center', ctaBtn1Class)}>
+                      {block.cta_btn1_label}
+                    </Link>
+                  </motion.div>
+                )
+              )}
+              {block.cta_btn2_label && (
+                block.cta_btn2_href === '#contact' ? (
+                  <motion.button
+                    whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                    onClick={onContact}
+                    className={ctaBtn2Class}
+                  >
+                    {block.cta_btn2_label}
+                  </motion.button>
+                ) : (
+                  <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                    <Link to={block.cta_btn2_href} className={cn('inline-block text-center', ctaBtn2Class)}>
+                      {block.cta_btn2_label}
+                    </Link>
+                  </motion.div>
+                )
+              )}
+            </div>
+          )}
         </motion.div>
       </div>
     </section>
@@ -318,7 +433,7 @@ function StatsBlock({ block }: { block: HomeBlock }) {
   const s = bc(block);
 
   return (
-    <section className={cn('py-20', !block.color_bg && sectionBgClass(block.bg))} style={s.section}>
+    <section className={cn('py-20', !block.color_bg && sectionBgClass(block.bg), !dark && !block.color_bg && 'border-t border-stone-100')} style={s.section}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {(block.title || block.subtitle) && <SectionHeader block={block} dark={dark} s={s} />}
         <div className={cn('grid grid-cols-2 gap-8', block.stats.length >= 4 ? 'md:grid-cols-4' : 'md:grid-cols-3')}>
@@ -332,11 +447,12 @@ function StatsBlock({ block }: { block: HomeBlock }) {
               transition={{ delay: i * 0.1 }}
               className="text-center"
             >
-              <div className={cn('w-6 h-0.5 mx-auto mb-4', dark ? 'bg-gold/60' : 'bg-gold')} />
-              <p className={cn('text-4xl md:text-5xl font-bold font-serif mb-1', !block.color_heading && (dark ? 'text-gold' : 'text-primary'))} style={s.heading}>
+              {stat.emoji && <span aria-hidden="true" className="text-2xl">{stat.emoji}</span>}
+              <div aria-hidden="true" className="mt-3 w-8 h-px bg-gold/70 mx-auto" />
+              <p className={cn('mt-2 font-serif text-4xl md:text-5xl font-semibold', !block.color_heading && (dark ? 'text-gold' : 'text-primary'))} style={s.heading}>
                 {stat.value}
               </p>
-              <p className={cn('text-sm font-medium tracking-wide uppercase', !block.color_text && (dark ? 'text-stone-300' : 'text-stone-500'))} style={s.text}>
+              <p className={cn('mt-2 text-xs font-semibold tracking-[0.14em] uppercase', !block.color_text && (dark ? 'text-stone-300' : 'text-stone-500'))} style={s.text}>
                 {stat.label}
               </p>
             </motion.div>
@@ -353,7 +469,7 @@ function RichTextBlock({ block }: { block: HomeBlock }) {
   const s = bc(block);
 
   return (
-    <section className={cn('py-20', !block.color_bg && sectionBgClass(block.bg))} style={s.section}>
+    <section className={cn('py-20', !block.color_bg && sectionBgClass(block.bg), !dark && !block.color_bg && 'border-t border-stone-100')} style={s.section}>
       <div className={cn('max-w-4xl mx-auto px-4 sm:px-6 lg:px-8', block.text_align === 'center' && 'text-center')}>
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
           {block.title && (
@@ -393,7 +509,7 @@ function TestimonialsBlock({ block }: { block: HomeBlock }) {
   const t = items[index % items.length];
 
   return (
-    <section className={cn('py-20', !block.color_bg && sectionBgClass(block.bg))} style={s.section}>
+    <section className={cn('py-20', !block.color_bg && sectionBgClass(block.bg), !dark && !block.color_bg && 'border-t border-stone-100')} style={s.section}>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         {(block.title || block.subtitle) && <SectionHeader block={block} dark={dark} s={s} />}
         <div className="relative text-center min-h-[220px] flex flex-col items-center justify-center">
@@ -442,7 +558,7 @@ function GalleryBlock({ block }: { block: HomeBlock }) {
   if (items.length === 0) return null;
 
   return (
-    <section className={cn('py-20', !block.color_bg && sectionBgClass(block.bg))} style={s.section}>
+    <section className={cn('py-20', !block.color_bg && sectionBgClass(block.bg), !dark && !block.color_bg && 'border-t border-stone-100')} style={s.section}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {(block.title || block.subtitle) && <SectionHeader block={block} dark={dark} s={s} />}
         <div className={cn('grid grid-cols-1 gap-4', cols[block.card_cols])}>
@@ -470,14 +586,14 @@ function GalleryBlock({ block }: { block: HomeBlock }) {
             onClick={() => setLightbox(null)}
             className="fixed inset-0 bg-black/92 z-100 flex items-center justify-center p-4 cursor-zoom-out"
           >
-            <button onClick={() => setLightbox(null)} className="absolute top-5 right-5 text-white/60 hover:text-white"><X size={28} /></button>
+            <button onClick={() => setLightbox(null)} aria-label="Cerrar visor de imágenes" className="absolute top-5 right-5 text-white/60 hover:text-white"><X size={28} /></button>
             {lightbox > 0 && (
-              <button onClick={e => { e.stopPropagation(); setLightbox(l => (l ?? 0) - 1); }} className="absolute left-4 text-white/60 hover:text-white">
+              <button onClick={e => { e.stopPropagation(); setLightbox(l => (l ?? 0) - 1); }} aria-label="Imagen anterior" className="absolute left-4 text-white/60 hover:text-white">
                 <ChevronLeft size={32} />
               </button>
             )}
             {lightbox < items.length - 1 && (
-              <button onClick={e => { e.stopPropagation(); setLightbox(l => (l ?? 0) + 1); }} className="absolute right-4 text-white/60 hover:text-white">
+              <button onClick={e => { e.stopPropagation(); setLightbox(l => (l ?? 0) + 1); }} aria-label="Imagen siguiente" className="absolute right-4 text-white/60 hover:text-white">
                 <ChevronRight size={32} />
               </button>
             )}
@@ -499,17 +615,20 @@ function TeamBlock({ block }: { block: HomeBlock }) {
   const members = block.team_members;
   if (members.length === 0) return null;
 
-  const colClass = members.length === 2
-    ? 'sm:grid-cols-2'
-    : members.length === 4
-      ? 'sm:grid-cols-2 lg:grid-cols-4'
-      : 'sm:grid-cols-2 lg:grid-cols-3';
+  const single = members.length === 1;
+  const colClass = single
+    ? ''
+    : members.length === 2
+      ? 'sm:grid-cols-2'
+      : members.length === 4
+        ? 'sm:grid-cols-2 lg:grid-cols-4'
+        : 'sm:grid-cols-2 lg:grid-cols-3';
 
   return (
-    <section className={cn('py-20', !block.color_bg && sectionBgClass(block.bg))} style={s.section}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionHeader block={block} dark={dark} s={s} />
-        <div className={cn('grid grid-cols-1 gap-8', colClass)}>
+    <section className={cn('py-20', !block.color_bg && sectionBgClass(block.bg), !dark && !block.color_bg && 'border-t border-stone-100')} style={s.section}>
+      <div className={cn('mx-auto px-4 sm:px-6 lg:px-8', single ? 'max-w-4xl' : 'max-w-7xl')}>
+        <SectionHeader block={block} dark={false} s={s} />
+        <div className={cn('grid grid-cols-1 items-stretch gap-10', colClass)}>
           {members.map((member, i) => (
             <motion.div
               key={i}
@@ -519,35 +638,46 @@ function TeamBlock({ block }: { block: HomeBlock }) {
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
               className={cn(
-                'rounded-2xl p-6 flex flex-col items-center text-center border transition-shadow hover:shadow-md',
-                dark ? 'bg-white/10 border-white/10' : 'bg-white border-stone-100'
+                'group relative rounded-2xl overflow-hidden bg-white border flex flex-col',
+                single
+                  ? 'md:flex-row border-stone-200/80 shadow-[0_8px_32px_rgba(34,26,20,0.08)] hover:shadow-[0_16px_48px_rgba(34,26,20,0.12)] transition-shadow duration-300'
+                  : 'border-stone-200 transition-all duration-300 hover:shadow-md hover:border-gold/30 motion-safe:hover:-translate-y-0.5'
               )}
             >
-              {member.photo_url ? (
-                <img
-                  src={member.photo_url}
-                  alt={member.name}
-                  className="w-24 h-24 rounded-full object-cover border-4 border-[#F8F5F0] shadow-sm mb-4"
-                />
-              ) : (
-                <div className={cn('w-24 h-24 rounded-full mb-4 flex items-center justify-center text-3xl font-serif font-bold border-4',
-                  dark ? 'bg-white/10 border-white/10 text-white/60' : 'bg-stone-100 border-stone-50 text-stone-400'
-                )}>
-                  {member.name ? member.name.charAt(0).toUpperCase() : '?'}
-                </div>
-              )}
-              <div className="w-6 h-0.5 bg-gold mb-3" />
-              <h3 className={cn('font-serif text-lg font-bold mb-0.5', !block.color_heading && (dark ? 'text-white' : 'text-[#1A1014]'))} style={s.heading}>
-                {member.name}
-              </h3>
-              <p className={cn('text-xs font-semibold tracking-widest uppercase mb-3', dark ? 'text-gold/80' : 'text-gold')}>
-                {member.role}
-              </p>
-              {member.bio && (
-                <p className={cn('text-sm leading-relaxed', !block.color_text && (dark ? 'text-stone-300' : 'text-stone-500'))} style={s.text}>
-                  {member.bio}
-                </p>
-              )}
+              {/* Gold hairline at card top */}
+              <div aria-hidden="true" className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-gold/45 to-transparent z-10 pointer-events-none" />
+              <div className={cn('relative overflow-hidden shrink-0', single ? 'aspect-[4/5] md:aspect-auto md:w-[42%] max-h-72 md:max-h-[460px]' : 'aspect-[4/5]')}>
+                {member.photo_url ? (
+                  <img
+                    src={member.photo_url}
+                    alt={member.name}
+                    loading="lazy"
+                    className={cn(
+                      'w-full h-full object-cover transition-transform duration-500 group-hover:scale-105',
+                      single ? 'object-top' : 'object-center'
+                    )}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-stone-100 text-6xl font-serif font-semibold text-stone-400">
+                    {member.name ? member.name.charAt(0).toUpperCase() : '?'}
+                  </div>
+                )}
+              </div>
+              <div className={cn('flex-1 text-left flex flex-col justify-center', single ? 'p-10 md:p-12' : 'p-8')}>
+                {member.role && <p className="eyebrow text-gold mb-3">{member.role}</p>}
+                <h3
+                  className={cn('font-serif font-semibold leading-tight', !block.color_heading && 'text-ink', single ? 'text-3xl md:text-4xl' : 'text-2xl')}
+                  style={s.heading}
+                >
+                  {member.name}
+                </h3>
+                <div aria-hidden="true" className={cn('h-px bg-gold/60 my-4', single ? 'w-16' : 'w-12')} />
+                {member.bio && (
+                  <p className={cn('leading-relaxed', !block.color_text && 'text-stone-600', single ? 'text-[15px] md:text-base' : 'text-sm md:text-base')} style={s.text}>
+                    {member.bio}
+                  </p>
+                )}
+              </div>
             </motion.div>
           ))}
         </div>
@@ -587,7 +717,7 @@ function ContactFormBlock({ block }: { block: HomeBlock }) {
   );
 
   return (
-    <section className={cn('py-20', !block.color_bg && sectionBgClass(block.bg))} style={s.section}>
+    <section className={cn('py-20', !block.color_bg && sectionBgClass(block.bg), !dark && !block.color_bg && 'border-t border-stone-100')} style={s.section}>
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
           {(block.title || block.subtitle) && <SectionHeader block={block} dark={dark} s={s} />}
@@ -654,6 +784,7 @@ export function HomePage({ onContact }: HomePageProps) {
   return (
     <div>
       <HeroSection />
+      <ServiceCard />
       <ScheduleBar />
 
       {visibleBlocks.map(block => {
