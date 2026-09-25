@@ -39,6 +39,7 @@ export function Navbar({ onSearch }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [logoError, setLogoError] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, profile, signOut, canViewDashboard } = useAuth();
@@ -92,12 +93,19 @@ export function Navbar({ onSearch }: NavbarProps) {
         <div className="flex items-center h-16 md:h-[4.5rem] gap-3">
           {/* Logo */}
           <Link to="/" aria-label={`${branding.site_name} — ir al inicio`} className="flex items-center gap-2.5 shrink-0">
-            <span className="w-10 h-10 rounded-full ring-2 ring-gold/50 ring-offset-1 overflow-hidden shrink-0">
-              <img
-                src={branding.logo_url || '/android-chrome-192x192.png'}
-                alt=""
-                className="w-full h-full object-cover"
-              />
+            <span className="w-10 h-10 rounded-full ring-2 ring-gold/50 ring-offset-1 overflow-hidden shrink-0 bg-primary flex items-center justify-center">
+              {!logoError ? (
+                <img
+                  src={branding.logo_url || '/android-chrome-192x192.png'}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  onError={() => setLogoError(true)}
+                />
+              ) : (
+                <span aria-hidden="true" className="font-serif text-white text-xs font-bold select-none">
+                  {branding.site_name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                </span>
+              )}
             </span>
             <span className="hidden md:block leading-none text-left">
               <span className="block font-serif text-lg font-semibold text-primary tracking-tight">{branding.site_name}</span>

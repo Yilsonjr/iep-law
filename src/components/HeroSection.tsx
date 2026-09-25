@@ -6,26 +6,36 @@ import { useSiteConfigContext } from '../contexts/SiteConfigContext';
 import { cn } from '../utils';
 
 const heroSizes = 'h-[56vw] sm:h-[100svh] min-h-[300px] sm:min-h-[560px]';
+const heroBg = 'linear-gradient(135deg, #1E0002 0%, #3D0004 45%, #221A14 100%)';
+
+function overlayGradient(overlay: number, loaded: boolean) {
+  if (!loaded) return 'linear-gradient(to bottom, rgba(24,14,9,0.08) 0%, rgba(24,14,9,0.20) 60%, rgba(24,14,9,0.32) 100%)';
+  return `linear-gradient(to bottom, rgba(24,14,9,0.04) 0%, rgba(24,14,9,${(overlay * 0.55).toFixed(2)}) 32%, rgba(24,14,9,${overlay.toFixed(2)}) 60%, rgba(24,14,9,${Math.min(overlay + 0.4, 0.96).toFixed(2)}) 100%)`;
+}
 
 export function HeroSection() {
   const { config, loading } = useSiteConfigContext();
   const hero = config.hero;
   const [slide, setSlide] = useState(0);
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   useEffect(() => {
     if (loading || hero.mode !== 'slider' || hero.slides.length < 2) return;
-    const interval = setInterval(() => setSlide(s => (s + 1) % hero.slides.length), 6000);
+    const interval = setInterval(() => {
+      setImgLoaded(false);
+      setSlide(s => (s + 1) % hero.slides.length);
+    }, 6000);
     return () => clearInterval(interval);
   }, [loading, hero.mode, hero.slides.length]);
 
   if (loading) {
-    return <div aria-hidden="true" className={cn(heroSizes, 'bg-stone-800 animate-pulse')} />;
+    return <div aria-hidden="true" className={heroSizes} style={{ background: heroBg }} />;
   }
 
   // ── SLIDER MODE ───────────────────────────────────────────────
   if (hero.mode === 'slider' && hero.slides.length > 0) {
     return (
-      <section aria-label="Portada" className={cn('relative overflow-hidden bg-stone-900', heroSizes)}>
+      <section aria-label="Portada" className={cn('relative overflow-hidden', heroSizes)} style={{ background: heroBg }}>
         <AnimatePresence>
           <motion.div
             key={slide}
@@ -38,24 +48,31 @@ export function HeroSection() {
             <img
               src={hero.slides[slide]}
               aria-hidden="true"
+              decoding="async"
               className="absolute inset-0 w-full h-full object-cover sm:hidden"
               style={{ filter: 'blur(24px) brightness(0.35) saturate(0.4)', transform: 'scale(1.15)' }}
             />
             <img
               src={hero.slides[slide]}
               alt=""
-              className="absolute inset-0 w-full h-full object-contain sm:object-cover hero-zoom"
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
+              onLoad={() => setImgLoaded(true)}
+              onError={() => setImgLoaded(true)}
+              className={cn(
+                'absolute inset-0 w-full h-full object-contain sm:object-cover hero-zoom transition-opacity duration-700',
+                imgLoaded ? 'opacity-100' : 'opacity-0'
+              )}
             />
           </motion.div>
         </AnimatePresence>
 
-        {/* Cinematic overlay — clear top, dramatic bottom */}
+        {/* Cinematic overlay — reduced until image loaded */}
         <div
           aria-hidden="true"
-          className="absolute inset-0"
-          style={{
-            background: `linear-gradient(to bottom, rgba(24,14,9,0.04) 0%, rgba(24,14,9,${(hero.overlay * 0.55).toFixed(2)}) 32%, rgba(24,14,9,${hero.overlay.toFixed(2)}) 60%, rgba(24,14,9,${Math.min(hero.overlay + 0.4, 0.96).toFixed(2)}) 100%)`,
-          }}
+          className="absolute inset-0 transition-opacity duration-700"
+          style={{ background: overlayGradient(hero.overlay, imgLoaded) }}
         />
         {/* Perimeter vignette — cinematic depth */}
         <div
@@ -74,9 +91,9 @@ export function HeroSection() {
         <SliderControls
           count={hero.slides.length}
           current={slide}
-          onPrev={() => setSlide(s => (s - 1 + hero.slides.length) % hero.slides.length)}
-          onNext={() => setSlide(s => (s + 1) % hero.slides.length)}
-          onDot={setSlide}
+          onPrev={() => { setImgLoaded(false); setSlide(s => (s - 1 + hero.slides.length) % hero.slides.length); }}
+          onNext={() => { setImgLoaded(false); setSlide(s => (s + 1) % hero.slides.length); }}
+          onDot={i => { setImgLoaded(false); setSlide(i); }}
         />
       </section>
     );
@@ -85,25 +102,32 @@ export function HeroSection() {
   // ── IMAGE MODE ────────────────────────────────────────────────
   if (hero.mode === 'image' && hero.bg_url) {
     return (
-      <section aria-label="Portada" className={cn('relative overflow-hidden bg-stone-900', heroSizes)}>
+      <section aria-label="Portada" className={cn('relative overflow-hidden', heroSizes)} style={{ background: heroBg }}>
         <img
           src={hero.bg_url}
           aria-hidden="true"
+          decoding="async"
           className="absolute inset-0 w-full h-full object-cover sm:hidden"
           style={{ filter: 'blur(24px) brightness(0.35) saturate(0.4)', transform: 'scale(1.15)' }}
         />
         <img
           src={hero.bg_url}
           alt=""
-          className="absolute inset-0 w-full h-full object-contain sm:object-cover hero-zoom"
+          loading="eager"
+          decoding="async"
+          fetchPriority="high"
+          onLoad={() => setImgLoaded(true)}
+          onError={() => setImgLoaded(true)}
+          className={cn(
+            'absolute inset-0 w-full h-full object-contain sm:object-cover hero-zoom transition-opacity duration-700',
+            imgLoaded ? 'opacity-100' : 'opacity-0'
+          )}
         />
-        {/* Cinematic overlay — clear top, dramatic bottom */}
+        {/* Cinematic overlay — reduced until image loaded */}
         <div
           aria-hidden="true"
-          className="absolute inset-0"
-          style={{
-            background: `linear-gradient(to bottom, rgba(24,14,9,0.04) 0%, rgba(24,14,9,${(hero.overlay * 0.55).toFixed(2)}) 32%, rgba(24,14,9,${hero.overlay.toFixed(2)}) 60%, rgba(24,14,9,${Math.min(hero.overlay + 0.4, 0.96).toFixed(2)}) 100%)`,
-          }}
+          className="absolute inset-0 transition-opacity duration-700"
+          style={{ background: overlayGradient(hero.overlay, imgLoaded) }}
         />
         {/* Perimeter vignette — cinematic depth */}
         <div

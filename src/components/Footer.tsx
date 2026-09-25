@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { MapPin, Phone, Mail, Heart, Clock, ChevronRight, MessageCircle } from 'lucide-react';
@@ -71,12 +72,24 @@ function widgetHeading(title: string, color: string) {
 function LogoInfoWidget({ widget, footer, branding, C }: {
   widget: FooterWidget; footer: FooterConfig; branding: BrandingConfig; C: GlobalColors;
 }) {
+  const [logoError, setLogoError] = useState(false);
   const { h, t } = wc(widget, C);
   return (
     <div>
       <div className="flex items-center gap-3 mb-5">
-        <span className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-gold/60">
-          <img src={branding.logo_url || '/android-chrome-192x192.png'} alt="" className="w-full h-full object-cover" />
+        <span className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-gold/60 bg-primary flex items-center justify-center">
+          {!logoError ? (
+            <img
+              src={branding.logo_url || '/android-chrome-192x192.png'}
+              alt=""
+              className="w-full h-full object-cover"
+              onError={() => setLogoError(true)}
+            />
+          ) : (
+            <span aria-hidden="true" className="font-serif text-white text-xs font-bold select-none">
+              {branding.site_name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+            </span>
+          )}
         </span>
         <span className="text-left leading-tight">
           <span className="block font-serif text-lg font-semibold text-white tracking-tight">{branding.site_name}</span>
