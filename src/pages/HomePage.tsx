@@ -18,6 +18,11 @@ const fadeUp = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' as const } },
 };
 
+const focusIn = {
+  hidden: { opacity: 0, filter: 'blur(6px)' },
+  visible: { opacity: 1, filter: 'blur(0px)', transition: { duration: 0.65, ease: 'easeOut' as const } },
+};
+
 // ── Background helpers ─────────────────────────────────────────
 function sectionBgClass(bg: HomeBlock['bg']) {
   return ({
@@ -50,12 +55,13 @@ function SectionHeader({ block, dark, s, verse }: {
   return (
     <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-12">
       {block.title && (
-        <h2
+        <motion.h2
+          variants={focusIn}
           className={cn('font-serif text-3xl md:text-4xl font-bold leading-tight text-balance', !block.color_heading && (dark ? 'text-white' : 'text-primary'))}
           style={s.heading}
         >
           {block.title}
-        </h2>
+        </motion.h2>
       )}
       <div aria-hidden="true" className={cn('h-px bg-gradient-to-r from-transparent via-gold/65 to-transparent mx-auto w-24', block.title ? 'mt-4' : 'mt-2')} />
       {block.subtitle && (
@@ -203,15 +209,19 @@ function CardsBlock({ block }: { block: HomeBlock }) {
               viewport={{ once: true }}
               transition={{ delay: i * 0.12 }}
               className={cn(
-                'flex flex-col items-center text-center group',
-                !block.color_bg && !dark && 'rounded-2xl border border-stone-200/70 bg-white p-8 sm:p-10 transition-all duration-300 hover:border-gold/50 hover:shadow-[0_8px_32px_rgba(212,175,55,0.13)] motion-safe:hover:-translate-y-1.5'
+                'relative flex flex-col items-center text-center group',
+                !block.color_bg && !dark && 'rounded-2xl border border-stone-200/70 bg-white p-8 sm:p-10 transition-all duration-300 hover:border-gold/50 hover:shadow-[0_10px_40px_rgba(212,175,55,0.16),0_0_0_1px_rgba(212,175,55,0.18)] motion-safe:hover:-translate-y-1.5'
               )}
             >
+              {/* Gold hairline top — bento accent */}
+              {!block.color_bg && !dark && (
+                <div aria-hidden="true" className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-gold/40 to-transparent rounded-t-2xl" />
+              )}
               <span
                 aria-hidden="true"
                 className={cn(
-                  'w-14 h-14 rounded-2xl flex items-center justify-center text-2xl transition-all duration-300',
-                  dark ? 'bg-white/10' : 'bg-primary/[0.08] group-hover:bg-gold/[0.14]'
+                  'w-16 h-16 rounded-2xl flex items-center justify-center text-2xl transition-all duration-300',
+                  dark ? 'bg-white/10' : 'bg-primary/[0.11] group-hover:bg-gold/[0.15] group-hover:scale-[1.07]'
                 )}
               >
                 {card.emoji || '✦'}
@@ -323,9 +333,9 @@ function CtaBannerBlock({ block, onContact }: { block: HomeBlock; onContact: () 
 
   return (
     <section
-      className={cn('py-20 relative overflow-hidden', !block.color_bg && sectionBgClass(block.bg))}
+      className={cn('py-24 relative overflow-hidden', !block.color_bg && sectionBgClass(block.bg))}
       style={dark && !block.color_bg
-        ? { background: 'linear-gradient(135deg, #6A0006 0%, #8D000A 45%, #3D0004 100%)' }
+        ? { background: 'linear-gradient(150deg, #580007 0%, #8D000A 38%, #3D0004 70%, #1E0002 100%)' }
         : s.section}
     >
       {/* Fine dot texture */}
@@ -343,7 +353,7 @@ function CtaBannerBlock({ block, onContact }: { block: HomeBlock; onContact: () 
       {dark && (
         <div
           aria-hidden="true"
-          className="absolute -top-24 left-1/2 -translate-x-1/2 w-[500px] h-[280px] rounded-full opacity-[0.12] pointer-events-none"
+          className="absolute -top-24 left-1/2 -translate-x-1/2 w-[600px] h-[320px] rounded-full opacity-[0.20] pointer-events-none"
           style={{ background: 'radial-gradient(ellipse, #D4AF37 0%, transparent 70%)' }}
         />
       )}

@@ -58,9 +58,12 @@ function wc(widget: FooterWidget, C: GlobalColors) {
 
 function widgetHeading(title: string, color: string) {
   return (
-    <h4 className="text-[11px] font-semibold uppercase tracking-[0.16em] mb-5" style={{ color }}>
-      {title}
-    </h4>
+    <div className="mb-5">
+      <h4 className="text-[11px] font-semibold uppercase tracking-[0.18em] mb-2" style={{ color }}>
+        {title}
+      </h4>
+      <div aria-hidden="true" className="w-8 h-px bg-gradient-to-r from-gold/45 to-transparent" />
+    </div>
   );
 }
 

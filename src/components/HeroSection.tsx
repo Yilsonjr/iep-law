@@ -57,11 +57,17 @@ export function HeroSection() {
             background: `linear-gradient(to bottom, rgba(24,14,9,0.04) 0%, rgba(24,14,9,${(hero.overlay * 0.55).toFixed(2)}) 32%, rgba(24,14,9,${hero.overlay.toFixed(2)}) 60%, rgba(24,14,9,${Math.min(hero.overlay + 0.4, 0.96).toFixed(2)}) 100%)`,
           }}
         />
-        {/* Subtle gold glow at bottom center */}
+        {/* Perimeter vignette — cinematic depth */}
         <div
           aria-hidden="true"
-          className="absolute bottom-0 inset-x-0 h-60 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse 70% 100% at 50% 100%, rgba(212,175,55,0.07) 0%, transparent 70%)' }}
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse 85% 80% at 50% 42%, transparent 45%, rgba(14,7,4,0.40) 100%)' }}
+        />
+        {/* Warm gold glow at bottom center */}
+        <div
+          aria-hidden="true"
+          className="absolute bottom-0 inset-x-0 h-72 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse 80% 100% at 50% 100%, rgba(212,175,55,0.11) 0%, transparent 65%)' }}
         />
 
         <HeroContent hero={hero} />
@@ -99,11 +105,17 @@ export function HeroSection() {
             background: `linear-gradient(to bottom, rgba(24,14,9,0.04) 0%, rgba(24,14,9,${(hero.overlay * 0.55).toFixed(2)}) 32%, rgba(24,14,9,${hero.overlay.toFixed(2)}) 60%, rgba(24,14,9,${Math.min(hero.overlay + 0.4, 0.96).toFixed(2)}) 100%)`,
           }}
         />
-        {/* Subtle gold glow at bottom center */}
+        {/* Perimeter vignette — cinematic depth */}
         <div
           aria-hidden="true"
-          className="absolute bottom-0 inset-x-0 h-60 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse 70% 100% at 50% 100%, rgba(212,175,55,0.07) 0%, transparent 70%)' }}
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse 85% 80% at 50% 42%, transparent 45%, rgba(14,7,4,0.40) 100%)' }}
+        />
+        {/* Warm gold glow at bottom center */}
+        <div
+          aria-hidden="true"
+          className="absolute bottom-0 inset-x-0 h-72 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse 80% 100% at 50% 100%, rgba(212,175,55,0.11) 0%, transparent 65%)' }}
         />
         <HeroContent hero={hero} />
       </section>
@@ -221,7 +233,7 @@ function HeroContent({ hero, textMode = false }: { hero: ReturnType<typeof useSi
                 className={cn(
                   'block sm:inline-flex items-center justify-center px-7 py-3 sm:px-8 sm:py-3.5 rounded-full font-semibold text-sm tracking-wide transition-all duration-300 text-center',
                   btn.variant === 'primary'
-                    ? 'bg-gold text-[#241B0B] hover:bg-gold-600 shadow-lg hover:shadow-gold/30 hover:shadow-xl hover:-translate-y-0.5'
+                    ? 'bg-gold text-[#241B0B] hover:bg-gold-600 shadow-lg hover:shadow-gold/30 hover:shadow-xl hover:-translate-y-0.5 btn-glow'
                     : 'border border-white/70 text-white hover:bg-white/10 hover:border-white backdrop-blur-sm'
                 )}
               >

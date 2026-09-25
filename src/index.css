@@ -168,3 +168,30 @@ body {
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
+
+/* ── Glow Ring Button ─────────────────────────────────────────── */
+.btn-glow {
+  position: relative;
+}
+.btn-glow::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  transition: border-color 0.35s ease, box-shadow 0.35s ease;
+  pointer-events: none;
+}
+@media (hover: hover) {
+  .btn-glow:hover::after {
+    border-color: rgba(212, 175, 55, 0.38);
+    box-shadow: 0 0 18px rgba(212, 175, 55, 0.18);
+  }
+}
+.btn-glow:focus-visible::after {
+  border-color: rgba(212, 175, 55, 0.55);
+  box-shadow: 0 0 22px rgba(212, 175, 55, 0.22);
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-glow::after { transition: none; }
+}
