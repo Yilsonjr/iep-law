@@ -54,6 +54,9 @@ export function Navbar({ onSearch }: NavbarProps) {
     ...(canViewDashboard ? [{ path: '/dashboard', label: 'Dashboard', icon: Users }] : []),
   ];
 
+  // Desktop center links: Dashboard lives in the user dropdown, not alongside public links
+  const desktopNavItems = navItems.filter(n => n.path !== '/dashboard');
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -90,7 +93,7 @@ export function Navbar({ onSearch }: NavbarProps) {
       )}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center h-16 md:h-[4.5rem] gap-3">
+        <div className="flex items-center h-16 md:h-[4.5rem] gap-4">
           {/* Logo */}
           <Link to="/" aria-label={`${branding.site_name} — ir al inicio`} className="flex items-center gap-2.5 shrink-0">
             <span className="w-10 h-10 rounded-full ring-2 ring-gold/50 ring-offset-1 overflow-hidden shrink-0 bg-primary flex items-center justify-center">
@@ -119,8 +122,8 @@ export function Navbar({ onSearch }: NavbarProps) {
           </Link>
 
           {/* Nav links — centered */}
-          <div className="hidden md:flex flex-1 items-center justify-center gap-1 min-w-0">
-            {navItems.map(({ path, label }) => {
+          <div className="hidden md:flex flex-1 items-center justify-center gap-1 min-w-0 px-4">
+            {desktopNavItems.map(({ path, label }) => {
               const isActive = location.pathname === path;
               return (
                 <Link
@@ -128,7 +131,7 @@ export function Navbar({ onSearch }: NavbarProps) {
                   to={path}
                   aria-current={isActive ? 'page' : undefined}
                   className={cn(
-                    'relative px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors duration-200',
+                    'relative px-2 lg:px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors duration-200',
                     isActive ? 'text-primary' : 'text-stone-600 hover:text-primary'
                   )}
                 >
@@ -146,7 +149,7 @@ export function Navbar({ onSearch }: NavbarProps) {
           </div>
 
           {/* Right: search + auth — desktop only */}
-          <div className="hidden md:flex items-center gap-2 shrink-0">
+          <div className="hidden md:flex items-center gap-3 shrink-0 pl-1">
             <button
               onClick={onSearch}
               aria-label="Abrir buscador"
@@ -154,8 +157,8 @@ export function Navbar({ onSearch }: NavbarProps) {
               className="flex items-center gap-2 rounded-full border border-stone-200 bg-transparent px-3.5 py-2 text-sm text-stone-500 hover:text-primary hover:border-stone-300 transition-colors"
             >
               <Search size={15} />
-              <span className="hidden lg:inline">Buscar</span>
-              <kbd className="hidden lg:inline-flex text-[10px] bg-stone-100 text-stone-400 px-1.5 py-0.5 rounded-md border border-stone-200">Ctrl K</kbd>
+              <span className="hidden xl:inline">Buscar</span>
+              <kbd className="hidden xl:inline-flex text-[10px] bg-stone-100 text-stone-400 px-1.5 py-0.5 rounded-md border border-stone-200">Ctrl K</kbd>
             </button>
 
             {user && profile ? (
@@ -169,7 +172,7 @@ export function Navbar({ onSearch }: NavbarProps) {
                   <span className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm font-semibold shrink-0">
                     {initials}
                   </span>
-                  <span className="hidden lg:block text-left leading-tight">
+                  <span className="hidden xl:block text-left leading-tight">
                     <span className="block text-sm font-medium text-stone-800">{profile.display_name}</span>
                     <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-semibold', roleColors[profile.role])}>
                       {roleLabels[profile.role]}
