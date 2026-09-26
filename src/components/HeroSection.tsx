@@ -9,9 +9,10 @@ const heroSizes = 'h-[56vw] sm:h-[100svh] min-h-[300px] sm:min-h-[560px]';
 const heroBg = 'linear-gradient(135deg, #1E0002 0%, #3D0004 45%, #221A14 100%)';
 
 function overlayGradient(overlay: number, loaded: boolean) {
-  if (!loaded) return 'linear-gradient(to bottom, rgba(14,7,4,0.45) 0%, rgba(14,7,4,0.30) 40%, rgba(14,7,4,0.65) 100%)';
-  const o = Math.max(overlay, 0.5);
-  return `linear-gradient(to bottom, rgba(14,7,4,0.42) 0%, rgba(14,7,4,${(o * 0.55).toFixed(2)}) 28%, rgba(14,7,4,${o.toFixed(2)}) 58%, rgba(14,7,4,${Math.min(o + 0.35, 0.97).toFixed(2)}) 100%)`;
+  if (!loaded) return 'linear-gradient(to bottom, rgba(14,7,4,0.46) 0%, rgba(14,7,4,0.32) 38%, rgba(14,7,4,0.70) 100%)';
+  const o = Math.max(overlay, 0.52);
+  const midDark = Math.min(o * 0.58, 0.52);
+  return `linear-gradient(to bottom, rgba(14,7,4,0.38) 0%, rgba(14,7,4,${midDark.toFixed(2)}) 25%, rgba(14,7,4,${o.toFixed(2)}) 60%, rgba(14,7,4,${Math.min(o + 0.30, 0.97).toFixed(2)}) 100%)`;
 }
 
 // ── Luminous Cross — CSS/SVG fallback (no Three.js) ───────────
@@ -163,7 +164,7 @@ export function HeroSection() {
               onLoad={() => setImgLoaded(true)}
               onError={() => setImgLoaded(true)}
               className={cn(
-                'absolute inset-0 w-full h-full object-cover hero-zoom transition-opacity duration-700',
+                'absolute inset-0 w-full h-full object-cover hero-zoom transition-opacity duration-700 hero-img-sm-treat',
                 imgLoaded ? 'opacity-100' : 'opacity-0'
               )}
             />
@@ -182,6 +183,12 @@ export function HeroSection() {
           className="absolute inset-0 pointer-events-none"
           style={{ background: 'radial-gradient(ellipse 85% 80% at 50% 42%, transparent 40%, rgba(14,7,4,0.50) 100%)' }}
         />
+        {/* Depth vignette center — light, clean image needs only gentle mood */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 pointer-events-none hidden sm:block"
+          style={{ background: 'radial-gradient(ellipse 72% 58% at 50% 40%, rgba(8,0,1,0.16) 0%, transparent 70%)' }}
+        />
         {/* Warm gold glow */}
         <div
           aria-hidden="true"
@@ -193,10 +200,10 @@ export function HeroSection() {
         <HeroBeams />
         <HeroSparkles />
 
-        {/* Luminous cross — subtle accent */}
+        {/* Luminous cross — very subtle, let the real cross in the image lead */}
         <LuminousCross
           className="absolute right-[8%] top-[12%] w-[22vw] max-w-[260px] min-w-[120px]"
-          opacity={0.22}
+          opacity={0.12}
         />
 
         <HeroContent hero={hero} />
@@ -231,7 +238,7 @@ export function HeroSection() {
           onLoad={() => setImgLoaded(true)}
           onError={() => setImgLoaded(true)}
           className={cn(
-            'absolute inset-0 w-full h-full object-cover hero-zoom transition-opacity duration-700',
+            'absolute inset-0 w-full h-full object-cover hero-zoom transition-opacity duration-700 hero-img-sm-treat',
             imgLoaded ? 'opacity-100' : 'opacity-0'
           )}
         />
@@ -247,6 +254,12 @@ export function HeroSection() {
           className="absolute inset-0 pointer-events-none"
           style={{ background: 'radial-gradient(ellipse 85% 80% at 50% 42%, transparent 40%, rgba(14,7,4,0.50) 100%)' }}
         />
+        {/* Depth vignette center — light, clean image needs only gentle mood */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 pointer-events-none hidden sm:block"
+          style={{ background: 'radial-gradient(ellipse 72% 58% at 50% 40%, rgba(8,0,1,0.16) 0%, transparent 70%)' }}
+        />
         {/* Warm gold glow */}
         <div
           aria-hidden="true"
@@ -257,10 +270,10 @@ export function HeroSection() {
         <HeroBeams />
         <HeroSparkles />
 
-        {/* Luminous cross — subtle accent */}
+        {/* Luminous cross — very subtle, let the real cross in the image lead */}
         <LuminousCross
           className="absolute right-[8%] top-[12%] w-[22vw] max-w-[260px] min-w-[120px]"
-          opacity={0.22}
+          opacity={0.12}
         />
         <HeroContent hero={hero} />
       </section>

@@ -406,6 +406,19 @@ function ScrollStorySection() {
               ))}
             </motion.div>
 
+            {/* Nuestra identidad — mini chips */}
+            <motion.div variants={fadeUp} className="flex flex-wrap gap-2 mb-8">
+              {['Visión', 'Adoración', 'Discipulado'].map(chip => (
+                <span
+                  key={chip}
+                  className="text-[9.5px] font-semibold uppercase tracking-[0.16em] text-gold/58 px-3 py-1.5 rounded-full"
+                  style={{ border: '1px solid rgba(212,175,55,0.18)' }}
+                >
+                  {chip}
+                </span>
+              ))}
+            </motion.div>
+
             <motion.div variants={fadeUp}>
               <Link
                 to="/p/quienes-somos"
@@ -458,6 +471,64 @@ function ScrollStorySection() {
   );
 }
 
+// ── Premium no-content placeholder for SermonFeatureSection ────
+function PremiumLivePlaceholder() {
+  return (
+    <motion.div
+      variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
+      className="relative rounded-2xl overflow-hidden aspect-video flex flex-col items-center justify-center gap-7"
+      style={{
+        background: 'linear-gradient(135deg, #130003 0%, #1C0003 50%, #0B0002 100%)',
+        boxShadow: '0 0 80px rgba(212,175,55,0.06), 0 20px 60px rgba(0,0,0,0.55)',
+        border: '1px solid rgba(212,175,55,0.10)',
+      }}
+    >
+      {/* Gold radial spotlight */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse 55% 65% at 50% 50%, rgba(212,175,55,0.055) 0%, transparent 70%)' }}
+      />
+      {/* Animated rings */}
+      <div className="relative flex items-center justify-center">
+        <div className="live-ring absolute rounded-full border border-gold/20" style={{ width: 80, height: 80, animationDelay: '0s' }} />
+        <div className="live-ring absolute rounded-full border border-gold/13" style={{ width: 136, height: 136, animationDelay: '0.55s' }} />
+        <div className="live-ring absolute rounded-full border border-gold/08" style={{ width: 192, height: 192, animationDelay: '1.1s' }} />
+        {/* Central play button */}
+        <Link
+          to="/live"
+          aria-label="Ver en vivo"
+          className="relative z-10 w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-105"
+          style={{
+            background: 'rgba(212,175,55,0.12)',
+            border: '1px solid rgba(212,175,55,0.38)',
+            boxShadow: '0 0 32px rgba(212,175,55,0.18)',
+          }}
+        >
+          <Play size={22} className="text-gold ml-1" fill="currentColor" />
+        </Link>
+      </div>
+      {/* Text block */}
+      <div className="text-center px-8 relative z-10 max-w-lg">
+        <h3 className="font-serif text-2xl md:text-3xl text-white font-bold mb-3 text-balance">
+          Únete a nuestra transmisión en vivo
+        </h3>
+        <p className="text-stone-400 text-sm mb-7 leading-relaxed">
+          Acompáñanos en adoración y palabra desde Lawrence, Massachusetts.
+        </p>
+        <Link
+          to="/live"
+          className="inline-flex items-center gap-2.5 px-7 py-3 rounded-full text-gold text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors hover:bg-gold/10"
+          style={{ border: '1px solid rgba(212,175,55,0.35)' }}
+        >
+          <Radio size={12} />
+          Ver en vivo
+        </Link>
+      </div>
+    </motion.div>
+  );
+}
+
 // ── SERMON FEATURE SECTION ─────────────────────────────────────
 function SermonFeatureSection() {
   const { config: live, loading: liveLoading } = useLiveStream();
@@ -469,7 +540,7 @@ function SermonFeatureSection() {
   const embedUrl = ytEmbed(live.stream_url);
   const thumbUrl = ytThumb(live.stream_url) || ytThumb(latest?.video_url) || latest?.thumbnail || null;
 
-  if (!live.is_live && !latest) return null;
+  const showPlaceholder = !live.is_live && !latest;
 
   return (
     <section className="py-20 bg-ink relative overflow-hidden">
@@ -496,7 +567,9 @@ function SermonFeatureSection() {
               ) : (
                 <>
                   <Radio size={12} className="text-gold" />
-                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-gold">Última prédica</span>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-gold">
+                    {showPlaceholder ? 'Transmisiones en vivo' : 'Última prédica'}
+                  </span>
                 </>
               )}
             </div>
@@ -504,7 +577,7 @@ function SermonFeatureSection() {
               {live.is_live ? (live.title || 'Transmisión en vivo') : 'La Palabra'}
             </h2>
           </div>
-          {!live.is_live && (
+          {!live.is_live && !showPlaceholder && (
             <Link
               to="/sermons"
               className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.1em] uppercase text-white/40 hover:text-gold transition-colors mt-1"
@@ -514,6 +587,9 @@ function SermonFeatureSection() {
             </Link>
           )}
         </div>
+
+        {/* No live, no sermon — premium CTA panel */}
+        {showPlaceholder && <PremiumLivePlaceholder />}
 
         {/* Live — embed */}
         {live.is_live && embedUrl && (
@@ -604,8 +680,21 @@ function SermonFeatureSection() {
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-stone-900">
-                  <Play size={40} className="text-stone-700" />
+                <div
+                  className="w-full h-full flex items-center justify-center relative"
+                  style={{ background: 'linear-gradient(135deg, #1A0003 0%, #0D0001 60%, #110806 100%)' }}
+                >
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-0 pointer-events-none"
+                    style={{ background: 'radial-gradient(ellipse 55% 60% at 50% 50%, rgba(212,175,55,0.045) 0%, transparent 70%)' }}
+                  />
+                  <div
+                    className="relative z-10 w-14 h-14 rounded-full flex items-center justify-center"
+                    style={{ background: 'rgba(212,175,55,0.10)', border: '1px solid rgba(212,175,55,0.28)' }}
+                  >
+                    <Play size={18} className="text-gold ml-0.5" fill="currentColor" />
+                  </div>
                 </div>
               )}
               {/* Play overlay */}
@@ -1514,8 +1603,7 @@ export function HomePage({ onContact }: HomePageProps) {
     .sort((a, b) => a.order - b.order);
 
   // Split blocks by type to render in spec order:
-  // 4→cards  5→sermon(new)  6→events(new)  7→team  8→testimonials  9→cta_banner  ∞→other
-  const cardsBlocks        = visibleBlocks.filter(b => b.type === 'cards');
+  // 3→story  4→sermon  5→events  6→team  7→testimonials  8→cta_banner  ∞→other
   const teamBlocks         = visibleBlocks.filter(b => b.type === 'team');
   const testimonialsBlocks = visibleBlocks.filter(b => b.type === 'testimonials');
   const ctaBlocks          = visibleBlocks.filter(b => b.type === 'cta_banner');
@@ -1535,10 +1623,7 @@ export function HomePage({ onContact }: HomePageProps) {
       {/* 3 — Scroll Story */}
       <ScrollStorySection />
 
-      {/* 4 — Service Bento (cards blocks from dashboard) */}
-      {cardsBlocks.map(b => renderBlock(b, onContact))}
-
-      {/* 5 — Live / Última Prédica */}
+      {/* 4 — Live / Última Prédica */}
       <SermonFeatureSection />
 
       {/* 6 — Events Strip */}
