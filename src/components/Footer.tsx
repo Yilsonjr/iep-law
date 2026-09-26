@@ -355,7 +355,7 @@ export function Footer({ onContact }: FooterProps) {
               <motion.button
                 whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                 onClick={onContact}
-                className="inline-flex items-center justify-center gap-2 bg-gold text-[#241B0B] px-6 py-3 rounded-full font-semibold text-sm transition-all hover:bg-gold-400 shadow-[0_4px_20px_rgba(212,175,55,0.3)]">
+                className="inline-flex items-center justify-center gap-2 bg-gold text-[#241B0B] px-6 py-3 rounded-full font-semibold text-sm transition-all hover:bg-gold-400 shadow-[0_4px_20px_rgba(212,175,55,0.3)] btn-shimmer">
                 <Mail size={16} />Escribirnos
               </motion.button>
               {waUrl && (
@@ -373,9 +373,8 @@ export function Footer({ onContact }: FooterProps) {
 
       <footer
         style={{
-          background: 'linear-gradient(160deg, #120002 0%, #1C0003 35%, #0F0001 70%, #0A0001 100%)',
-          backgroundImage: 'radial-gradient(circle at 1.5px 1.5px, rgba(212,175,55,0.055) 1px, transparent 0)',
-          backgroundSize: '26px 26px',
+          background: 'radial-gradient(circle at 1.5px 1.5px, rgba(212,175,55,0.055) 1px, transparent 0), linear-gradient(160deg, #120002 0%, #1C0003 35%, #0F0001 70%, #0A0001 100%)',
+          backgroundSize: '26px 26px, 100% 100%',
         }}
       >
         {/* Gold accent top border */}

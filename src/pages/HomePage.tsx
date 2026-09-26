@@ -156,7 +156,7 @@ function ScheduleBar() {
   );
 }
 
-// ── FLOATING SERVICE CARD ─────────────────────────────────────
+// ── FLOATING SERVICE CARD — glass on desktop, white on mobile ──
 function ServiceCard() {
   const { config } = useSiteConfigContext();
   const { schedules, contact } = config.footer;
@@ -168,39 +168,50 @@ function ServiceCard() {
     : null;
 
   return (
-    <section className="bg-paper py-7">
+    <section className={cn(
+      'relative z-20',
+      // Mobile: paper section, normal flow
+      'bg-paper py-5',
+      // Desktop: float over hero bottom via negative margin, transparent bg
+      'sm:bg-transparent sm:py-0 sm:-mt-14 sm:pb-7',
+    )}>
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8, duration: 0.55, ease: 'easeOut' }}
-          className="relative bg-white rounded-2xl
-            border border-stone-200/70
-            shadow-[0_8px_32px_rgba(34,26,20,0.09),0_2px_6px_rgba(34,26,20,0.05)]
-            px-5 py-5 sm:px-8 sm:py-6
-            flex flex-col sm:flex-row sm:items-center gap-5"
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8, duration: 0.55, ease: 'easeOut' }}
+          className={cn(
+            'relative flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6',
+            'px-5 py-4 sm:px-7 sm:py-5 rounded-2xl border',
+            // Mobile: white card
+            'bg-white border-stone-200/70 shadow-[0_4px_20px_rgba(34,26,20,0.08)]',
+            // Desktop: glass dark card
+            'sm:bg-black/30 sm:backdrop-blur-xl sm:border-gold/20',
+            'sm:shadow-[0_8px_40px_rgba(0,0,0,0.45),0_0_0_1px_rgba(212,175,55,0.07)] gold-glow-pulse',
+          )}
         >
-          <div aria-hidden="true" className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-gold/50 to-transparent rounded-t-2xl" />
+          <div aria-hidden="true" className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-gold/45 to-transparent rounded-t-2xl" />
 
           {first && (
-            <div className="flex items-center gap-4 flex-1 sm:pr-7 sm:border-r sm:border-stone-200">
-              <span className="w-10 h-10 rounded-xl bg-primary/[0.06] flex items-center justify-center shrink-0">
-                <Clock size={17} className="text-primary" />
+            <div className={cn('flex items-center gap-3 flex-1', contact.address && 'sm:pr-6 sm:border-r sm:border-white/10')}>
+              <span className="w-9 h-9 rounded-xl bg-primary/[0.07] sm:bg-white/10 flex items-center justify-center shrink-0">
+                <Clock size={15} className="text-primary sm:text-gold" />
               </span>
               <div>
                 <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-gold mb-0.5">Próximo servicio</p>
-                <p className="font-serif text-[17px] font-semibold text-ink leading-none">{first.time}</p>
-                <p className="text-[11px] text-stone-500 mt-0.5">{first.day}{first.label ? ` · ${first.label}` : ''}</p>
+                <p className="font-serif text-base font-semibold text-ink sm:text-white leading-none">{first.time}</p>
+                <p className="text-[11px] text-stone-500 sm:text-white/45 mt-0.5">{first.day}{first.label ? ` · ${first.label}` : ''}</p>
               </div>
             </div>
           )}
 
           {contact.address && (
-            <div className={cn('flex items-center gap-4 flex-1', first && 'sm:pl-7')}>
-              <span className="w-10 h-10 rounded-xl bg-primary/[0.06] flex items-center justify-center shrink-0">
-                <MapPin size={17} className="text-primary" />
+            <div className={cn('flex items-center gap-3 flex-1', first && 'sm:pl-6')}>
+              <span className="w-9 h-9 rounded-xl bg-primary/[0.07] sm:bg-white/10 flex items-center justify-center shrink-0">
+                <MapPin size={15} className="text-primary sm:text-gold" />
               </span>
               <div>
-                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-gold mb-0.5">Nos encontramos en</p>
-                <p className="text-sm font-medium text-ink leading-snug">{contact.address}</p>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-gold mb-0.5">Ubicación</p>
+                <p className="text-sm font-medium text-ink sm:text-white/85 leading-snug">{contact.address}</p>
               </div>
             </div>
           )}
@@ -210,7 +221,11 @@ function ServiceCard() {
               href={mapsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="shrink-0 sm:ml-4 flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-full bg-primary text-white text-[11px] font-semibold tracking-[0.06em] hover:bg-primary/90 transition-colors focus-visible:ring-2 focus-visible:ring-gold focus-visible:outline-none"
+              className={cn(
+                'shrink-0 flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-full text-[11px] font-semibold tracking-[0.06em] transition-all',
+                'bg-primary text-white hover:bg-primary/90 sm:bg-gold sm:text-[#241B0B] sm:hover:bg-gold-400',
+                'focus-visible:ring-2 focus-visible:ring-gold focus-visible:outline-none',
+              )}
             >
               <MapPin size={12} />
               Cómo llegar
@@ -220,6 +235,77 @@ function ServiceCard() {
       </div>
     </section>
   );
+}
+
+// ── SANCTUARY VISUAL — abstract SVG for story section ─────────
+function SanctuaryVisual() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 300 380"
+      xmlns="http://www.w3.org/2000/svg"
+      className="w-3/4 h-3/4 max-w-[220px] select-none pointer-events-none"
+    >
+      <defs>
+        <radialGradient id="sv-halo" cx="50%" cy="35%" r="55%">
+          <stop offset="0%" stopColor="#D4AF37" stopOpacity="0.30" />
+          <stop offset="100%" stopColor="#D4AF37" stopOpacity="0" />
+        </radialGradient>
+        <filter id="sv-glow-xl" x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur stdDeviation="20" />
+        </filter>
+        <filter id="sv-glow-md" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="7" />
+        </filter>
+        <filter id="sv-glow-sm" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="3" />
+        </filter>
+      </defs>
+      <ellipse cx="150" cy="145" rx="135" ry="125" fill="url(#sv-halo)" filter="url(#sv-glow-xl)" />
+      <rect x="134" y="22" width="32" height="298" rx="6" fill="#D4AF37" opacity="0.17" filter="url(#sv-glow-md)" />
+      <rect x="16" y="106" width="268" height="32" rx="6" fill="#D4AF37" opacity="0.17" filter="url(#sv-glow-md)" />
+      <rect x="144" y="22" width="12" height="298" rx="2" fill="#D4AF37" opacity="0.52" />
+      <rect x="16" y="116" width="268" height="12" rx="2" fill="#D4AF37" opacity="0.52" />
+      <circle cx="150" cy="122" r="18" fill="#F0E068" opacity="0.58" filter="url(#sv-glow-sm)" />
+      <circle cx="150" cy="200" r="112" fill="none" stroke="#D4AF37" strokeWidth="0.8" strokeOpacity="0.18" />
+      <circle cx="150" cy="200" r="86" fill="none" stroke="#D4AF37" strokeWidth="0.45" strokeOpacity="0.12" />
+      {([[68,52],[232,70],[48,196],[254,208],[100,316],[200,326],[150,370]] as [number,number][]).map(([x,y],i)=>(
+        <circle key={i} cx={x} cy={y} r={i%3===0 ? 1.8 : 1.1} fill="#D4AF37" opacity={0.22+(i*0.04)} />
+      ))}
+    </svg>
+  );
+}
+
+// ── HP-5: Animated stat counter ───────────────────────────────
+function AnimatedStat({ value }: { value: string }) {
+  const m = value.match(/^(\d+)(.*)$/);
+  const num = m ? parseInt(m[1], 10) : null;
+  const suffix = m ? m[2] : '';
+  const ref = useRef<HTMLSpanElement>(null);
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (num === null) return;
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      obs.disconnect();
+      const dur = 1350, step = 16;
+      const inc = num / (dur / step);
+      let v = 0;
+      const t = setInterval(() => {
+        v = Math.min(v + inc, num);
+        setCount(Math.round(v));
+        if (v >= num) clearInterval(t);
+      }, step);
+    }, { threshold: 0.5 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [num]);
+
+  if (num === null) return <>{value}</>;
+  return <span ref={ref}>{count}{suffix}</span>;
 }
 
 // ── SCROLL STORY SECTION (HP-3 Impact) ────────────────────────
@@ -311,7 +397,7 @@ function ScrollStorySection() {
               {stats.map((stat, i) => (
                 <div key={i} className="flex flex-col gap-1.5">
                   <span className="font-serif text-3xl md:text-4xl font-bold text-gold leading-none tabular-nums">
-                    {stat.value}
+                    <AnimatedStat value={stat.value} />
                   </span>
                   <span className="text-[9px] font-semibold uppercase tracking-[0.15em] text-stone-500">
                     {stat.label}
@@ -331,43 +417,41 @@ function ScrollStorySection() {
             </motion.div>
           </motion.div>
 
-          {/* Image column */}
-          {imgSrc ? (
-            <motion.div
-              initial={{ opacity: 0, x: 40 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.9, ease: 'easeOut' }}
-              className="relative rounded-3xl overflow-hidden aspect-[4/5] max-h-[560px] shadow-[0_40px_90px_rgba(0,0,0,0.65)]"
-            >
+          {/* Visual column — sanctuary abstract composition */}
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.9, ease: 'easeOut' }}
+            className="relative rounded-3xl overflow-hidden aspect-[4/5] max-h-[560px] shadow-[0_40px_90px_rgba(0,0,0,0.65)]"
+            style={{ background: '#0A0706' }}
+          >
+            {/* Blurred image as deep texture (if available) */}
+            {imgSrc && (
               <img
                 src={imgSrc}
-                alt="Iglesia Ebenezer M.I."
+                aria-hidden="true"
+                alt=""
                 loading="lazy"
                 decoding="async"
-                className="w-full h-full object-cover object-center"
+                className="absolute inset-0 w-full h-full object-cover"
+                style={{ filter: 'blur(42px) brightness(0.10) saturate(0.35)', transform: 'scale(1.35)' }}
               />
-              {/* Film burn gradient */}
-              <div
-                aria-hidden="true"
-                className="absolute inset-0 pointer-events-none"
-                style={{ background: 'linear-gradient(to bottom, rgba(12,8,7,0.08) 0%, transparent 35%, rgba(12,8,7,0.72) 100%)' }}
-              />
-              {/* Gold corner brackets */}
-              <div aria-hidden="true" className="absolute top-5 left-5 w-10 h-10 border-t-[1.5px] border-l-[1.5px] border-gold/55 pointer-events-none" />
-              <div aria-hidden="true" className="absolute bottom-5 right-5 w-10 h-10 border-b-[1.5px] border-r-[1.5px] border-gold/35 pointer-events-none" />
-              {/* Bottom label */}
-              <div className="absolute bottom-7 left-7 right-7">
-                <p className="text-white/65 text-xs font-light tracking-wide">
-                  {branding.tagline || 'Lawrence, Massachusetts'}
-                </p>
-              </div>
-            </motion.div>
-          ) : (
-            <div className="rounded-3xl aspect-[4/5] max-h-[560px] bg-stone-900 border border-white/[0.06] flex items-center justify-center">
-              <span className="text-stone-600 text-sm">Sin imagen configurada</span>
+            )}
+            {/* Abstract SVG sanctuary composition */}
+            <div className="relative z-10 w-full h-full flex items-center justify-center">
+              <SanctuaryVisual />
             </div>
-          )}
+            {/* Gold corner brackets */}
+            <div aria-hidden="true" className="absolute top-5 left-5 w-10 h-10 border-t-[1.5px] border-l-[1.5px] border-gold/45 pointer-events-none z-20" />
+            <div aria-hidden="true" className="absolute bottom-5 right-5 w-10 h-10 border-b-[1.5px] border-r-[1.5px] border-gold/28 pointer-events-none z-20" />
+            {/* Bottom label */}
+            <div className="absolute bottom-7 left-7 right-7 z-20">
+              <p className="text-white/35 text-[10px] font-semibold tracking-[0.18em] uppercase">
+                {branding.tagline || 'Lawrence, Massachusetts'}
+              </p>
+            </div>
+          </motion.div>
         </div>
       </div>
     </section>
@@ -704,7 +788,7 @@ function CardsBlock({ block }: { block: HomeBlock }) {
   const isBento = block.cards.length === 3;
 
   const cardClass = (featured: boolean) => cn(
-    'relative group overflow-hidden card-3d',
+    'relative group overflow-hidden card-3d card-spotlight',
     featured ? 'flex flex-row items-start gap-7 p-9 sm:p-10' : 'flex flex-col items-center text-center p-8 sm:p-10',
     !block.color_bg && !dark && [
       'rounded-2xl border border-stone-200/70 bg-white',
@@ -882,10 +966,10 @@ function CtaBannerBlock({ block, onContact }: { block: HomeBlock; onContact: () 
   const s = bc(block);
 
   const ctaBtn1Class = dark
-    ? 'px-8 py-3.5 rounded-full font-semibold text-sm tracking-wide bg-white/[0.08] border-2 border-white/85 text-white hover:bg-white/20 transition-colors'
-    : 'btn-primary';
+    ? 'px-8 py-3.5 rounded-full font-semibold text-sm tracking-wide bg-gold text-[#241B0B] hover:bg-gold-400 shadow-[0_4px_18px_rgba(212,175,55,0.35)] hover:shadow-[0_6px_24px_rgba(212,175,55,0.50)] transition-all btn-glow btn-shimmer'
+    : 'btn-primary btn-shimmer';
   const ctaBtn2Class = dark
-    ? 'px-8 py-3.5 rounded-full font-semibold text-sm tracking-wide bg-white/[0.12] border border-white/55 text-white hover:bg-white/25 transition-colors'
+    ? 'px-8 py-3.5 rounded-full font-semibold text-sm tracking-wide backdrop-blur-sm bg-white/[0.08] border border-white/40 text-white hover:bg-white/15 hover:border-white/60 transition-all'
     : 'btn-secondary';
 
   return (
@@ -1191,7 +1275,7 @@ function MemberPhoto({ src, name, single }: { src: string; name: string; single:
   );
 }
 
-// ── TEAM BLOCK ────────────────────────────────────────────────
+// ── TEAM BLOCK — editorial portrait layout ────────────────────
 function TeamBlock({ block }: { block: HomeBlock }) {
   const dark = isDarkBg(block.bg);
   const s = bc(block);
@@ -1199,19 +1283,74 @@ function TeamBlock({ block }: { block: HomeBlock }) {
   if (members.length === 0) return null;
 
   const single = members.length === 1;
-  const colClass = single
-    ? ''
-    : members.length === 2
-      ? 'sm:grid-cols-2'
-      : members.length === 4
-        ? 'sm:grid-cols-2 lg:grid-cols-4'
-        : 'sm:grid-cols-2 lg:grid-cols-3';
+  const colClass = members.length === 2
+    ? 'sm:grid-cols-2'
+    : members.length === 4
+      ? 'sm:grid-cols-2 lg:grid-cols-4'
+      : 'sm:grid-cols-2 lg:grid-cols-3';
+
+  if (single) {
+    const member = members[0];
+    return (
+      <section className={cn('py-20', !block.color_bg && sectionBgClass(block.bg), !dark && !block.color_bg && 'border-t border-stone-100')} style={s.section}>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <SectionHeader block={block} dark={false} s={s} />
+          <motion.div
+            variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
+            className="relative overflow-hidden rounded-3xl border border-stone-200/70 bg-white
+              shadow-[0_12px_48px_rgba(34,26,20,0.10)]
+              grid grid-cols-1 md:grid-cols-[2fr_3fr]"
+          >
+            <div aria-hidden="true" className="absolute top-0 inset-x-0 h-[1.5px] bg-gradient-to-r from-transparent via-gold/55 to-transparent z-10 pointer-events-none" />
+            {/* Image frame */}
+            <div className="relative overflow-hidden min-h-[260px] md:min-h-[420px] bg-stone-100 shrink-0">
+              {member.photo_url ? (
+                <>
+                  <MemberPhoto src={member.photo_url} name={member.name} single />
+                  {/* Gradient: fades image right on desktop, bottom on mobile — masks flyer text */}
+                  <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-white/0 md:to-white/70 pointer-events-none" />
+                  <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-transparent to-white/35 md:to-transparent pointer-events-none" />
+                </>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-stone-100 text-6xl font-serif font-semibold text-stone-400">
+                  {member.name ? member.name.charAt(0).toUpperCase() : '?'}
+                </div>
+              )}
+              <div aria-hidden="true" className="absolute top-4 left-4 w-8 h-8 border-t border-l border-gold/40 pointer-events-none z-10" />
+            </div>
+            {/* Text */}
+            <div className="p-8 md:p-12 lg:p-14 flex flex-col justify-center">
+              {member.role && <p className="eyebrow text-gold mb-3" style={s.heading ? undefined : undefined}>{member.role}</p>}
+              <h3
+                className={cn('font-serif text-3xl md:text-4xl font-bold leading-tight', !block.color_heading && 'text-ink')}
+                style={s.heading}
+              >
+                {member.name}
+              </h3>
+              <div aria-hidden="true" className="w-14 h-px bg-gold/55 my-5" />
+              {member.bio && (
+                <p className={cn('leading-relaxed text-[15px] md:text-base', !block.color_text && 'text-stone-600')} style={s.text}>
+                  {member.bio}
+                </p>
+              )}
+              <div className="flex items-center gap-3 mt-7 pt-5 border-t border-stone-100">
+                <span aria-hidden="true" className="text-gold/30 font-serif text-2xl italic leading-none select-none">—</span>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-stone-400">
+                  {member.role || 'Liderazgo Pastoral'}
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className={cn('py-20', !block.color_bg && sectionBgClass(block.bg), !dark && !block.color_bg && 'border-t border-stone-100')} style={s.section}>
-      <div className={cn('mx-auto px-4 sm:px-6 lg:px-8', single ? 'max-w-4xl' : 'max-w-7xl')}>
-        <SectionHeader block={block} dark={false} s={s} />
-        <div className={cn('grid grid-cols-1 items-stretch gap-10', colClass)}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <SectionHeader block={block} dark={dark} s={s} />
+        <div className={cn('grid grid-cols-1 gap-8', colClass)}>
           {members.map((member, i) => (
             <motion.div
               key={i}
@@ -1220,34 +1359,37 @@ function TeamBlock({ block }: { block: HomeBlock }) {
               whileInView="visible"
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              className={cn(
-                'group relative rounded-2xl overflow-hidden bg-white border flex flex-col',
-                single
-                  ? 'md:flex-row border-stone-200/80 shadow-[0_8px_32px_rgba(34,26,20,0.08)] hover:shadow-[0_16px_48px_rgba(34,26,20,0.12)] transition-shadow duration-300'
-                  : 'border-stone-200 transition-all duration-300 hover:shadow-md hover:border-gold/30 motion-safe:hover:-translate-y-0.5'
-              )}
+              className="group relative bg-white rounded-2xl overflow-hidden border border-stone-100
+                shadow-[0_4px_20px_rgba(34,26,20,0.07)]
+                hover:shadow-[0_8px_36px_rgba(34,26,20,0.12),0_0_0_1px_rgba(212,175,55,0.20)]
+                hover:border-gold/25 transition-all duration-300 motion-safe:hover:-translate-y-1"
             >
               <div aria-hidden="true" className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-gold/45 to-transparent z-10 pointer-events-none" />
-              <div className={cn('relative overflow-hidden shrink-0 bg-stone-100', single ? 'aspect-[4/5] md:aspect-auto md:w-[42%] max-h-72 md:max-h-[460px]' : 'aspect-[4/5]')}>
+              {/* Portrait image */}
+              <div className="relative aspect-[3/4] overflow-hidden bg-stone-100">
                 {member.photo_url ? (
-                  <MemberPhoto src={member.photo_url} name={member.name} single={single} />
+                  <MemberPhoto src={member.photo_url} name={member.name} single={false} />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-stone-100 text-6xl font-serif font-semibold text-stone-400">
+                  <div className="w-full h-full flex items-center justify-center text-5xl font-serif text-stone-300">
                     {member.name ? member.name.charAt(0).toUpperCase() : '?'}
                   </div>
                 )}
+                <div aria-hidden="true" className="absolute bottom-0 inset-x-0 h-28 bg-gradient-to-t from-white to-transparent pointer-events-none" />
               </div>
-              <div className={cn('flex-1 text-left flex flex-col justify-center', single ? 'p-10 md:p-12' : 'p-8')}>
-                {member.role && <p className="eyebrow text-gold mb-3">{member.role}</p>}
+              {/* Text (overlaps gradient fade) */}
+              <div className="px-6 pb-7 -mt-5 relative z-10">
+                {member.role && (
+                  <p className="text-[9px] font-bold uppercase tracking-[0.20em] text-gold mb-2">{member.role}</p>
+                )}
                 <h3
-                  className={cn('font-serif font-semibold leading-tight', !block.color_heading && 'text-ink', single ? 'text-3xl md:text-4xl' : 'text-2xl')}
+                  className={cn('font-serif text-xl font-bold leading-tight', !block.color_heading && 'text-ink')}
                   style={s.heading}
                 >
                   {member.name}
                 </h3>
-                <div aria-hidden="true" className={cn('h-px bg-gold/60 my-4', single ? 'w-16' : 'w-12')} />
+                <div aria-hidden="true" className="w-8 h-px bg-gold/50 my-3" />
                 {member.bio && (
-                  <p className={cn('leading-relaxed', !block.color_text && 'text-stone-600', single ? 'text-[15px] md:text-base' : 'text-sm md:text-base')} style={s.text}>
+                  <p className={cn('text-sm leading-relaxed', !block.color_text && 'text-stone-600')} style={s.text}>
                     {member.bio}
                   </p>
                 )}

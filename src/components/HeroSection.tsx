@@ -55,6 +55,66 @@ function LuminousCross({ className = '', opacity = 1 }: { className?: string; op
   );
 }
 
+// ── HP-5: Background beams ────────────────────────────────────
+function HeroBeams() {
+  const beams = [
+    { left: '12%', w: '1px', h: '58%', deg: 34, delay: '0s', dur: '9s' },
+    { left: '43%', w: '1px', h: '46%', deg: 18, delay: '2.6s', dur: '11s' },
+    { left: '67%', w: '1px', h: '54%', deg: -28, delay: '1.3s', dur: '8.5s' },
+    { left: '82%', w: '1px', h: '40%', deg: -46, delay: '4.2s', dur: '10s' },
+    { left: '28%', w: '1px', h: '44%', deg: 54, delay: '3.1s', dur: '12s' },
+  ];
+  return (
+    <div aria-hidden="true" className="absolute inset-0 overflow-hidden pointer-events-none">
+      {beams.map((b, i) => (
+        <div
+          key={i}
+          className="hero-beam"
+          style={{
+            top: '-8%', left: b.left,
+            width: b.w, height: b.h,
+            background: 'linear-gradient(to bottom, transparent 0%, rgba(212,175,55,0.11) 50%, transparent 100%)',
+            transform: `rotate(${b.deg}deg)`,
+            transformOrigin: 'top center',
+            animationDelay: b.delay,
+            animationDuration: b.dur,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ── HP-5: Sparkle dots ────────────────────────────────────────
+function HeroSparkles() {
+  const dots = [
+    { x: '14%', y: '22%', s: 3, d: '0s', dur: '4.2s' },
+    { x: '79%', y: '17%', s: 2, d: '1.8s', dur: '3.6s' },
+    { x: '37%', y: '73%', s: 3, d: '3.3s', dur: '4.8s' },
+    { x: '88%', y: '54%', s: 2, d: '0.9s', dur: '3.8s' },
+    { x: '22%', y: '61%', s: 2, d: '4.1s', dur: '4.4s' },
+    { x: '63%', y: '11%', s: 4, d: '2.4s', dur: '3.5s' },
+    { x: '91%', y: '83%', s: 2, d: '1.5s', dur: '5s' },
+    { x: '7%', y: '79%', s: 3, d: '5.2s', dur: '4.1s' },
+  ];
+  return (
+    <div aria-hidden="true" className="absolute inset-0 overflow-hidden pointer-events-none">
+      {dots.map((p, i) => (
+        <span
+          key={i}
+          className="sparkle-dot"
+          style={{
+            left: p.x, top: p.y,
+            width: p.s, height: p.s,
+            animationDelay: p.d,
+            animationDuration: p.dur,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function HeroSection() {
   const { config, loading } = useSiteConfigContext();
   const hero = config.hero;
@@ -129,6 +189,10 @@ export function HeroSection() {
           style={{ background: 'radial-gradient(ellipse 80% 100% at 50% 100%, rgba(212,175,55,0.13) 0%, transparent 65%)' }}
         />
 
+        {/* HP-5: Diagonal beams + sparkles */}
+        <HeroBeams />
+        <HeroSparkles />
+
         {/* Luminous cross — subtle accent */}
         <LuminousCross
           className="absolute right-[8%] top-[12%] w-[22vw] max-w-[260px] min-w-[120px]"
@@ -189,6 +253,10 @@ export function HeroSection() {
           className="absolute bottom-0 inset-x-0 h-72 pointer-events-none"
           style={{ background: 'radial-gradient(ellipse 80% 100% at 50% 100%, rgba(212,175,55,0.13) 0%, transparent 65%)' }}
         />
+        {/* HP-5: Diagonal beams + sparkles */}
+        <HeroBeams />
+        <HeroSparkles />
+
         {/* Luminous cross — subtle accent */}
         <LuminousCross
           className="absolute right-[8%] top-[12%] w-[22vw] max-w-[260px] min-w-[120px]"
@@ -215,6 +283,17 @@ export function HeroSection() {
       {/* Warm atmosphere glows */}
       <div aria-hidden="true" className="absolute top-0 right-0 w-96 h-96 bg-gold/[0.07] rounded-full blur-3xl -translate-y-1/3 translate-x-1/3" />
       <div aria-hidden="true" className="absolute bottom-0 left-0 w-80 h-80 bg-primary/30 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3" />
+
+      {/* HP-5: Diagonal beams + sparkles */}
+      <HeroBeams />
+      <HeroSparkles />
+
+      {/* HP-5: Lamp glow — centered behind cross */}
+      <div
+        aria-hidden="true"
+        className="absolute left-1/2 -translate-x-1/2 top-[5%] w-[500px] h-[320px] pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse 60% 55% at 50% 30%, rgba(212,175,55,0.10) 0%, transparent 70%)' }}
+      />
 
       {/* Luminous cross — prominent in text mode */}
       <LuminousCross
@@ -306,27 +385,28 @@ function HeroContent({ hero, textMode = false }: { hero: ReturnType<typeof useSi
           </motion.p>
         )}
 
-        {hero.buttons.length > 0 && (
-          <motion.div
-            custom={3} variants={item} initial="hidden" animate="visible"
-            className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center"
-          >
-            {hero.buttons.map((btn, i) => (
-              <Link
-                key={i}
-                to={btn.href}
-                className={cn(
-                  'block sm:inline-flex items-center justify-center px-7 py-3 sm:px-8 sm:py-3.5 rounded-full font-semibold text-sm tracking-wide transition-all duration-300 text-center',
-                  btn.variant === 'primary'
-                    ? 'bg-gold text-[#241B0B] hover:bg-gold-600 shadow-lg hover:shadow-gold/30 hover:shadow-xl hover:-translate-y-0.5 btn-glow'
-                    : 'border border-white/70 text-white hover:bg-white/10 hover:border-white backdrop-blur-sm'
-                )}
-              >
-                {btn.label}
-              </Link>
-            ))}
-          </motion.div>
-        )}
+        <motion.div
+          custom={3} variants={item} initial="hidden" animate="visible"
+          className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center"
+        >
+          {(hero.buttons.length > 0 ? hero.buttons : [
+            { href: '/p/quienes-somos', label: 'Planifica tu visita', variant: 'primary' as const },
+            { href: '/live', label: 'Ver transmisión', variant: 'secondary' as const },
+          ]).map((btn, i) => (
+            <Link
+              key={i}
+              to={btn.href}
+              className={cn(
+                'block sm:inline-flex items-center justify-center px-7 py-3 sm:px-8 sm:py-3.5 rounded-full font-semibold text-sm tracking-wide transition-all duration-300 text-center',
+                btn.variant === 'primary'
+                  ? 'bg-gold text-[#241B0B] hover:bg-gold-600 shadow-lg hover:shadow-gold/30 hover:shadow-xl hover:-translate-y-0.5 btn-glow'
+                  : 'border border-white/70 text-white hover:bg-white/10 hover:border-white backdrop-blur-sm'
+              )}
+            >
+              {btn.label}
+            </Link>
+          ))}
+        </motion.div>
       </div>
 
       {/* Scroll indicator */}
