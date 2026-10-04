@@ -2,13 +2,15 @@ import { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, Search, Filter, Mail, Phone, Calendar,
-  UserCheck, Shield, ChevronDown, BarChart3,
+  UserCheck, Shield, ChevronDown, ChevronUp, BarChart3,
   Save, Plus, Trash2, Globe, Layout, FileText,
   Inbox, Eye, CheckCheck, Trash, ImageIcon, PanelLeft,
   ExternalLink, GripVertical, MessageSquare, Home,
   Type, Columns, Zap, TrendingUp, AlignCenter, AlignLeft,
   Palette, X, AlertCircle, User, Lock, Quote, Images,
+  Upload, CheckCircle, Loader,
 } from 'lucide-react';
+import { supabase } from '../config/supabase';
 import { useUsers } from '../hooks/useUsers';
 import { useAuth } from '../contexts/AuthContext';
 import { useSiteConfigContext } from '../contexts/SiteConfigContext';
@@ -2058,10 +2060,14 @@ function UsuariosTab() {
 }
 
 // ── IMAGE CARD (gallery dashboard) ────────────────────────────
-function GalleryImageCard({ img, onUpdate, onDelete }: {
+function GalleryImageCard({ img, index, total, onUpdate, onDelete, onReorder, onSetCover }: {
   img: GalleryImage;
+  index: number;
+  total: number;
   onUpdate: (id: string, data: Partial<GalleryImage>) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
+  onDelete: (id: string, imageUrl: string) => Promise<void>;
+  onReorder: (id: string, dir: 'up' | 'down') => Promise<void>;
+  onSetCover: (imageUrl: string) => Promise<void>;
 }) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(img.title ?? '');
@@ -2087,6 +2093,11 @@ function GalleryImageCard({ img, onUpdate, onDelete }: {
     }
   };
 
+  const handleDelete = () => {
+    if (!window.confirm('¿Eliminar esta imagen? Esta acción no se puede deshacer.')) return;
+    onDelete(img.id, img.image_url);
+  };
+
   return (
     <div className="relative group border border-stone-200 rounded-xl overflow-hidden bg-white">
       <div className="aspect-square relative">
@@ -2100,16 +2111,39 @@ function GalleryImageCard({ img, onUpdate, onDelete }: {
           </div>
         )}
       </div>
-      <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+
+      {/* Reorder — left side */}
+      <div className="absolute left-1.5 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
+        {index > 0 && (
+          <button onClick={() => onReorder(img.id, 'up')} title="Subir"
+            className="bg-white/90 backdrop-blur-sm rounded-lg p-1.5 text-stone-600 hover:text-primary transition-colors shadow-sm">
+            <ChevronUp size={12} />
+          </button>
+        )}
+        {index < total - 1 && (
+          <button onClick={() => onReorder(img.id, 'down')} title="Bajar"
+            className="bg-white/90 backdrop-blur-sm rounded-lg p-1.5 text-stone-600 hover:text-primary transition-colors shadow-sm">
+            <ChevronDown size={12} />
+          </button>
+        )}
+      </div>
+
+      {/* Actions — right side */}
+      <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
         <button onClick={() => setEditing(e => !e)} title="Editar"
           className="bg-white/90 backdrop-blur-sm rounded-lg p-1.5 text-stone-600 hover:text-primary transition-colors shadow-sm">
           <FileText size={12} />
         </button>
-        <button onClick={() => onDelete(img.id)} title="Eliminar"
+        <button onClick={() => onSetCover(img.image_url)} title="Usar como portada del álbum"
+          className="bg-white/90 backdrop-blur-sm rounded-lg p-1.5 text-stone-600 hover:text-gold transition-colors shadow-sm">
+          <ImageIcon size={12} />
+        </button>
+        <button onClick={handleDelete} title="Eliminar"
           className="bg-white/90 backdrop-blur-sm rounded-lg p-1.5 text-red-400 hover:text-red-600 transition-colors shadow-sm">
           <Trash2 size={12} />
         </button>
       </div>
+
       {editing && (
         <div className="p-2.5 border-t border-stone-100 space-y-1.5 bg-stone-50">
           <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Título"
@@ -2139,6 +2173,14 @@ function GalleryImageCard({ img, onUpdate, onDelete }: {
 }
 
 // ── GALERÍA TAB ─────────────────────────────────────────────────
+interface UploadItem {
+  uid: string;
+  file: File;
+  previewUrl: string;
+  status: 'pending' | 'uploading' | 'done' | 'error';
+  errMsg?: string;
+}
+
 function GaleriaTab() {
   const { albums, loading: albLoading, addAlbum, updateAlbum, deleteAlbum } = useGalleryAlbums(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -2149,8 +2191,11 @@ function GaleriaTab() {
 
   const [form, setForm] = useState<Partial<GalleryAlbum> | null>(null);
   const [saving, setSaving] = useState(false);
-  const [newImg, setNewImg] = useState({ image_url: '', title: '', description: '', alt_text: '' });
-  const [imgSaving, setImgSaving] = useState(false);
+
+  // Multi-upload state
+  const [uploadQueue, setUploadQueue] = useState<UploadItem[]>([]);
+  const [bulkUploading, setBulkUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const openNew = () => {
     setSelectedId('__new__');
@@ -2162,15 +2207,16 @@ function GaleriaTab() {
     setSaving(true);
     try {
       if (selectedId === '__new__') {
-        await addAlbum({
+        const created = await addAlbum({
           title: form.title,
           description: form.description ?? null,
           cover_image_url: form.cover_image_url ?? null,
           is_active: form.is_active ?? true,
           sort_order: form.sort_order ?? 0,
         });
-        setSelectedId(null);
-        setForm(null);
+        // Auto-open the newly created album
+        setSelectedId(created.id);
+        setForm({ ...created });
       } else if (selectedId) {
         await updateAlbum(selectedId, form);
       }
@@ -2187,25 +2233,99 @@ function GaleriaTab() {
     setForm(null);
   };
 
-  const handleAddImage = async () => {
-    if (!newImg.image_url || !selectedId || selectedId === '__new__') return;
-    setImgSaving(true);
-    try {
-      await addImage({
-        album_id: selectedId,
-        image_url: newImg.image_url,
-        title: newImg.title || null,
-        description: newImg.description || null,
-        alt_text: newImg.alt_text || null,
-        sort_order: images.length,
-        is_featured: false,
-        is_active: true,
-      });
-      setNewImg({ image_url: '', title: '', description: '', alt_text: '' });
-    } finally {
-      setImgSaving(false);
-    }
+  const handleReorder = async (id: string, dir: 'up' | 'down') => {
+    const idx = images.findIndex(img => img.id === id);
+    const swapIdx = dir === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= images.length) return;
+    const a = images[idx];
+    const b = images[swapIdx];
+    await Promise.all([
+      updateImage(a.id, { sort_order: b.sort_order }),
+      updateImage(b.id, { sort_order: a.sort_order }),
+    ]);
   };
+
+  const handleSetCover = async (imageUrl: string) => {
+    if (!selectedId || selectedId === '__new__') return;
+    await updateAlbum(selectedId, { cover_image_url: imageUrl });
+    setForm(f => f ? { ...f, cover_image_url: imageUrl } : f);
+  };
+
+  // Multi-upload handlers
+  const handleFilesPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const picked = Array.from(e.target.files ?? []);
+    e.target.value = '';
+    const valid = picked.filter(f => f.type.startsWith('image/') && f.size <= 10 * 1024 * 1024);
+    const invalid = picked.length - valid.length;
+    if (invalid > 0) alert(`${invalid} archivo(s) ignorado(s): solo imágenes JPG/PNG/WEBP hasta 10 MB.`);
+    if (!valid.length) return;
+    setUploadQueue(prev => [
+      ...prev,
+      ...valid.map(f => ({
+        uid: `${f.name}-${f.size}-${f.lastModified}-${Math.random()}`,
+        file: f,
+        previewUrl: URL.createObjectURL(f),
+        status: 'pending' as const,
+      })),
+    ]);
+  };
+
+  const removeFromQueue = (uid: string) => {
+    setUploadQueue(prev => {
+      const item = prev.find(p => p.uid === uid);
+      if (item) URL.revokeObjectURL(item.previewUrl);
+      return prev.filter(p => p.uid !== uid);
+    });
+  };
+
+  const clearQueue = () => {
+    setUploadQueue(prev => { prev.forEach(p => URL.revokeObjectURL(p.previewUrl)); return []; });
+  };
+
+  const handleBulkUpload = async () => {
+    if (!selectedId || selectedId === '__new__') return;
+    const pending = uploadQueue.filter(p => p.status === 'pending');
+    if (!pending.length) return;
+    setBulkUploading(true);
+    const baseOrder = images.length;
+    for (let i = 0; i < pending.length; i++) {
+      const item = pending[i];
+      setUploadQueue(prev => prev.map(p => p.uid === item.uid ? { ...p, status: 'uploading' } : p));
+      try {
+        const ext = item.file.name.split('.').pop() ?? 'jpg';
+        const path = `gallery/${selectedId}/${Date.now()}_${i}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from('media')
+          .upload(path, item.file, { upsert: false });
+        if (upErr) throw upErr;
+        const { data: urlData } = supabase.storage.from('media').getPublicUrl(path);
+        await addImage({
+          album_id: selectedId,
+          image_url: urlData.publicUrl,
+          title: null,
+          description: null,
+          alt_text: null,
+          sort_order: baseOrder + i,
+          is_featured: false,
+          is_active: true,
+        });
+        setUploadQueue(prev => prev.map(p => p.uid === item.uid ? { ...p, status: 'done' } : p));
+      } catch {
+        setUploadQueue(prev => prev.map(p => p.uid === item.uid ? { ...p, status: 'error', errMsg: 'Error al subir' } : p));
+      }
+    }
+    setBulkUploading(false);
+    setTimeout(() => {
+      setUploadQueue(prev => {
+        prev.filter(p => p.status === 'done').forEach(p => URL.revokeObjectURL(p.previewUrl));
+        return prev.filter(p => p.status !== 'done');
+      });
+    }, 1800);
+  };
+
+  const pendingCount = uploadQueue.filter(p => p.status === 'pending').length;
+  const doneCount = uploadQueue.filter(p => p.status === 'done').length;
+  const errorCount = uploadQueue.filter(p => p.status === 'error').length;
 
   return (
     <div className="flex gap-5 min-h-0" style={{ minHeight: 'calc(100vh - 8rem)' }}>
@@ -2226,7 +2346,7 @@ function GaleriaTab() {
         ) : (
           albums.map(album => (
             <button key={album.id}
-              onClick={() => { setSelectedId(album.id); setForm({ ...album }); }}
+              onClick={() => { setSelectedId(album.id); setForm({ ...album }); clearQueue(); }}
               className={cn(
                 'w-full text-left flex items-center gap-3 p-3 rounded-xl transition-colors border',
                 selectedId === album.id
@@ -2292,7 +2412,7 @@ function GaleriaTab() {
             <div className="flex items-center gap-2 pt-1">
               <button onClick={handleSave} disabled={saving || !form.title}
                 className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white text-sm rounded-xl hover:bg-primary/90 disabled:opacity-50 transition-colors">
-                <Save size={14} /> {saving ? 'Guardando…' : 'Guardar'}
+                <Save size={14} /> {saving ? 'Guardando…' : selectedId === '__new__' ? 'Crear álbum' : 'Guardar'}
               </button>
               {selectedId && selectedId !== '__new__' && (
                 <button onClick={handleDelete}
@@ -2300,7 +2420,7 @@ function GaleriaTab() {
                   <Trash2 size={14} /> Eliminar álbum
                 </button>
               )}
-              <button onClick={() => { setSelectedId(null); setForm(null); }}
+              <button onClick={() => { setSelectedId(null); setForm(null); clearQueue(); }}
                 className="px-3 py-2 text-sm text-stone-400 hover:text-stone-600 rounded-xl transition-colors">
                 Cancelar
               </button>
@@ -2310,46 +2430,124 @@ function GaleriaTab() {
           {/* Images panel — only for saved albums */}
           {selectedId && selectedId !== '__new__' && (
             <div className="bg-white border border-[#E4E4EC] rounded-xl p-5 space-y-4">
-              <h3 className="text-[14px] font-semibold text-stone-800">Imágenes del álbum</h3>
-
-              {/* Add image form */}
-              <div className="border border-dashed border-stone-200 rounded-xl p-4 space-y-3 bg-stone-50">
-                <p className="text-xs font-medium text-stone-500">Agregar imagen</p>
-                <ImageUpload value={newImg.image_url} folder={`gallery/${selectedId}`} label="Imagen"
-                  onChange={v => setNewImg(n => ({ ...n, image_url: v }))} />
-                {newImg.image_url && (
-                  <>
-                    <div className="grid grid-cols-2 gap-3">
-                      <input value={newImg.title} placeholder="Título (opcional)" className={INPUT_SM}
-                        onChange={e => setNewImg(n => ({ ...n, title: e.target.value }))} />
-                      <input value={newImg.alt_text} placeholder="Alt text (accesibilidad)" className={INPUT_SM}
-                        onChange={e => setNewImg(n => ({ ...n, alt_text: e.target.value }))} />
-                    </div>
-                    <input value={newImg.description} placeholder="Descripción visible (opcional)" className={INPUT_SM + ' w-full'}
-                      onChange={e => setNewImg(n => ({ ...n, description: e.target.value }))} />
-                    <button onClick={handleAddImage} disabled={imgSaving}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white text-sm rounded-xl hover:bg-primary/90 disabled:opacity-50 transition-colors">
-                      <Plus size={14} /> {imgSaving ? 'Guardando…' : 'Agregar imagen'}
-                    </button>
-                  </>
-                )}
+              <div className="flex items-center justify-between">
+                <h3 className="text-[14px] font-semibold text-stone-800">
+                  Imágenes del álbum
+                  {images.length > 0 && <span className="ml-2 text-xs font-normal text-stone-400">({images.length})</span>}
+                </h3>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={bulkUploading}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white text-xs rounded-xl hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                >
+                  <Plus size={13} /> Subir imágenes
+                </button>
               </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                multiple
+                className="hidden"
+                onChange={handleFilesPick}
+              />
+
+              {/* Upload queue */}
+              {uploadQueue.length > 0 && (
+                <div className="border border-stone-200 rounded-xl p-4 space-y-3 bg-stone-50">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <p className="text-xs font-medium text-stone-600">
+                      {pendingCount > 0 && `${pendingCount} pendiente(s)`}
+                      {doneCount > 0 && ` · ${doneCount} subida(s) ✓`}
+                      {errorCount > 0 && ` · ${errorCount} con error`}
+                      {bulkUploading && ' · subiendo…'}
+                    </p>
+                    {!bulkUploading && (
+                      <button onClick={clearQueue} className="text-xs text-stone-400 hover:text-stone-600 transition-colors">
+                        Limpiar todo
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                    {uploadQueue.map(item => (
+                      <div key={item.uid} className="relative aspect-square rounded-lg overflow-hidden bg-stone-200">
+                        <img src={item.previewUrl} alt="" className="w-full h-full object-cover" />
+                        {item.status === 'uploading' && (
+                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                            <Loader size={18} className="text-white animate-spin" />
+                          </div>
+                        )}
+                        {item.status === 'done' && (
+                          <div className="absolute inset-0 bg-green-500/70 flex items-center justify-center">
+                            <CheckCircle size={20} className="text-white" />
+                          </div>
+                        )}
+                        {item.status === 'error' && (
+                          <div className="absolute inset-0 bg-red-500/70 flex flex-col items-center justify-center gap-1">
+                            <AlertCircle size={16} className="text-white" />
+                            <span className="text-white text-[9px] font-medium">Error</span>
+                          </div>
+                        )}
+                        {item.status === 'pending' && !bulkUploading && (
+                          <button
+                            onClick={() => removeFromQueue(item.uid)}
+                            className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-0.5 hover:bg-red-500 transition-colors"
+                          >
+                            <X size={10} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {pendingCount > 0 && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        onClick={handleBulkUpload}
+                        disabled={bulkUploading}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white text-sm rounded-xl hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                      >
+                        <Upload size={14} />
+                        {bulkUploading ? 'Subiendo…' : `Subir ${pendingCount} imagen${pendingCount !== 1 ? 'es' : ''}`}
+                      </button>
+                      {!bulkUploading && (
+                        <button onClick={clearQueue}
+                          className="px-3 py-2 text-sm text-stone-400 hover:text-stone-600 rounded-xl transition-colors">
+                          Cancelar
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Image grid */}
               {imgLoading ? (
                 <p className="text-sm text-stone-400">Cargando imágenes…</p>
-              ) : images.length === 0 ? (
-                <div className="text-center py-8">
-                  <Images size={24} className="text-stone-300 mx-auto mb-2" />
-                  <p className="text-sm text-stone-400">Sin imágenes aún</p>
+              ) : images.length === 0 && uploadQueue.length === 0 ? (
+                <div className="text-center py-10">
+                  <Images size={28} className="text-stone-300 mx-auto mb-2" />
+                  <p className="text-sm text-stone-400">Sin imágenes todavía.</p>
+                  <p className="text-xs text-stone-400 mt-1">Haz clic en "Subir imágenes" para agregar fotos.</p>
                 </div>
-              ) : (
+              ) : images.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                  {images.map(img => (
-                    <GalleryImageCard key={img.id} img={img} onUpdate={updateImage} onDelete={deleteImage} />
+                  {images.map((img, index) => (
+                    <GalleryImageCard
+                      key={img.id}
+                      img={img}
+                      index={index}
+                      total={images.length}
+                      onUpdate={updateImage}
+                      onDelete={deleteImage}
+                      onReorder={handleReorder}
+                      onSetCover={handleSetCover}
+                    />
                   ))}
                 </div>
-              )}
+              ) : null}
             </div>
           )}
         </div>

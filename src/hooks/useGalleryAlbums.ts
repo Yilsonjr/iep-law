@@ -92,10 +92,15 @@ export function useGalleryAlbums(activeOnly = true) {
     return () => { supabase.removeChannel(channel); };
   }, [activeOnly]);
 
-  const addAlbum = async (album: Omit<GalleryAlbum, 'id' | 'created_at' | 'updated_at'>) => {
-    const { error } = await supabase.from('gallery_albums').insert(album);
+  const addAlbum = async (album: Omit<GalleryAlbum, 'id' | 'created_at' | 'updated_at'>): Promise<GalleryAlbum> => {
+    const { data, error } = await supabase
+      .from('gallery_albums')
+      .insert(album)
+      .select()
+      .single();
     if (error) throw error;
     await fetch();
+    return data;
   };
 
   const updateAlbum = async (id: string, data: Partial<Omit<GalleryAlbum, 'id' | 'created_at'>>) => {

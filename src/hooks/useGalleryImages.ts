@@ -55,9 +55,19 @@ export function useGalleryImages(options: UseGalleryImagesOptions = {}) {
     await fetch();
   };
 
-  const deleteImage = async (id: string) => {
+  const deleteImage = async (id: string, imageUrl?: string) => {
     const { error } = await supabase.from('gallery_images').delete().eq('id', id);
     if (error) throw error;
+    if (imageUrl) {
+      const marker = '/storage/v1/object/public/media/';
+      const idx = imageUrl.indexOf(marker);
+      if (idx !== -1) {
+        const path = imageUrl.slice(idx + marker.length);
+        if (path.startsWith('gallery/')) {
+          supabase.storage.from('media').remove([path]).catch(() => {/* silent */});
+        }
+      }
+    }
     await fetch();
   };
 
