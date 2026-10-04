@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, Search, Filter, Mail, Phone, Calendar,
@@ -8,7 +8,7 @@ import {
   ExternalLink, GripVertical, MessageSquare, Home,
   Type, Columns, Zap, TrendingUp, AlignCenter, AlignLeft,
   Palette, X, AlertCircle, User, Lock, Quote, Images,
-  Upload, CheckCircle, Loader,
+  Upload, CheckCircle, Loader, Radio,
 } from 'lucide-react';
 import { supabase } from '../config/supabase';
 import { useUsers } from '../hooks/useUsers';
@@ -18,6 +18,7 @@ import { useContactMessages, CREATE_CONTACT_MESSAGES_SQL } from '../hooks/useCon
 import { usePages } from '../hooks/usePages';
 import { useGalleryAlbums } from '../hooks/useGalleryAlbums';
 import { useGalleryImages } from '../hooks/useGalleryImages';
+import { useLiveStream } from '../hooks/useLiveStream';
 import { ImageUpload } from '../components/ImageUpload';
 import { RichTextEditor } from '../components/RichTextEditor';
 import type {
@@ -53,7 +54,7 @@ const statusColors = {
   inactive: { bg: 'bg-stone-100', text: 'text-stone-500' },
 };
 
-type TabId = 'resumen' | 'inicio' | 'mensajes' | 'sitio' | 'paginas' | 'usuarios' | 'galeria';
+type TabId = 'resumen' | 'inicio' | 'mensajes' | 'sitio' | 'paginas' | 'usuarios' | 'galeria' | 'live';
 
 // ── RESUMEN TAB ────────────────────────────────────────────────
 function ResumenTab() {
@@ -2561,6 +2562,153 @@ function GaleriaTab() {
   );
 }
 
+// ── LIVE STREAM TAB ────────────────────────────────────────────
+function LiveTab() {
+  const { config, loading, updateConfig } = useLiveStream();
+  const [form, setForm] = useState({
+    is_live: false,
+    stream_url: '',
+    title: '',
+    speaker: '',
+    description: '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  // Sync form once config is loaded from Supabase
+  useEffect(() => {
+    if (!loading) {
+      setForm({
+        is_live: config.is_live,
+        stream_url: config.stream_url ?? '',
+        title: config.title ?? '',
+        speaker: config.speaker ?? '',
+        description: config.description ?? '',
+      });
+    }
+  }, [loading]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await updateConfig(form);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleToggleLive = async (val: boolean) => {
+    setForm(f => ({ ...f, is_live: val }));
+    setSaving(true);
+    try {
+      await updateConfig({ ...form, is_live: val });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader size={32} className="animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-2xl space-y-6">
+      <div>
+        <h2 className="text-2xl font-serif text-stone-800 mb-1">Transmisión en Vivo</h2>
+        <p className="text-stone-500 text-sm">Activa o desactiva la transmisión y configura los detalles del stream.</p>
+      </div>
+
+      {/* Live toggle — most prominent */}
+      <div className={cn(
+        'flex items-center justify-between p-5 rounded-2xl border-2 transition-colors',
+        form.is_live ? 'border-green-500 bg-green-50' : 'border-stone-200 bg-white',
+      )}>
+        <div className="flex items-center gap-3">
+          <div className={cn(
+            'w-10 h-10 rounded-full flex items-center justify-center',
+            form.is_live ? 'bg-green-500' : 'bg-stone-200',
+          )}>
+            <Radio size={20} className={form.is_live ? 'text-white' : 'text-stone-400'} />
+          </div>
+          <div>
+            <p className="font-semibold text-stone-800">
+              {form.is_live ? 'Transmisión activa' : 'Transmisión inactiva'}
+            </p>
+            <p className="text-sm text-stone-500">
+              {form.is_live ? 'El banner "En Vivo" es visible en el sitio' : 'No se muestra ningún banner de en vivo'}
+            </p>
+          </div>
+        </div>
+        <TOGGLE checked={form.is_live} onChange={handleToggleLive} />
+      </div>
+
+      {/* Stream details */}
+      <div className="bg-white rounded-2xl border border-stone-200 p-5 space-y-4">
+        <h3 className="font-semibold text-stone-700">Detalles del Stream</h3>
+
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-stone-500 uppercase tracking-wide">URL del Stream (YouTube)</label>
+          <input
+            className={INPUT}
+            placeholder="https://youtube.com/watch?v=..."
+            value={form.stream_url}
+            onChange={e => setForm(f => ({ ...f, stream_url: e.target.value }))}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-stone-500 uppercase tracking-wide">Título del mensaje</label>
+            <input
+              className={INPUT}
+              placeholder="Título del sermón"
+              value={form.title}
+              onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-stone-500 uppercase tracking-wide">Predicador</label>
+            <input
+              className={INPUT}
+              placeholder="Nombre del predicador"
+              value={form.speaker}
+              onChange={e => setForm(f => ({ ...f, speaker: e.target.value }))}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-stone-500 uppercase tracking-wide">Descripción</label>
+          <textarea
+            className={cn(INPUT, 'resize-none')}
+            rows={3}
+            placeholder="Breve descripción del servicio..."
+            value={form.description}
+            onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+          />
+        </div>
+
+        <div className="flex justify-end pt-2">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
+          >
+            {saving ? <Loader size={16} className="animate-spin" /> : saved ? <CheckCircle size={16} /> : <Save size={16} />}
+            {saved ? 'Guardado' : 'Guardar cambios'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── MAIN DASHBOARD ─────────────────────────────────────────────
 export function DashboardPage() {
   const { profile: currentProfile, signOut } = useAuth();
@@ -2579,6 +2727,7 @@ export function DashboardPage() {
     {
       label: 'Contenido',
       items: [
+        { id: 'live' as TabId, label: 'En Vivo', icon: Radio },
         { id: 'galeria' as TabId, label: 'Galería', icon: Images },
       ],
     },
@@ -2681,6 +2830,7 @@ export function DashboardPage() {
               {activeTab === 'paginas' && <PaginasTab />}
               {activeTab === 'usuarios' && <UsuariosTab />}
               {activeTab === 'galeria' && <GaleriaTab />}
+              {activeTab === 'live' && <LiveTab />}
             </motion.div>
           </AnimatePresence>
         </main>
