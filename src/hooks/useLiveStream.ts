@@ -4,6 +4,7 @@ import type { LiveStreamConfig } from '../types';
 
 const defaultConfig: LiveStreamConfig = {
   is_live: false,
+  show_on_homepage: true,
   stream_url: '',
   title: '',
   speaker: '',

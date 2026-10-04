@@ -536,6 +536,7 @@ function SermonFeatureSection() {
   const { sermons, loading: sermonsLoading } = useSermons(true);
 
   if (liveLoading && sermonsLoading) return null;
+  if (!live.show_on_homepage) return null;
 
   const latest = sermons[0];
   const embedUrl = ytEmbed(live.stream_url);

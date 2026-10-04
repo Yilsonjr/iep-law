@@ -244,6 +244,7 @@ export interface ChurchEvent {
 export interface LiveStreamConfig {
   id?: string;
   is_live: boolean;
+  show_on_homepage: boolean;
   stream_url: string;
   title: string;
   speaker: string;

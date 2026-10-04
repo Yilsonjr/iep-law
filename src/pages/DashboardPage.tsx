@@ -2567,6 +2567,7 @@ function LiveTab() {
   const { config, loading, updateConfig } = useLiveStream();
   const [form, setForm] = useState({
     is_live: false,
+    show_on_homepage: true,
     stream_url: '',
     title: '',
     speaker: '',
@@ -2580,6 +2581,7 @@ function LiveTab() {
     if (!loading) {
       setForm({
         is_live: config.is_live,
+        show_on_homepage: config.show_on_homepage ?? true,
         stream_url: config.stream_url ?? '',
         title: config.title ?? '',
         speaker: config.speaker ?? '',
@@ -2646,6 +2648,23 @@ function LiveTab() {
           </div>
         </div>
         <TOGGLE checked={form.is_live} onChange={handleToggleLive} />
+      </div>
+
+      {/* Homepage visibility */}
+      <div className="flex items-center justify-between bg-white p-5 rounded-2xl border border-stone-200">
+        <div>
+          <p className="font-semibold text-stone-800">Mostrar sección en Homepage</p>
+          <p className="text-sm text-stone-500">Cuando está desactivado, la sección "En Vivo / La Palabra" se oculta del inicio</p>
+        </div>
+        <TOGGLE
+          checked={form.show_on_homepage}
+          onChange={async (val) => {
+            setForm(f => ({ ...f, show_on_homepage: val }));
+            setSaving(true);
+            try { await updateConfig({ ...form, show_on_homepage: val }); }
+            finally { setSaving(false); }
+          }}
+        />
       </div>
 
       {/* Stream details */}
