@@ -14,13 +14,15 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSiteConfigContext } from '../contexts/SiteConfigContext';
 import { useContactMessages, CREATE_CONTACT_MESSAGES_SQL } from '../hooks/useContactMessages';
 import { usePages } from '../hooks/usePages';
+import { useGalleryAlbums } from '../hooks/useGalleryAlbums';
+import { useGalleryImages } from '../hooks/useGalleryImages';
 import { ImageUpload } from '../components/ImageUpload';
 import { RichTextEditor } from '../components/RichTextEditor';
 import type {
   UserProfile, UserRole, Page,
   HeroConfig, BrandingConfig, FooterConfig, SeoConfig,
   HomeBlock, HomeBlockType, FooterWidget, FooterWidgetType,
-  HomeBlockTeamMember,
+  HomeBlockTeamMember, GalleryAlbum, GalleryImage,
 } from '../types';
 import { cn } from '../utils';
 
@@ -49,7 +51,7 @@ const statusColors = {
   inactive: { bg: 'bg-stone-100', text: 'text-stone-500' },
 };
 
-type TabId = 'resumen' | 'inicio' | 'mensajes' | 'sitio' | 'paginas' | 'usuarios';
+type TabId = 'resumen' | 'inicio' | 'mensajes' | 'sitio' | 'paginas' | 'usuarios' | 'galeria';
 
 // ── RESUMEN TAB ────────────────────────────────────────────────
 function ResumenTab() {
@@ -2055,6 +2057,312 @@ function UsuariosTab() {
   );
 }
 
+// ── IMAGE CARD (gallery dashboard) ────────────────────────────
+function GalleryImageCard({ img, onUpdate, onDelete }: {
+  img: GalleryImage;
+  onUpdate: (id: string, data: Partial<GalleryImage>) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [title, setTitle] = useState(img.title ?? '');
+  const [description, setDescription] = useState(img.description ?? '');
+  const [alt, setAlt] = useState(img.alt_text ?? '');
+  const [featured, setFeatured] = useState(img.is_featured);
+  const [active, setActive] = useState(img.is_active);
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await onUpdate(img.id, {
+        title: title || null,
+        description: description || null,
+        alt_text: alt || null,
+        is_featured: featured,
+        is_active: active,
+      });
+      setEditing(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="relative group border border-stone-200 rounded-xl overflow-hidden bg-white">
+      <div className="aspect-square relative">
+        <img src={img.image_url} alt={img.alt_text ?? ''} className="w-full h-full object-cover" />
+        {img.is_featured && (
+          <span className="absolute top-1 left-1 bg-gold text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">★</span>
+        )}
+        {!img.is_active && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+            <span className="text-white text-[10px] font-semibold">Oculta</span>
+          </div>
+        )}
+      </div>
+      <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+        <button onClick={() => setEditing(e => !e)} title="Editar"
+          className="bg-white/90 backdrop-blur-sm rounded-lg p-1.5 text-stone-600 hover:text-primary transition-colors shadow-sm">
+          <FileText size={12} />
+        </button>
+        <button onClick={() => onDelete(img.id)} title="Eliminar"
+          className="bg-white/90 backdrop-blur-sm rounded-lg p-1.5 text-red-400 hover:text-red-600 transition-colors shadow-sm">
+          <Trash2 size={12} />
+        </button>
+      </div>
+      {editing && (
+        <div className="p-2.5 border-t border-stone-100 space-y-1.5 bg-stone-50">
+          <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Título"
+            className="w-full px-2.5 py-1.5 text-xs border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-gold" />
+          <input value={description} onChange={e => setDescription(e.target.value)} placeholder="Descripción"
+            className="w-full px-2.5 py-1.5 text-xs border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-gold" />
+          <input value={alt} onChange={e => setAlt(e.target.value)} placeholder="Alt text (accesibilidad)"
+            className="w-full px-2.5 py-1.5 text-xs border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-gold" />
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-1.5 text-xs text-stone-600 cursor-pointer">
+              <input type="checkbox" checked={featured} onChange={e => setFeatured(e.target.checked)} className="accent-gold" />
+              Destacada
+            </label>
+            <label className="flex items-center gap-1.5 text-xs text-stone-600 cursor-pointer">
+              <input type="checkbox" checked={active} onChange={e => setActive(e.target.checked)} className="accent-primary" />
+              Activa
+            </label>
+          </div>
+          <button onClick={save} disabled={saving}
+            className="w-full bg-primary text-white text-xs py-1.5 rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors">
+            {saving ? 'Guardando…' : 'Guardar'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── GALERÍA TAB ─────────────────────────────────────────────────
+function GaleriaTab() {
+  const { albums, loading: albLoading, addAlbum, updateAlbum, deleteAlbum } = useGalleryAlbums(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { images, loading: imgLoading, addImage, updateImage, deleteImage } = useGalleryImages({
+    albumId: selectedId && selectedId !== '__new__' ? selectedId : null,
+    activeOnly: false,
+  });
+
+  const [form, setForm] = useState<Partial<GalleryAlbum> | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [newImg, setNewImg] = useState({ image_url: '', title: '', description: '', alt_text: '' });
+  const [imgSaving, setImgSaving] = useState(false);
+
+  const openNew = () => {
+    setSelectedId('__new__');
+    setForm({ title: '', description: '', cover_image_url: '', is_active: true, sort_order: 0 });
+  };
+
+  const handleSave = async () => {
+    if (!form?.title) return;
+    setSaving(true);
+    try {
+      if (selectedId === '__new__') {
+        await addAlbum({
+          title: form.title,
+          description: form.description ?? null,
+          cover_image_url: form.cover_image_url ?? null,
+          is_active: form.is_active ?? true,
+          sort_order: form.sort_order ?? 0,
+        });
+        setSelectedId(null);
+        setForm(null);
+      } else if (selectedId) {
+        await updateAlbum(selectedId, form);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedId || selectedId === '__new__') return;
+    if (!window.confirm('¿Eliminar este álbum y todas sus imágenes? Esta acción no se puede deshacer.')) return;
+    await deleteAlbum(selectedId);
+    setSelectedId(null);
+    setForm(null);
+  };
+
+  const handleAddImage = async () => {
+    if (!newImg.image_url || !selectedId || selectedId === '__new__') return;
+    setImgSaving(true);
+    try {
+      await addImage({
+        album_id: selectedId,
+        image_url: newImg.image_url,
+        title: newImg.title || null,
+        description: newImg.description || null,
+        alt_text: newImg.alt_text || null,
+        sort_order: images.length,
+        is_featured: false,
+        is_active: true,
+      });
+      setNewImg({ image_url: '', title: '', description: '', alt_text: '' });
+    } finally {
+      setImgSaving(false);
+    }
+  };
+
+  return (
+    <div className="flex gap-5 min-h-0" style={{ minHeight: 'calc(100vh - 8rem)' }}>
+      {/* Album sidebar */}
+      <div className="w-60 flex-shrink-0 space-y-2">
+        <button onClick={openNew}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-stone-300 text-sm text-stone-500 hover:border-primary hover:text-primary transition-colors">
+          <Plus size={15} /> Nuevo álbum
+        </button>
+
+        {albLoading ? (
+          <p className="text-sm text-stone-400 text-center py-4">Cargando…</p>
+        ) : albums.length === 0 ? (
+          <div className="text-center py-10">
+            <Images size={28} className="text-stone-300 mx-auto mb-2" />
+            <p className="text-sm text-stone-400">Sin álbumes aún</p>
+          </div>
+        ) : (
+          albums.map(album => (
+            <button key={album.id}
+              onClick={() => { setSelectedId(album.id); setForm({ ...album }); }}
+              className={cn(
+                'w-full text-left flex items-center gap-3 p-3 rounded-xl transition-colors border',
+                selectedId === album.id
+                  ? 'border-primary/30 bg-primary/5'
+                  : 'border-stone-200 bg-white hover:bg-stone-50'
+              )}>
+              <div className="w-10 h-10 flex-shrink-0 rounded-lg overflow-hidden bg-stone-100 flex items-center justify-center">
+                {album.cover_image_url
+                  ? <img src={album.cover_image_url} alt="" className="w-full h-full object-cover" />
+                  : <Images size={16} className="text-stone-300" />}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-medium text-stone-800 truncate">{album.title || 'Sin título'}</p>
+                <span className={cn(
+                  'text-[10px] px-1.5 py-0.5 rounded-full font-medium',
+                  album.is_active ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-500'
+                )}>
+                  {album.is_active ? 'Activo' : 'Oculto'}
+                </span>
+              </div>
+            </button>
+          ))
+        )}
+      </div>
+
+      {/* Detail panel */}
+      {form ? (
+        <div className="flex-1 space-y-5 min-w-0 overflow-y-auto">
+          {/* Album form */}
+          <div className="bg-white border border-[#E4E4EC] rounded-xl p-5 space-y-4">
+            <h3 className="text-[14px] font-semibold text-stone-800">
+              {selectedId === '__new__' ? 'Nuevo álbum' : 'Editar álbum'}
+            </h3>
+
+            <div>
+              <label className="block text-xs text-stone-500 mb-1">Título *</label>
+              <input value={form.title ?? ''} placeholder="Nombre del álbum" className={INPUT}
+                onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
+            </div>
+
+            <div>
+              <label className="block text-xs text-stone-500 mb-1">Descripción</label>
+              <textarea value={form.description ?? ''} rows={2} className={INPUT + ' resize-none'}
+                onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+            </div>
+
+            <ImageUpload value={form.cover_image_url ?? ''} folder="gallery/covers" label="Imagen de portada"
+              onChange={v => setForm(f => ({ ...f, cover_image_url: v }))} />
+
+            <div className="flex items-center gap-6 flex-wrap">
+              <div className="flex items-center gap-2">
+                <TOGGLE checked={form.is_active ?? true} onChange={v => setForm(f => ({ ...f, is_active: v }))} />
+                <span className="text-sm text-stone-600">Activo</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-stone-600">Orden</label>
+                <input type="number" min={0} value={form.sort_order ?? 0}
+                  onChange={e => setForm(f => ({ ...f, sort_order: parseInt(e.target.value) || 0 }))}
+                  className="w-16 px-2 py-1.5 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gold" />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pt-1">
+              <button onClick={handleSave} disabled={saving || !form.title}
+                className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white text-sm rounded-xl hover:bg-primary/90 disabled:opacity-50 transition-colors">
+                <Save size={14} /> {saving ? 'Guardando…' : 'Guardar'}
+              </button>
+              {selectedId && selectedId !== '__new__' && (
+                <button onClick={handleDelete}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition-colors">
+                  <Trash2 size={14} /> Eliminar álbum
+                </button>
+              )}
+              <button onClick={() => { setSelectedId(null); setForm(null); }}
+                className="px-3 py-2 text-sm text-stone-400 hover:text-stone-600 rounded-xl transition-colors">
+                Cancelar
+              </button>
+            </div>
+          </div>
+
+          {/* Images panel — only for saved albums */}
+          {selectedId && selectedId !== '__new__' && (
+            <div className="bg-white border border-[#E4E4EC] rounded-xl p-5 space-y-4">
+              <h3 className="text-[14px] font-semibold text-stone-800">Imágenes del álbum</h3>
+
+              {/* Add image form */}
+              <div className="border border-dashed border-stone-200 rounded-xl p-4 space-y-3 bg-stone-50">
+                <p className="text-xs font-medium text-stone-500">Agregar imagen</p>
+                <ImageUpload value={newImg.image_url} folder={`gallery/${selectedId}`} label="Imagen"
+                  onChange={v => setNewImg(n => ({ ...n, image_url: v }))} />
+                {newImg.image_url && (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <input value={newImg.title} placeholder="Título (opcional)" className={INPUT_SM}
+                        onChange={e => setNewImg(n => ({ ...n, title: e.target.value }))} />
+                      <input value={newImg.alt_text} placeholder="Alt text (accesibilidad)" className={INPUT_SM}
+                        onChange={e => setNewImg(n => ({ ...n, alt_text: e.target.value }))} />
+                    </div>
+                    <input value={newImg.description} placeholder="Descripción visible (opcional)" className={INPUT_SM + ' w-full'}
+                      onChange={e => setNewImg(n => ({ ...n, description: e.target.value }))} />
+                    <button onClick={handleAddImage} disabled={imgSaving}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white text-sm rounded-xl hover:bg-primary/90 disabled:opacity-50 transition-colors">
+                      <Plus size={14} /> {imgSaving ? 'Guardando…' : 'Agregar imagen'}
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* Image grid */}
+              {imgLoading ? (
+                <p className="text-sm text-stone-400">Cargando imágenes…</p>
+              ) : images.length === 0 ? (
+                <div className="text-center py-8">
+                  <Images size={24} className="text-stone-300 mx-auto mb-2" />
+                  <p className="text-sm text-stone-400">Sin imágenes aún</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {images.map(img => (
+                    <GalleryImageCard key={img.id} img={img} onUpdate={updateImage} onDelete={deleteImage} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="flex-1 flex flex-col items-center justify-center text-center py-16">
+          <Images size={40} className="text-stone-300 mb-3" />
+          <p className="text-stone-400 text-sm">Selecciona un álbum o crea uno nuevo</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── MAIN DASHBOARD ─────────────────────────────────────────────
 export function DashboardPage() {
   const { profile: currentProfile, signOut } = useAuth();
@@ -2068,6 +2376,12 @@ export function DashboardPage() {
         { id: 'resumen' as TabId, label: 'Resumen', icon: BarChart3 },
         { id: 'inicio' as TabId, label: 'Inicio', icon: Home },
         { id: 'mensajes' as TabId, label: 'Mensajes', icon: MessageSquare, badge: unread },
+      ],
+    },
+    {
+      label: 'Contenido',
+      items: [
+        { id: 'galeria' as TabId, label: 'Galería', icon: Images },
       ],
     },
     {
@@ -2168,6 +2482,7 @@ export function DashboardPage() {
               {activeTab === 'sitio' && <SitioTab />}
               {activeTab === 'paginas' && <PaginasTab />}
               {activeTab === 'usuarios' && <UsuariosTab />}
+              {activeTab === 'galeria' && <GaleriaTab />}
             </motion.div>
           </AnimatePresence>
         </main>

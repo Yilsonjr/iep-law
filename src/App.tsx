@@ -17,6 +17,7 @@ const PostsPage     = lazy(() => import('./pages/PostsPage').then(m => ({ defaul
 const PostDetailPage = lazy(() => import('./pages/PostDetailPage').then(m => ({ default: m.PostDetailPage })));
 const DynamicPage   = lazy(() => import('./pages/DynamicPage').then(m => ({ default: m.DynamicPage })));
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const GalleryPage   = lazy(() => import('./pages/GalleryPage').then(m => ({ default: m.GalleryPage })));
 const LoginPage     = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })));
 
 function FullPageLoader() {
@@ -77,6 +78,7 @@ function AppInner() {
           <Route path="events" element={<EventsPage />} />
           <Route path="posts" element={<PostsPage />} />
           <Route path="posts/:id" element={<PostDetailPage />} />
+          <Route path="gallery" element={<GalleryPage />} />
           <Route path="p/:slug" element={<DynamicPage />} />
           <Route path="*" element={
             <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4 py-20">

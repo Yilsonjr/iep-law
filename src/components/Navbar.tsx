@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Home, Video, Calendar, Users, Menu, X, LogIn, LogOut, ChevronDown, ChevronRight, Radio, BookOpen, Search, FileText,
+  Home, Video, Calendar, Users, Menu, X, LogIn, LogOut, ChevronDown, ChevronRight, Radio, BookOpen, Search, FileText, Images,
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
@@ -29,6 +29,7 @@ const publicNavItems = [
   { path: '/live', label: 'En Vivo', icon: Radio },
   { path: '/events', label: 'Eventos', icon: Calendar },
   { path: '/posts', label: 'Comunidad', icon: BookOpen },
+  { path: '/gallery', label: 'Galería', icon: Images },
 ];
 
 interface NavbarProps {

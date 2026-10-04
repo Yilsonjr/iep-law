@@ -310,3 +310,29 @@ export interface EventRsvp {
   user_id: string;
   created_at: string;
 }
+
+// ── Gallery ────────────────────────────────────────────────────
+export interface GalleryAlbum {
+  id: string;
+  title: string;
+  description: string | null;
+  cover_image_url: string | null;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GalleryImage {
+  id: string;
+  album_id: string | null;
+  image_url: string;
+  title: string | null;
+  description: string | null;
+  alt_text: string | null;
+  sort_order: number;
+  is_featured: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}

@@ -11,6 +11,7 @@ import { useContactMessages } from '../hooks/useContactMessages';
 import { useSermons } from '../hooks/useSermons';
 import { useEvents } from '../hooks/useEvents';
 import { useLiveStream } from '../hooks/useLiveStream';
+import { useGalleryImages } from '../hooks/useGalleryImages';
 import type { HomeBlock } from '../types';
 import { cn } from '../utils';
 
@@ -1572,6 +1573,60 @@ function ContactFormBlock({ block }: { block: HomeBlock }) {
   );
 }
 
+// ── GALLERY MOMENTOS SECTION ───────────────────────────────────
+function GalleryMomentosSection() {
+  const { images, loading } = useGalleryImages({ featuredOnly: true, activeOnly: true, limit: 6 });
+
+  if (loading || images.length === 0) return null;
+
+  return (
+    <section className="py-16 md:py-20 bg-ink text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div
+          initial="hidden" whileInView="visible" viewport={{ once: true }}
+          variants={fadeUp}
+          className="text-center mb-10"
+        >
+          <p className="eyebrow text-gold mb-3">Comunidad</p>
+          <h2 className="font-serif text-3xl md:text-4xl text-white mb-4">Momentos de nuestra comunidad</h2>
+          <p className="text-white/60 max-w-md mx-auto">
+            Cada imagen cuenta una historia de fe, encuentro y gracia.
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8">
+          {images.map((img, i) => (
+            <motion.div
+              key={img.id}
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.07, duration: 0.4 }}
+              className="aspect-square overflow-hidden rounded-xl bg-white/10"
+            >
+              <img
+                src={img.image_url}
+                alt={img.alt_text ?? ''}
+                loading="lazy"
+                className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+              />
+            </motion.div>
+          ))}
+        </div>
+
+        <div className="text-center">
+          <Link
+            to="/gallery"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/30 text-white hover:bg-white/10 transition-colors text-sm font-medium"
+          >
+            Ver galería completa
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ── Block renderer helper ──────────────────────────────────────
 function renderBlock(block: HomeBlock, onContact: () => void) {
   switch (block.type) {
@@ -1629,7 +1684,10 @@ export function HomePage({ onContact }: HomePageProps) {
       {/* 6 — Events Strip */}
       <EventsStripSection />
 
-      {/* 7 — Pastoral Leadership (team blocks from dashboard) */}
+      {/* 7 — Gallery Momentos (conditional on published images) */}
+      <GalleryMomentosSection />
+
+      {/* 8 — Pastoral Leadership (team blocks from dashboard) */}
       {teamBlocks.map(b => renderBlock(b, onContact))}
 
       {/* 8 — Testimonio / Versículo (testimonials blocks from dashboard) */}
