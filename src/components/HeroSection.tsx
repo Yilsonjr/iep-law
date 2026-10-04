@@ -402,10 +402,7 @@ function HeroContent({ hero, textMode = false }: { hero: ReturnType<typeof useSi
           custom={3} variants={item} initial="hidden" animate="visible"
           className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center"
         >
-          {(hero.buttons.length > 0 ? hero.buttons : [
-            { href: '/events', label: 'Planifica tu visita', variant: 'primary' as const },
-            { href: '/live', label: 'Ver transmisión', variant: 'secondary' as const },
-          ]).map((btn, i) => (
+          {hero.buttons.map((btn, i) => (
             <Link
               key={i}
               to={btn.href}

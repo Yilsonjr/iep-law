@@ -1658,14 +1658,8 @@ export function HomePage({ onContact }: HomePageProps) {
     .filter(b => b.visible)
     .sort((a, b) => a.order - b.order);
 
-  // Split blocks by type to render in spec order:
-  // 3→story  4→sermon  5→events  6→team  7→testimonials  8→cta_banner  ∞→other
-  const teamBlocks         = visibleBlocks.filter(b => b.type === 'team');
-  const testimonialsBlocks = visibleBlocks.filter(b => b.type === 'testimonials');
-  const ctaBlocks          = visibleBlocks.filter(b => b.type === 'cta_banner');
-  const otherBlocks        = visibleBlocks.filter(b =>
-    !['cards', 'team', 'testimonials', 'cta_banner'].includes(b.type)
-  );
+  // Render all non-cards blocks in sort_order (cards handled by ScrollStorySection)
+  const dashboardBlocks = visibleBlocks.filter(b => b.type !== 'cards');
 
   return (
     <div>
@@ -1688,17 +1682,8 @@ export function HomePage({ onContact }: HomePageProps) {
       {/* 7 — Gallery Momentos (conditional on published images) */}
       <GalleryMomentosSection />
 
-      {/* 8 — Pastoral Leadership (team blocks from dashboard) */}
-      {teamBlocks.map(b => renderBlock(b, onContact))}
-
-      {/* 8 — Testimonio / Versículo (testimonials blocks from dashboard) */}
-      {testimonialsBlocks.map(b => renderBlock(b, onContact))}
-
-      {/* 9 — CTA Final (cta_banner blocks from dashboard) */}
-      {ctaBlocks.map(b => renderBlock(b, onContact))}
-
-      {/* Other block types (columns, stats, rich_text, gallery, contact_form) */}
-      {otherBlocks.map(b => renderBlock(b, onContact))}
+      {/* Dashboard blocks — rendered in sort_order */}
+      {dashboardBlocks.map(b => renderBlock(b, onContact))}
 
       <div ref={ctaRef} />
     </div>
